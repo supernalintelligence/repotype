@@ -39,6 +39,29 @@ pnpm --filter @supernal/repotype exec -- node bin/repotype.js status . --json
 pnpm --filter @supernal/repotype exec -- node bin/repotype.js apply .
 ```
 
+## Deny-by-default validation behavior
+
+Repotype now defaults to **deny-by-default** for unmatched files.
+
+- Diagnostic code: `no_matching_file_rule`
+- Default severity: `error`
+- Behavior: any scanned file path not explicitly matched by `files[*].glob` fails validation.
+
+Legacy compatibility escape hatch:
+
+```yaml
+defaults:
+  unmatchedFiles: allow
+```
+
+In permissive mode, unmatched files emit `suggestion` diagnostics instead of errors.
+
+Strict root allowlist preset is available via:
+
+```bash
+repotype init . --type strict
+```
+
 ## Core Commands
 
 - `repotype validate [target] [--json]`
@@ -47,7 +70,7 @@ pnpm --filter @supernal/repotype exec -- node bin/repotype.js apply .
 - `repotype explain <file> [--json]`
 - `repotype scaffold <templateId> <output> --set key=value`
 - `repotype generate schema <target> <output> [--pattern "**/*.md"]`
-- `repotype init [target] [--type default] [--from path/to/profile.yaml] [--force]`
+- `repotype init [target] [--type default|strict] [--from path/to/profile.yaml] [--force]`
 - `repotype cleanup-run [target] --queue sort_queue --min-errors 3 [--dry-run] [--json]`
 - `repotype status [target] [--json]`
 - `repotype apply [target] [--json]`

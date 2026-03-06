@@ -89,6 +89,7 @@ export interface RepoSchemaConfig {
   defaults?: {
     inheritance?: 'merge' | 'replace';
     strictness?: 'strict' | 'balanced' | 'lenient';
+    unmatchedFiles?: 'deny' | 'allow';
   };
   operations?: {
     hooks?: {

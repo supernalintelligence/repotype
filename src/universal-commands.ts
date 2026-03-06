@@ -362,7 +362,7 @@ export const repotypeGenerateSchemaCommand = new UniversalCommand<
 });
 
 export const repotypeInitCommand = new UniversalCommand<
-  { target?: string; type?: 'default'; from?: string; force?: boolean },
+  { target?: string; type?: 'default' | 'strict'; from?: string; force?: boolean },
   ReturnType<typeof initRepotypeConfig>
 >({
   name: 'repotype init',

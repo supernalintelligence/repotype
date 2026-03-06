@@ -315,7 +315,7 @@ export async function runCLI(argv: string[]): Promise<number> {
     .command('init')
     .description('Initialize repotype.yaml from generic preset or external source')
     .argument('[target]', 'target directory for repotype.yaml', '.')
-    .option('--type <type>', 'preset type: default', 'default')
+    .option('--type <type>', 'preset type: default|strict', 'default')
     .option('--from <path>', 'external YAML config to copy as repotype.yaml')
     .option('--force', 'overwrite existing repotype.yaml if present', false)
     .action((target: string, options: { type: string; from?: string; force: boolean }) => {

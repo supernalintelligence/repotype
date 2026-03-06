@@ -20,35 +20,96 @@ function isInManagedFolderScope(relativePath: string, context: ValidatorContext)
   });
 }
 
+function normalizePath(p: string): string {
+  return p.replace(/\\/g, '/').replace(/^\.\//, '');
+}
+
 function isTemplateSource(relativePath: string): boolean {
-  const normalized = relativePath.replace(/\\/g, '/');
+  const normalized = normalizePath(relativePath);
   return normalized.includes('/templates/') || normalized.endsWith('.template.md');
+}
+
+function isRepotypeSystemFile(relativePath: string): boolean {
+  const normalized = normalizePath(relativePath);
+  return normalized === 'repotype.yaml' || normalized === 'repo-schema.yaml';
+}
+
+function isReferencedByConfig(relativePath: string, context: ValidatorContext): boolean {
+  const normalized = normalizePath(relativePath);
+
+  if ((context.config.templates || []).some((t) => normalizePath(t.path) === normalized)) {
+    return true;
+  }
+
+  for (const rule of context.config.files || []) {
+    if (rule.schema && normalizePath(rule.schema.schema) === normalized) {
+      return true;
+    }
+  }
+
+  for (const folder of context.config.folders || []) {
+    const bindings = folder.schemaBindings || {};
+    for (const key of Object.keys(bindings)) {
+      const binding = bindings[key];
+      if (normalizePath(binding.schema) === normalized) {
+        return true;
+      }
+    }
+  }
+
+  return false;
 }
 
 export class GuidanceAdapter implements ValidatorAdapter {
   id = 'guidance';
 
-  supports(filePath: string, _context: ValidatorContext): boolean {
-    return filePath.endsWith('.md');
+  supports(_filePath: string, _context: ValidatorContext): boolean {
+    return true;
   }
 
   async validate(filePath: string, context: ValidatorContext): Promise<Diagnostic[]> {
     const diagnostics: Diagnostic[] = [];
     const relative = context.ruleSet.filePath;
+    const strictUnmatchedPolicy = context.config.defaults?.unmatchedFiles ?? 'deny';
 
     if (context.ruleSet.fileRules.length === 0) {
-      if (!isInManagedFolderScope(relative, context)) {
+      if (isRepotypeSystemFile(relative) || isReferencedByConfig(relative, context)) {
         return diagnostics;
       }
+
+      if (strictUnmatchedPolicy === 'allow') {
+        diagnostics.push({
+          code: 'no_matching_file_rule',
+          message: `No file rule matched '${relative}'. Legacy permissive mode is enabled (defaults.unmatchedFiles=allow).`,
+          severity: 'suggestion',
+          file: filePath,
+          details: {
+            mode: 'permissive',
+            recommendation: 'Set defaults.unmatchedFiles to deny for strict deny-by-default enforcement.',
+          },
+        });
+        return diagnostics;
+      }
+
+      if (!isInManagedFolderScope(relative, context) && (context.config.folders || []).length > 0) {
+        // deny-by-default should still fail unmatched paths even outside managed folder scope
+      }
+
       diagnostics.push({
         code: 'no_matching_file_rule',
-        message: `No file rule matched '${relative}'. Add a files rule in repotype.yaml to enforce expectations.`,
-        severity: 'suggestion',
+        message: `No file rule matched '${relative}'. Deny-by-default policy requires explicit file allow rules.`,
+        severity: 'error',
         file: filePath,
         details: {
-          example: `files:\n  - id: ${path.basename(relative, '.md') || 'rule-id'}\n    glob: "${relative}"`,
+          mode: 'deny',
+          example: `files:\n  - id: ${path.basename(relative, path.extname(relative)) || 'rule-id'}\n    glob: "${relative}"`,
+          compatibilityEscapeHatch: 'defaults.unmatchedFiles: allow',
         },
       });
+      return diagnostics;
+    }
+
+    if (!filePath.endsWith('.md')) {
       return diagnostics;
     }
 

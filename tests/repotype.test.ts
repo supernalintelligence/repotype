@@ -116,6 +116,26 @@ folders:
   return root;
 }
 
+function makeUnmatchedRootFixture(mode: 'deny' | 'allow' = 'deny'): string {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-unmatched-root-'));
+  fs.mkdirSync(path.join(root, 'docs', 'requirements'), { recursive: true });
+
+  fs.writeFileSync(
+    path.join(root, 'repotype.yaml'),
+    `version: "1"
+defaults:
+  unmatchedFiles: ${mode}
+files:
+  - id: docs-md
+    glob: "docs/**/*.md"
+`,
+  );
+
+  fs.writeFileSync(path.join(root, 'docs', 'requirements', 'req-a.md'), '# okay\n');
+  fs.writeFileSync(path.join(root, 'README.md'), '# unmatched root file\n');
+  return root;
+}
+
 function makeTypedFileFixtureRepo(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-typed-test-'));
   fs.mkdirSync(path.join(root, 'config'), { recursive: true });
@@ -465,6 +485,24 @@ description: something: else
     const status = pluginStatus(root);
     expect(status.plugins.length).toBe(3);
     expect(status.plugins.some((p) => p.id === 'sample-validate' && p.hasValidate)).toBe(true);
+  });
+
+  it('fails unmatched root files by default (deny-by-default)', async () => {
+    const root = makeUnmatchedRootFixture('deny');
+    const result = await validatePath(root);
+
+    expect(result.ok).toBe(false);
+    const unmatched = result.diagnostics.find((d) => d.code === 'no_matching_file_rule' && d.file.endsWith('README.md'));
+    expect(unmatched?.severity).toBe('error');
+  });
+
+  it('supports legacy permissive mode via defaults.unmatchedFiles=allow', async () => {
+    const root = makeUnmatchedRootFixture('allow');
+    const result = await validatePath(root);
+
+    expect(result.ok).toBe(true);
+    const unmatched = result.diagnostics.find((d) => d.code === 'no_matching_file_rule' && d.file.endsWith('README.md'));
+    expect(unmatched?.severity).toBe('suggestion');
   });
 
   it('runs plugin fix commands through repotype fix', async () => {
