@@ -197,11 +197,13 @@
 
     <section class="grid grid-2" aria-label="How to run">
       <article class="card">
-        <h3>Quickstart</h3>
-<pre><code>pnpm --filter repotype build
-pnpm --filter repotype exec repotype init .
-pnpm --filter repotype exec repotype validate . --json
-pnpm --filter repotype exec repotype apply .</code></pre>
+        <h3>Install + Quickstart</h3>
+<pre><code>npm install -g repotype
+# or: npx repotype validate .
+
+repotype init .
+repotype validate . --json
+repotype apply .</code></pre>
       </article>
       <article class="card">
         <h3>Operational Signals</h3>
@@ -213,6 +215,14 @@ pnpm --filter repotype exec repotype apply .</code></pre>
         </div>
       </article>
     </section>
+
+    <article class="blog" aria-label="Share blurb">
+      <h2>Share With Your Agents</h2>
+      <p>Copy/paste this into agent instructions:</p>
+<pre><code>Use repotype to enforce repository structure and doc contracts before writing files.
+Run `repotype validate . --json` first, then only create or modify files that match repotype.yaml rules.
+If validation fails, follow diagnostics or run `repotype fix` / `repotype cleanup-run` to restore compliance.</code></pre>
+    </article>
 
     <p class="footer">
       MIT Licensed. Works with any agent workflow that writes to your repository.

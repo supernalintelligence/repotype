@@ -11,6 +11,23 @@ It prevents repo drift by enforcing structure, templates, frontmatter schemas, a
 
 If your team has ever said "we thought this doc format was required" or "why did this file end up here?" this is for that.
 
+## Install (npm)
+
+Repotype is published on npm as `repotype` (latest: `0.1.0`).
+
+```bash
+# global CLI
+npm install -g repotype
+
+# OR run without installing globally
+npx repotype validate .
+```
+
+Download/package page:
+
+- npm: [npmjs.com/package/repotype](https://www.npmjs.com/package/repotype)
+- source: [github.com/supernalintelligence/repotype](https://github.com/supernalintelligence/repotype)
+
 ## Why Repotype
 
 - Define repository rules once in `repotype.yaml`
@@ -22,20 +39,27 @@ If your team has ever said "we thought this doc format was required" or "why did
 ## 60-Second Quickstart
 
 ```bash
-# 1) Build
-pnpm --filter repotype build
+# 1) Initialize generic starter config
+repotype init .
 
-# 2) Initialize generic starter config
-pnpm --filter repotype exec -- node bin/repotype.js init .
+# 2) Validate current repo
+repotype validate .
 
-# 3) Validate current repo
-pnpm --filter repotype exec -- node bin/repotype.js validate .
+# 3) Inspect operations state
+repotype status . --json
 
-# 4) Inspect operations state
-pnpm --filter repotype exec -- node bin/repotype.js status . --json
+# 4) Apply operations declared in repotype.yaml
+repotype apply .
+```
 
-# 5) Apply operations declared in repotype.yaml
-pnpm --filter repotype exec -- node bin/repotype.js apply .
+## Share With Your Agents
+
+Copy/paste blurb:
+
+```text
+Use repotype to enforce repository structure and doc contracts before writing files.
+Run `repotype validate . --json` first, then only create or modify files that match repotype.yaml rules.
+If validation fails, follow diagnostics or run `repotype fix` / `repotype cleanup-run` to restore compliance.
 ```
 
 ## Deny-by-default validation behavior
