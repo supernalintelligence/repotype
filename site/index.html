@@ -3,90 +3,330 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Repotype</title>
-  <meta name="description" content="Repotype: repository contract validation and operations automation." />
+  <title>Repotype | Repository Contracts for Human + Agent Teams</title>
+  <meta name="description" content="Repotype prevents repo drift caused by agents and humans by enforcing repository contracts, templates, schemas, and cleanup workflows." />
   <link rel="icon" href="favicon.ico" sizes="any" />
   <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32" />
   <link rel="icon" href="assets/favicon-16.png" type="image/png" sizes="16x16" />
   <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" sizes="180x180" />
   <style>
     :root {
-      --bg: #0f172a;
-      --panel: #111827;
-      --text: #e5e7eb;
-      --muted: #94a3b8;
-      --accent: #14b8a6;
-      --accent2: #22c55e;
-      --line: #1f2937;
+      --bg: #f6f8fb;
+      --text: #0f172a;
+      --muted: #475569;
+      --panel: #ffffff;
+      --line: #dbe3ef;
+      --ink: #0b1220;
+      --accent: #0ea5e9;
+      --accent-2: #22c55e;
+      --danger: #dc2626;
+      --warn: #b45309;
     }
+
     * { box-sizing: border-box; }
+
     body {
       margin: 0;
       color: var(--text);
-      background: radial-gradient(circle at 20% 20%, #122748 0%, var(--bg) 45%), var(--bg);
-      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu;
+      background:
+        radial-gradient(circle at 0% 0%, rgba(14,165,233,.10) 0, transparent 34%),
+        radial-gradient(circle at 100% 0%, rgba(34,197,94,.10) 0, transparent 32%),
+        var(--bg);
+      font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
       line-height: 1.5;
     }
-    .wrap { max-width: 980px; margin: 0 auto; padding: 40px 20px 72px; }
+
+    .wrap {
+      max-width: 1080px;
+      margin: 0 auto;
+      padding: 26px 18px 72px;
+    }
+
     .hero {
       border: 1px solid var(--line);
-      background: linear-gradient(160deg, rgba(20,184,166,.14), rgba(34,197,94,.08));
-      border-radius: 18px;
-      padding: 26px;
+      background: linear-gradient(155deg, #ffffff, #f8fbff 55%, #f7fff8);
+      border-radius: 20px;
+      padding: 20px;
+      box-shadow: 0 10px 24px rgba(15, 23, 42, 0.06);
     }
-    h1 { margin: 12px 0 4px; font-size: 2rem; }
-    p { margin: 0; color: var(--muted); }
-    .grid { display: grid; gap: 14px; margin-top: 18px; }
-    @media (min-width: 800px) { .grid { grid-template-columns: 1fr 1fr; } }
+
+    .hero-head {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+
+    .logo {
+      width: 72px;
+      height: 72px;
+      border-radius: 14px;
+      border: 1px solid var(--line);
+      background: #fff;
+      object-fit: cover;
+    }
+
+    .pill {
+      display: inline-block;
+      font-size: .78rem;
+      letter-spacing: .03em;
+      text-transform: uppercase;
+      color: #0b4a6d;
+      background: #e0f2fe;
+      border: 1px solid #bae6fd;
+      border-radius: 999px;
+      padding: 4px 10px;
+      margin: 0 8px 8px 0;
+      font-weight: 700;
+    }
+
+    h1 {
+      margin: 8px 0 6px;
+      font-size: clamp(1.6rem, 3.8vw, 2.5rem);
+      line-height: 1.15;
+      color: var(--ink);
+    }
+
+    .sub {
+      margin: 0;
+      color: var(--muted);
+      font-size: 1.03rem;
+      max-width: 74ch;
+    }
+
+    .hero-actions {
+      margin-top: 14px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      text-decoration: none;
+      display: inline-block;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+    }
+
+    .btn-secondary {
+      background: #fff;
+      color: #0c4a6e;
+      border-color: #bae6fd;
+    }
+
+    .grid {
+      display: grid;
+      gap: 14px;
+      margin-top: 16px;
+    }
+
+    @media (min-width: 900px) {
+      .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+      .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
     .card {
       border: 1px solid var(--line);
       background: var(--panel);
-      border-radius: 14px;
+      border-radius: 16px;
       padding: 16px;
+      box-shadow: 0 4px 12px rgba(15,23,42,.04);
     }
-    .card h2 { margin: 0 0 8px; font-size: 1.05rem; }
+
+    .card h2, .card h3 {
+      margin: 0 0 8px;
+      color: var(--ink);
+    }
+
+    .card p {
+      margin: 0;
+      color: var(--muted);
+    }
+
+    .list {
+      margin: 8px 0 0;
+      padding-left: 18px;
+      color: var(--muted);
+    }
+
+    .list li { margin: 6px 0; }
+
+    .flow {
+      counter-reset: flow;
+      list-style: none;
+      padding: 0;
+      margin: 8px 0 0;
+      display: grid;
+      gap: 10px;
+    }
+
+    .flow li {
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      padding: 10px 12px 10px 42px;
+      background: #fbfdff;
+      position: relative;
+      color: #1e293b;
+    }
+
+    .flow li::before {
+      counter-increment: flow;
+      content: counter(flow);
+      width: 22px;
+      height: 22px;
+      position: absolute;
+      left: 12px;
+      top: 10px;
+      border-radius: 999px;
+      background: #dbeafe;
+      color: #1d4ed8;
+      font-weight: 700;
+      text-align: center;
+      line-height: 22px;
+      font-size: .82rem;
+    }
+
     pre {
-      margin: 0; padding: 12px;
+      margin: 0;
       background: #0b1220;
-      border-radius: 10px;
+      color: #e2e8f0;
+      border-radius: 12px;
       border: 1px solid #1e293b;
+      padding: 12px;
+      font-size: .87rem;
       overflow: auto;
-      font-size: .9rem;
     }
-    .meta { margin-top: 16px; color: var(--muted); font-size: .92rem; }
-    a { color: #67e8f9; text-decoration: none; }
-    a:hover { text-decoration: underline; }
-    .logo { width: 100%; max-width: 420px; height: auto; }
+
+    .signal-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .signal {
+      padding: 6px 10px;
+      border-radius: 999px;
+      font-size: .8rem;
+      font-weight: 700;
+      border: 1px solid transparent;
+    }
+
+    .signal-bad {
+      color: #7f1d1d;
+      background: #fee2e2;
+      border-color: #fecaca;
+    }
+
+    .signal-warn {
+      color: #78350f;
+      background: #ffedd5;
+      border-color: #fed7aa;
+    }
+
+    .signal-good {
+      color: #14532d;
+      background: #dcfce7;
+      border-color: #bbf7d0;
+    }
+
+    .footer {
+      margin-top: 20px;
+      color: #64748b;
+      font-size: .92rem;
+    }
+
+    .footer a { color: #0369a1; text-decoration: none; }
+    .footer a:hover { text-decoration: underline; }
   </style>
 </head>
 <body>
   <main class="wrap">
-    <section class="hero">
-      <img src="assets/logo.png" alt="Repotype" class="logo" />
-      <h1>Repository contracts, not repo chaos.</h1>
-      <p>Validate structure, enforce templates and frontmatter schemas, and automate safe cleanup with full logs.</p>
+    <section class="hero" aria-label="Repotype intro">
+      <div class="hero-head">
+        <img src="assets/logo.png" alt="Repotype logo" class="logo" />
+        <div>
+          <span class="pill">Repo Contracts</span>
+          <span class="pill">Agent-Safe</span>
+          <span class="pill">CI-Enforced</span>
+        </div>
+      </div>
+      <h1>Stop agent-generated repo sprawl before it lands in main.</h1>
+      <p class="sub">
+        Repotype defines and enforces how your repository should be structured: folders, file patterns,
+        markdown/frontmatter rules, naming conventions, companion files, and cleanup policy.
+      </p>
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="https://github.com/supernalintelligence/repotype">View on GitHub</a>
+        <a class="btn btn-secondary" href="https://github.com/supernalintelligence/repotype/blob/main/README.md">Read docs</a>
+      </div>
     </section>
 
-    <section class="grid" aria-label="Quick Actions">
+    <section class="grid grid-3" aria-label="Core use cases">
       <article class="card">
-        <h2>Quickstart</h2>
-        <pre><code>pnpm --filter @supernal/repotype build
-pnpm --filter @supernal/repotype exec repotype validate .
-pnpm --filter @supernal/repotype exec repotype status . --json
+        <h2>Agent Output Control</h2>
+        <p>Prevent “docs/code anywhere” drift by requiring explicit allow rules for where generated content can live.</p>
+        <ul class="list">
+          <li>Deny-by-default unmatched files</li>
+          <li>Folder allowlists and required paths</li>
+          <li>Path case + naming enforcement</li>
+        </ul>
+      </article>
+      <article class="card">
+        <h2>Doc Contract Enforcement</h2>
+        <p>Ensure markdown is consistently structured and machine-usable for planning, testing, and traceability.</p>
+        <ul class="list">
+          <li>Required frontmatter schema</li>
+          <li>Required sections per doc type</li>
+          <li>Template enforcement + cleanup hints</li>
+        </ul>
+      </article>
+      <article class="card">
+        <h2>Operational Hygiene</h2>
+        <p>Install hooks and watcher policies from config to catch drift continuously, not just at review time.</p>
+        <ul class="list">
+          <li>Pre-commit / pre-push checks</li>
+          <li>Cleanup queue with audit logs</li>
+          <li>JSON report output for automation</li>
+        </ul>
+      </article>
+    </section>
+
+    <section class="grid grid-2" aria-label="How it works">
+      <article class="card">
+        <h3>Workflow</h3>
+        <ol class="flow">
+          <li>Define repository contract in <code>repotype.yaml</code>.</li>
+          <li>Run <code>repotype validate .</code> locally and in CI.</li>
+          <li>Use <code>repotype fix</code> and <code>cleanup-run</code> for safe remediation.</li>
+          <li>Publish evidence with <code>repotype report --json</code>.</li>
+        </ol>
+      </article>
+      <article class="card">
+        <h3>Quickstart</h3>
+<pre><code>pnpm --filter @supernal/repotype build
+pnpm --filter @supernal/repotype exec repotype init .
+pnpm --filter @supernal/repotype exec repotype validate . --json
 pnpm --filter @supernal/repotype exec repotype apply .</code></pre>
-      </article>
-
-      <article class="card">
-        <h2>Safe Cleanup Flow</h2>
-        <pre><code>repotype cleanup-run . --queue sort_queue --min-errors 3 --dry-run
-repotype cleanup-run . --queue sort_queue --min-errors 3
-# logs:
-# sort_queue/cleanup-log.jsonl
-# sort_queue/cleanup-log.md</code></pre>
+        <div class="signal-row" aria-label="signals">
+          <span class="signal signal-bad">Error: repo contract violation</span>
+          <span class="signal signal-warn">Warning: weak policy or mismatch risk</span>
+          <span class="signal signal-good">Pass: repo typed + enforceable</span>
+        </div>
       </article>
     </section>
 
-    <p class="meta">Docs: <a href="https://github.com/supernalintelligence/repotype">GitHub</a> · License: MIT</p>
+    <p class="footer">
+      MIT Licensed. Source and issues:
+      <a href="https://github.com/supernalintelligence/repotype">github.com/supernalintelligence/repotype</a>
+    </p>
   </main>
 </body>
 </html>
