@@ -1,0 +1,55 @@
+version: "1"
+
+defaults:
+  inheritance: merge
+  strictness: balanced
+
+folders:
+  - id: supernal-docs-root
+    path: .supernal
+    requiredFolders:
+      - features
+      - requirements
+      - traceability
+
+files:
+  - id: supernal-config
+    glob: "supernal.yaml"
+
+  - id: feature-docs
+    glob: ".supernal/features/*.md"
+    filenamePattern: "^FEAT-[A-Z0-9-]+.*\\.md$"
+    requiredSections:
+      - Feature
+      - Scope
+      - Evidence
+
+  - id: requirement-docs
+    glob: ".supernal/requirements/REQ-*.md"
+    filenamePattern: "^REQ-[A-Z0-9-]+.*\\.md$"
+    requiredSections:
+      - Requirement
+      - Acceptance Criteria
+      - Notes
+
+  - id: requirement-index
+    glob: ".supernal/requirements/README.md"
+    requiredSections:
+      - Requirements
+      - Requirement Summary
+      - Traceability
+
+  - id: traceability-output
+    glob: ".supernal/traceability/traceability.md"
+    requiredSections:
+      - Repotype Requirement Traceability
+      - Summary
+      - Matrix
+
+  - id: gherkin-story-sources
+    glob: "stories/*.feature"
+    filenamePattern: "^[a-z0-9-]+\\.feature$"
+
+  - id: generated-story-tests
+    glob: "tests/generated/stories/*.spec.ts"
+    filenamePattern: "^[a-z0-9-]+\\.spec\\.ts$"

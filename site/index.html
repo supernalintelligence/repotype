@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Repotype</title>
+  <meta name="description" content="Repotype: repository contract validation and operations automation." />
+  <style>
+    :root {
+      --bg: #0f172a;
+      --panel: #111827;
+      --text: #e5e7eb;
+      --muted: #94a3b8;
+      --accent: #14b8a6;
+      --accent2: #22c55e;
+      --line: #1f2937;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      color: var(--text);
+      background: radial-gradient(circle at 20% 20%, #122748 0%, var(--bg) 45%), var(--bg);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu;
+      line-height: 1.5;
+    }
+    .wrap { max-width: 980px; margin: 0 auto; padding: 40px 20px 72px; }
+    .hero {
+      border: 1px solid var(--line);
+      background: linear-gradient(160deg, rgba(20,184,166,.14), rgba(34,197,94,.08));
+      border-radius: 18px;
+      padding: 26px;
+    }
+    h1 { margin: 12px 0 4px; font-size: 2rem; }
+    p { margin: 0; color: var(--muted); }
+    .grid { display: grid; gap: 14px; margin-top: 18px; }
+    @media (min-width: 800px) { .grid { grid-template-columns: 1fr 1fr; } }
+    .card {
+      border: 1px solid var(--line);
+      background: var(--panel);
+      border-radius: 14px;
+      padding: 16px;
+    }
+    .card h2 { margin: 0 0 8px; font-size: 1.05rem; }
+    pre {
+      margin: 0; padding: 12px;
+      background: #0b1220;
+      border-radius: 10px;
+      border: 1px solid #1e293b;
+      overflow: auto;
+      font-size: .9rem;
+    }
+    .meta { margin-top: 16px; color: var(--muted); font-size: .92rem; }
+    a { color: #67e8f9; text-decoration: none; }
+    a:hover { text-decoration: underline; }
+    .logo { width: 100%; max-width: 420px; height: auto; }
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="hero">
+      <img src="assets/logo-lockup.svg" alt="Repotype" class="logo" />
+      <h1>Repository contracts, not repo chaos.</h1>
+      <p>Validate structure, enforce templates and frontmatter schemas, and automate safe cleanup with full logs.</p>
+    </section>
+
+    <section class="grid" aria-label="Quick Actions">
+      <article class="card">
+        <h2>Quickstart</h2>
+        <pre><code>pnpm --filter @supernal/repotype build
+pnpm --filter @supernal/repotype exec repotype validate .
+pnpm --filter @supernal/repotype exec repotype status . --json
+pnpm --filter @supernal/repotype exec repotype apply .</code></pre>
+      </article>
+
+      <article class="card">
+        <h2>Safe Cleanup Flow</h2>
+        <pre><code>repotype cleanup-run . --queue sort_queue --min-errors 3 --dry-run
+repotype cleanup-run . --queue sort_queue --min-errors 3
+# logs:
+# sort_queue/cleanup-log.jsonl
+# sort_queue/cleanup-log.md</code></pre>
+      </article>
+    </section>
+
+    <p class="meta">Docs: <a href="../README.md">README.md</a> · License: CC BY-NC-SA 4.0</p>
+  </main>
+</body>
+</html>

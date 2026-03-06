@@ -1,0 +1,16 @@
+{
+  "generatedAt": "2026-03-06T08:15:51.012Z",
+  "target": "/Users/ianderrington/git/supernal-nova/families/supernal-coding/packages/repotype",
+  "repoRoot": "/Users/ianderrington/git/supernal-nova/families/supernal-coding/packages/repotype",
+  "configPath": "/Users/ianderrington/git/supernal-nova/families/supernal-coding/packages/repotype/repotype.yaml",
+  "ok": true,
+  "filesScanned": 62,
+  "totals": {
+    "errors": 0,
+    "warnings": 0,
+    "suggestions": 0,
+    "diagnostics": 0
+  },
+  "byCode": [],
+  "sampleFindings": []
+}

@@ -1,0 +1,70 @@
+{
+  "name": "@supernal/repotype",
+  "version": "0.1.0",
+  "description": "Repository schema validation, scaffolding, autofix, and service runtime",
+  "type": "module",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "bin": {
+    "repotype": "bin/repotype.js"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch",
+    "test": "pnpm run test:generate-cli && vitest run",
+    "test:generate-cli": "node scripts/generate-cli-tests.mjs",
+    "test:e2e": "vitest run tests/e2e-cli.test.ts tests/generated/universal-cli.generated.test.ts tests/universal-interface.integration.test.ts",
+    "stories:generate": "si generate-story-tests stories --output tests/generated/stories",
+    "stories:generate:check": "si generate-story-tests stories --output tests/generated/stories --check",
+    "traceability:generate": "node scripts/generate-traceability.mjs",
+    "traceability:check": "node scripts/generate-traceability.mjs --check",
+    "self:validate": "node bin/repotype.js validate . --json",
+    "self:validate:repotype": "node bin/repotype.js validate . --json",
+    "self:validate:supernal": "node bin/repotype.js validate . --json --config profiles/supernal/repotype.yaml",
+    "self:validate:all": "pnpm run self:validate:repotype && pnpm run self:validate:supernal",
+    "self:report": "node bin/repotype.js report . --json --output .supernal/traceability/repotype-self-report.json",
+    "self:report:repotype": "node bin/repotype.js report . --json --output .supernal/traceability/repotype-self-report.json",
+    "self:report:supernal": "node bin/repotype.js report . --json --config profiles/supernal/repotype.yaml --output .supernal/traceability/repotype-supernal-self-report.json",
+    "self:report:all": "pnpm run self:report:repotype && pnpm run self:report:supernal"
+  },
+  "dependencies": {
+    "@supernal/universal-command": "workspace:*",
+    "ajv": "^8.17.1",
+    "ajv-formats": "^3.0.1",
+    "chalk": "^5.3.0",
+    "commander": "^12.0.0",
+    "express": "^4.18.2",
+    "glob": "^10.4.5",
+    "handlebars": "^4.7.8",
+    "js-yaml": "^4.1.1",
+    "minimatch": "^10.0.1"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.21",
+    "@types/node": "^20.0.0",
+    "tsup": "^8.0.0",
+    "typescript": "^5.3.0",
+    "vitest": "^1.0.0"
+  },
+  "files": [
+    "dist",
+    "bin",
+    "README.md",
+    "examples",
+    "LICENSE",
+    "CONTRIBUTING.md",
+    "CHANGELOG.md",
+    "site",
+    "ROADMAP.md"
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "license": "CC-BY-NC-SA-4.0"
+}

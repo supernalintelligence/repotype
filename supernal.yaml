@@ -1,0 +1,26 @@
+# Supernal Configuration for @supernal/repotype
+
+version: '1.0'
+package:
+  name: '@supernal/repotype'
+  type: standalone
+  license: CC-BY-NC-SA-4.0
+
+upstream:
+  repo: https://github.com/supernalintelligence/supernal-coding
+  docs_path: docs/features/developer-tooling/repotype
+
+requirements:
+  prefix: REQ-REPOTYPE
+  path: .supernal/requirements
+
+testing:
+  framework: vitest
+  path: tests/**/*.test.ts
+  requirement_linkage: true
+
+features:
+  requirement_tracking: true
+  test_traceability: true
+  commit_traceability: true
+  gherkin_e2e_stories: true

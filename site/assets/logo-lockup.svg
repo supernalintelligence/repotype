@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 860 220" role="img" aria-label="Repotype logo">
+  <rect width="860" height="220" rx="28" fill="#0f172a"/>
+  <g transform="translate(24,24)">
+    <rect width="172" height="172" rx="28" fill="#111827"/>
+    <path d="M30 42h70c28 0 50 22 50 50s-22 50-50 50H62v30H30V42zm32 50h38c10 0 18-8 18-18s-8-18-18-18H62v36z" fill="#14b8a6"/>
+    <path d="M84 142h30l30 30h-34l-26-30z" fill="#e2e8f0"/>
+  </g>
+  <g fill="#e5e7eb">
+    <text x="230" y="104" font-size="60" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu" font-weight="700">repotype</text>
+    <text x="232" y="146" font-size="24" font-family="ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Ubuntu" fill="#94a3b8">Repository Contract Engine</text>
+  </g>
+</svg>

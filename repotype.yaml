@@ -1,0 +1,49 @@
+version: "1"
+extends: "profiles/repotype/repotype.yaml"
+
+files:
+
+  - id: package-readme
+    glob: "README.md"
+    requiredSections:
+      - Why Repotype
+      - Core Commands
+      - CI Integration (GitHub Actions)
+
+  - id: package-agents
+    glob: "AGENTS.md"
+    requiredSections:
+      - Purpose
+      - Use This Package For
+      - Recommended Agent Workflow
+
+  - id: package-contributing
+    glob: "CONTRIBUTING.md"
+    requiredSections:
+      - Scope
+      - Local Development
+      - Commit Guidance
+
+  - id: package-changelog
+    glob: "CHANGELOG.md"
+    requiredSections:
+      - Added
+
+  - id: package-site-readme
+    glob: "site/README.md"
+    requiredSections:
+      - Local Preview
+      - GitHub Pages
+
+  - id: package-template-sources
+    glob: "examples/templates/*.md"
+    requiredSections:
+      - Description
+      - Acceptance Criteria
+      - Test Strategy
+
+  - id: package-roadmap
+    glob: "ROADMAP.md"
+    requiredSections:
+      - Near Term
+      - Runtime Portability
