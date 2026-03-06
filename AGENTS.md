@@ -17,7 +17,7 @@ Repotype enforces repository-level contracts for structure, markdown/frontmatter
 
 ## Install Repotype Skill (For Agents)
 
-From repository root:
+From repotype repository root:
 
 ```bash
 bash skills/repotype/scripts/install-local.sh
