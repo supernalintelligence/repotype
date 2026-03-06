@@ -1,9 +1,9 @@
 # @supernal/repotype
 
-[![node](https://img.shields.io/badge/node-%3E%3D20-0ea5e9)](https://nodejs.org/)
-[![license](https://img.shields.io/badge/license-MIT-22c55e)](./LICENSE)
-[![tests](https://img.shields.io/badge/tests-49%20passing-16a34a)](./tests)
-[![docs](https://img.shields.io/badge/docs-repotype.dev-blue)](https://supernalintelligence.github.io/repotype/)
+[![CI](https://github.com/supernalintelligence/repotype/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/supernalintelligence/repotype/actions/workflows/ci.yml)
+[![License: MIT](https://img.shields.io/badge/license-MIT-22c55e.svg)](https://github.com/supernalintelligence/repotype/blob/main/LICENSE)
+[![tests](https://img.shields.io/badge/tests-51%20passing-16a34a)](https://github.com/supernalintelligence/repotype/actions/workflows/ci.yml)
+[![docs](https://img.shields.io/badge/docs-github%20pages-0ea5e9)](https://supernalintelligence.github.io/repotype/)
 
 Repotype is your repository contract engine.
 
@@ -401,6 +401,8 @@ Repotype includes:
 - Generated CLI surface tests from universal-command exports (`tests/generated/universal-cli.generated.test.ts`)
 - Universal-command test harness integration (`tests/universal-interface.integration.test.ts`)
 
+Current baseline: 51 tests across 7 Vitest files (updated March 6, 2026).
+
 Generate + run:
 
 ```bash
@@ -446,3 +448,7 @@ Repotype supersedes the initial `repo-schema` naming in this workspace.
 
 - Prefer `repotype.yaml` going forward
 - Existing `repo-schema.yaml` continues to load for compatibility
+
+## License
+
+MIT. See [LICENSE](https://github.com/supernalintelligence/repotype/blob/main/LICENSE).

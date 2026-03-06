@@ -2,6 +2,14 @@
   "name": "@supernal/repotype",
   "version": "0.1.0",
   "description": "Repository schema validation, scaffolding, autofix, and service runtime",
+  "homepage": "https://supernalintelligence.github.io/repotype/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/supernalintelligence/repotype.git"
+  },
+  "bugs": {
+    "url": "https://github.com/supernalintelligence/repotype/issues"
+  },
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

@@ -13,15 +13,12 @@ Open `http://localhost:4173`.
 
 ## GitHub Pages
 
-`repotype.yml` deploys Pages automatically on `push` to `main`, using `.repotype/publish`.
+`.github/workflows/ci.yml` deploys Pages automatically on `push` to `main`.
 
-If you need manual publishing instead, publish `.repotype/publish` as the Pages artifact content.
+It publishes this directory directly:
 
-## Evidence Bundle
+- `packages/repotype/site`
 
-CI now prepares a publish-ready bundle in `.repotype/publish` with:
+Repository setting to use:
 
-- static site files from `packages/repotype/site`
-- generated compliance evidence in `.repotype/publish/reports`
-
-Use this bundle as the source for Pages or any static host.
+- GitHub Pages source: `GitHub Actions`
