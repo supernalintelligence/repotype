@@ -163,6 +163,25 @@ files:
   return root;
 }
 
+function makeOverbroadGlobFixtureRepo(): string {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-overbroad-glob-'));
+  fs.mkdirSync(path.join(root, 'docs', 'requirements'), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, 'repotype.yaml'),
+    `version: "1"
+defaults:
+  unmatchedFiles: deny
+files:
+  - id: catch-all
+    glob: "**/*"
+  - id: broad-docs
+    glob: "docs/**/*"
+`,
+  );
+  fs.writeFileSync(path.join(root, 'docs', 'requirements', 'req-a.md'), '# ok\n');
+  return root;
+}
+
 function makeTypedFileFixtureRepo(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-typed-test-'));
   fs.mkdirSync(path.join(root, 'config'), { recursive: true });
@@ -556,6 +575,15 @@ description: something: else
 
     const generated = generateSchemaFromContent(root, outputSchema, '**/*.md');
     expect(generated.filesParsed).toBe(1);
+  });
+
+  it('warns on overbroad glob patterns like **/* during validation', async () => {
+    const root = makeOverbroadGlobFixtureRepo();
+    const result = await validatePath(root);
+
+    const warnings = result.diagnostics.filter((d) => d.code === 'overbroad_glob_pattern');
+    expect(warnings.length).toBeGreaterThanOrEqual(2);
+    expect(warnings.every((d) => d.severity === 'warning')).toBe(true);
   });
 
   it('runs plugin fix commands through repotype fix', async () => {

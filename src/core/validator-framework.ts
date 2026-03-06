@@ -4,7 +4,7 @@ import { globSync } from 'glob';
 import { findConfig, loadConfig } from './config-loader.js';
 import { createIgnoreMatcher, getStaticIgnoreGlobs } from './path-ignore.js';
 import { resolveEffectiveRules } from './rule-engine.js';
-import type { Diagnostic, ValidationResult, ValidatorAdapter, ValidatorContext } from './types.js';
+import type { Diagnostic, RepoSchemaConfig, ValidationResult, ValidatorAdapter, ValidatorContext } from './types.js';
 
 function scanFiles(targetPath: string, repoRoot: string): string[] {
   const ignoreMatcher = createIgnoreMatcher(repoRoot);
@@ -23,6 +23,51 @@ function scanFiles(targetPath: string, repoRoot: string): string[] {
   return files.filter((filePath) => !ignoreMatcher.isIgnored(filePath));
 }
 
+function hasOverbroadGlob(glob: string): boolean {
+  const normalized = glob.replace(/\\+/g, '/');
+  return normalized === '**/*' || normalized.includes('/**/*') || normalized.endsWith('/**');
+}
+
+function lintConfigGlobs(config: RepoSchemaConfig, configPath: string): Diagnostic[] {
+  const diagnostics: Diagnostic[] = [];
+
+  for (const rule of config.files || []) {
+    if (!rule.glob) continue;
+    if (hasOverbroadGlob(rule.glob)) {
+      diagnostics.push({
+        code: 'overbroad_glob_pattern',
+        message: `Overbroad file glob '${rule.glob}' in rule '${rule.id || 'unnamed'}'. Avoid '**/*' style catch-alls; use explicit allowlist paths.`,
+        severity: 'warning',
+        file: configPath,
+        ruleId: rule.id,
+        details: {
+          glob: rule.glob,
+          recommendation: 'Replace broad glob with explicit folder/file rules.',
+        },
+      });
+    }
+  }
+
+  for (const rule of config.folders || []) {
+    if (!rule.glob) continue;
+    if (hasOverbroadGlob(rule.glob)) {
+      diagnostics.push({
+        code: 'overbroad_glob_pattern',
+        message: `Overbroad folder glob '${rule.glob}' in rule '${rule.id || 'unnamed'}'. Avoid catch-all patterns in allow-only schemas.`,
+        severity: 'warning',
+        file: configPath,
+        ruleId: rule.id,
+        details: {
+          glob: rule.glob,
+          recommendation: 'Use explicit folder paths in allowedFolders/requiredFolders.',
+        },
+      });
+    }
+  }
+
+  return diagnostics;
+}
+
 export class ValidationEngine {
   constructor(private readonly adapters: ValidatorAdapter[]) {}
 
@@ -37,7 +82,7 @@ export class ValidationEngine {
     const repoRoot = options?.configPath ? targetRoot : path.dirname(configPath);
     const config = loadConfig(configPath);
     const files = scanFiles(absoluteTarget, repoRoot);
-    const diagnostics: Diagnostic[] = [];
+    const diagnostics: Diagnostic[] = [...lintConfigGlobs(config, configPath)];
 
     for (const filePath of files) {
       const ruleSet = resolveEffectiveRules(config, repoRoot, filePath);
