@@ -1773,6 +1773,34 @@ function findGitRoot(startPath) {
     dir = parent;
   }
 }
+function resolveGitDir(repoRoot) {
+  const dotGit = path16.join(repoRoot, ".git");
+  if (!fs15.existsSync(dotGit)) {
+    throw new Error(`.git path not found for repo root: ${repoRoot}`);
+  }
+  const stat = fs15.statSync(dotGit);
+  if (stat.isDirectory()) {
+    return dotGit;
+  }
+  if (stat.isFile()) {
+    const content = fs15.readFileSync(dotGit, "utf8").trim();
+    const match = content.match(/^gitdir:\s*(.+)$/i);
+    if (!match) {
+      throw new Error(`Unsupported .git file format at: ${dotGit}`);
+    }
+    const rawGitDir = match[1].trim();
+    return path16.isAbsolute(rawGitDir) ? rawGitDir : path16.resolve(repoRoot, rawGitDir);
+  }
+  throw new Error(`Unsupported .git path type at: ${dotGit}`);
+}
+function resolveHooksDir(repoRoot) {
+  const gitDir = resolveGitDir(repoRoot);
+  const hooksDir = path16.join(gitDir, "hooks");
+  if (!fs15.existsSync(hooksDir)) {
+    fs15.mkdirSync(hooksDir, { recursive: true });
+  }
+  return hooksDir;
+}
 function makeHookSnippet(repoRoot) {
   return `${START_MARKER}
 REPO_ROOT="${repoRoot}"
@@ -1815,10 +1843,7 @@ function upsertHook(hookFile, snippet) {
 }
 function installChecks(options) {
   const repoRoot = findGitRoot(options.target);
-  const hooksDir = path16.join(repoRoot, ".git", "hooks");
-  if (!fs15.existsSync(hooksDir)) {
-    throw new Error(`Git hooks directory not found: ${hooksDir}`);
-  }
+  const hooksDir = resolveHooksDir(repoRoot);
   const hookNames = options.hook === "both" ? ["pre-commit", "pre-push"] : [options.hook];
   const snippet = makeHookSnippet(repoRoot);
   const hooks = hookNames.map((hook) => {
@@ -1830,7 +1855,7 @@ function installChecks(options) {
 }
 function inspectChecks(target) {
   const repoRoot = findGitRoot(target);
-  const hooksDir = path16.join(repoRoot, ".git", "hooks");
+  const hooksDir = resolveHooksDir(repoRoot);
   const hookNames = ["pre-commit", "pre-push"];
   const hooks = hookNames.map((hook) => {
     const hookPath = path16.join(hooksDir, hook);
@@ -1849,7 +1874,7 @@ function inspectChecks(target) {
 }
 function uninstallChecks(options) {
   const repoRoot = findGitRoot(options.target);
-  const hooksDir = path16.join(repoRoot, ".git", "hooks");
+  const hooksDir = resolveHooksDir(repoRoot);
   const hookNames = options.hook === "both" ? ["pre-commit", "pre-push"] : [options.hook];
   const hooks = hookNames.map((hook) => {
     const hookPath = path16.join(hooksDir, hook);

@@ -68,6 +68,14 @@ id: "REQ-BAD-001"
   return root;
 }
 
+function makeRepoWithGitFile(): { root: string; gitDir: string } {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-gitfile-test-'));
+  const gitDir = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-gitdir-'));
+  fs.mkdirSync(path.join(gitDir, 'hooks'), { recursive: true });
+  fs.writeFileSync(path.join(root, '.git'), `gitdir: ${gitDir}\n`);
+  return { root, gitDir };
+}
+
 describe('cleanup and hooks', () => {
   it('installs both git hooks idempotently', () => {
     const root = makeRepo();
@@ -80,6 +88,19 @@ describe('cleanup and hooks', () => {
 
     const preCommit = fs.readFileSync(path.join(root, '.git', 'hooks', 'pre-commit'), 'utf8');
     expect(preCommit.includes('repotype validate')).toBe(true);
+  });
+
+  it('installs hooks when .git is a file pointing to external gitdir', () => {
+    const { root, gitDir } = makeRepoWithGitFile();
+
+    const result = installChecks({ target: root, hook: 'pre-commit' });
+    expect(result.repoRoot).toBe(root);
+
+    const hookPath = path.join(gitDir, 'hooks', 'pre-commit');
+    expect(fs.existsSync(hookPath)).toBe(true);
+
+    const hook = fs.readFileSync(hookPath, 'utf8');
+    expect(hook.includes('repotype validate')).toBe(true);
   });
 
   it('moves severely invalid files into sort_queue and logs actions', async () => {

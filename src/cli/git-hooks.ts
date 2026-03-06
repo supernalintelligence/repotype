@@ -30,6 +30,39 @@ function findGitRoot(startPath: string): string {
   }
 }
 
+function resolveGitDir(repoRoot: string): string {
+  const dotGit = path.join(repoRoot, '.git');
+  if (!fs.existsSync(dotGit)) {
+    throw new Error(`.git path not found for repo root: ${repoRoot}`);
+  }
+
+  const stat = fs.statSync(dotGit);
+  if (stat.isDirectory()) {
+    return dotGit;
+  }
+
+  if (stat.isFile()) {
+    const content = fs.readFileSync(dotGit, 'utf8').trim();
+    const match = content.match(/^gitdir:\s*(.+)$/i);
+    if (!match) {
+      throw new Error(`Unsupported .git file format at: ${dotGit}`);
+    }
+    const rawGitDir = match[1].trim();
+    return path.isAbsolute(rawGitDir) ? rawGitDir : path.resolve(repoRoot, rawGitDir);
+  }
+
+  throw new Error(`Unsupported .git path type at: ${dotGit}`);
+}
+
+function resolveHooksDir(repoRoot: string): string {
+  const gitDir = resolveGitDir(repoRoot);
+  const hooksDir = path.join(gitDir, 'hooks');
+  if (!fs.existsSync(hooksDir)) {
+    fs.mkdirSync(hooksDir, { recursive: true });
+  }
+  return hooksDir;
+}
+
 function makeHookSnippet(repoRoot: string): string {
   return `${START_MARKER}\nREPO_ROOT="${repoRoot}"\nif command -v repotype >/dev/null 2>&1; then\n  repotype validate "$REPO_ROOT"\nelif command -v pnpm >/dev/null 2>&1; then\n  pnpm --silent exec repotype validate "$REPO_ROOT"\nelse\n  echo "repotype CLI not found. Install @supernal/repotype or add it to PATH."\n  exit 1\nfi\n${END_MARKER}\n`;
 }
@@ -70,11 +103,7 @@ export function installChecks(options: InstallChecksOptions): {
   hooks: Array<{ hook: string; status: 'created' | 'updated' | 'unchanged'; path: string }>;
 } {
   const repoRoot = findGitRoot(options.target);
-  const hooksDir = path.join(repoRoot, '.git', 'hooks');
-
-  if (!fs.existsSync(hooksDir)) {
-    throw new Error(`Git hooks directory not found: ${hooksDir}`);
-  }
+  const hooksDir = resolveHooksDir(repoRoot);
 
   const hookNames = options.hook === 'both' ? ['pre-commit', 'pre-push'] : [options.hook];
   const snippet = makeHookSnippet(repoRoot);
@@ -93,7 +122,7 @@ export function inspectChecks(target: string): {
   hooks: Array<{ hook: 'pre-commit' | 'pre-push'; path: string; exists: boolean; managed: boolean }>;
 } {
   const repoRoot = findGitRoot(target);
-  const hooksDir = path.join(repoRoot, '.git', 'hooks');
+  const hooksDir = resolveHooksDir(repoRoot);
   const hookNames: Array<'pre-commit' | 'pre-push'> = ['pre-commit', 'pre-push'];
 
   const hooks = hookNames.map((hook) => {
@@ -118,7 +147,7 @@ export function uninstallChecks(options: InstallChecksOptions): {
   hooks: Array<{ hook: string; status: 'removed' | 'unchanged' | 'not_found'; path: string }>;
 } {
   const repoRoot = findGitRoot(options.target);
-  const hooksDir = path.join(repoRoot, '.git', 'hooks');
+  const hooksDir = resolveHooksDir(repoRoot);
   const hookNames = options.hook === 'both' ? ['pre-commit', 'pre-push'] : [options.hook];
 
   const hooks = hookNames.map((hook) => {
