@@ -1,4 +1,4 @@
-# @supernal/repotype
+# repotype
 
 [![CI](https://github.com/supernalintelligence/repotype/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/supernalintelligence/repotype/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e.svg)](https://github.com/supernalintelligence/repotype/blob/main/LICENSE)
@@ -23,19 +23,19 @@ If your team has ever said "we thought this doc format was required" or "why did
 
 ```bash
 # 1) Build
-pnpm --filter @supernal/repotype build
+pnpm --filter repotype build
 
 # 2) Initialize generic starter config
-pnpm --filter @supernal/repotype exec -- node bin/repotype.js init .
+pnpm --filter repotype exec -- node bin/repotype.js init .
 
 # 3) Validate current repo
-pnpm --filter @supernal/repotype exec -- node bin/repotype.js validate .
+pnpm --filter repotype exec -- node bin/repotype.js validate .
 
 # 4) Inspect operations state
-pnpm --filter @supernal/repotype exec -- node bin/repotype.js status . --json
+pnpm --filter repotype exec -- node bin/repotype.js status . --json
 
 # 5) Apply operations declared in repotype.yaml
-pnpm --filter @supernal/repotype exec -- node bin/repotype.js apply .
+pnpm --filter repotype exec -- node bin/repotype.js apply .
 ```
 
 ## Deny-by-default validation behavior
@@ -192,7 +192,7 @@ SDK helpers for other sites:
 import {
   parseComplianceReportJson,
   renderComplianceReportFromJson,
-} from '@supernal/repotype';
+} from 'repotype';
 
 const json = await fetch('/evidence/repotype-package.compliance.json').then((r) => r.text());
 const report = parseComplianceReportJson(json);
@@ -343,9 +343,9 @@ jobs:
           node-version: 20
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm --filter @supernal/repotype build
-      - run: pnpm --filter @supernal/repotype exec -- node bin/repotype.js validate . --json
-      - run: pnpm --filter @supernal/repotype exec -- node bin/repotype.js report . --json --output .repotype/reports/compliance.json
+      - run: pnpm --filter repotype build
+      - run: pnpm --filter repotype exec -- node bin/repotype.js validate . --json
+      - run: pnpm --filter repotype exec -- node bin/repotype.js report . --json --output .repotype/reports/compliance.json
       - uses: actions/upload-artifact@v4
         with:
           name: repotype-evidence
@@ -406,8 +406,8 @@ Current baseline: 51 tests across 7 Vitest files (updated March 6, 2026).
 Generate + run:
 
 ```bash
-pnpm --filter @supernal/repotype test
-pnpm --filter @supernal/repotype test:e2e
+pnpm --filter repotype test
+pnpm --filter repotype test:e2e
 ```
 
 ## Agents
@@ -436,10 +436,10 @@ si generate-story-tests packages/repotype/stories --output packages/repotype/tes
 Generate and verify requirement traceability:
 
 ```bash
-pnpm --filter @supernal/repotype traceability:generate
-pnpm --filter @supernal/repotype traceability:check
-pnpm --filter @supernal/repotype self:validate:all
-pnpm --filter @supernal/repotype self:report:all
+pnpm --filter repotype traceability:generate
+pnpm --filter repotype traceability:check
+pnpm --filter repotype self:validate:all
+pnpm --filter repotype self:report:all
 ```
 
 ## Migration Note

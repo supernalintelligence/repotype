@@ -80,6 +80,7 @@ interface RepoSchemaConfig {
     defaults?: {
         inheritance?: 'merge' | 'replace';
         strictness?: 'strict' | 'balanced' | 'lenient';
+        unmatchedFiles?: 'deny' | 'allow';
     };
     operations?: {
         hooks?: {
@@ -146,7 +147,7 @@ interface PluginRequirement {
 declare function findConfig(startPath: string): string;
 declare function loadConfig(configPath: string): RepoSchemaConfig;
 
-type RepotypePresetType = 'default';
+type RepotypePresetType = 'default' | 'strict';
 declare function createPresetConfig(type: RepotypePresetType): RepoSchemaConfig;
 declare function listPresetTypes(): RepotypePresetType[];
 
@@ -260,7 +261,7 @@ declare function initRepotypeConfig(targetDir: string, options?: {
     source: string;
 };
 declare function getRepotypePresetMetadata(): {
-    types: "default"[];
+    types: RepotypePresetType[];
 };
 declare function installPluginRequirements(target: string): {
     repoRoot: string;
@@ -511,7 +512,7 @@ declare const repotypeGenerateSchemaCommand: UniversalCommand<{
 }>;
 declare const repotypeInitCommand: UniversalCommand<{
     target?: string;
-    type?: "default";
+    type?: "default" | "strict";
     from?: string;
     force?: boolean;
 }, {

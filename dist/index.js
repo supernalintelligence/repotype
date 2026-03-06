@@ -108,7 +108,8 @@ function loadConfig(configPath) {
 function baseDefaults() {
   return {
     inheritance: "merge",
-    strictness: "balanced"
+    strictness: "balanced",
+    unmatchedFiles: "deny"
   };
 }
 function defaultPreset() {
@@ -128,18 +129,45 @@ function defaultPreset() {
         glob: "docs/requirements/**/*.md",
         filenamePattern: "^req-[a-z0-9-]+\\.md$",
         requiredSections: ["Description", "Acceptance Criteria", "Test Strategy"]
+      },
+      {
+        id: "repotype-config",
+        glob: "repotype.yaml"
       }
     ]
   };
 }
+function strictPreset() {
+  return {
+    version: "1",
+    defaults: {
+      ...baseDefaults(),
+      strictness: "strict",
+      unmatchedFiles: "deny"
+    },
+    folders: [
+      {
+        id: "root-allowlist",
+        path: ".",
+        allowedFolders: ["docs", "schemas", "examples"],
+        allowedFiles: ["repotype.yaml", "README.md"]
+      }
+    ],
+    files: [
+      { id: "repotype-config", glob: "repotype.yaml" },
+      { id: "docs-markdown", glob: "docs/**/*.md" },
+      { id: "schemas-json", glob: "schemas/**/*.json" },
+      { id: "templates-markdown", glob: "examples/templates/**/*.md" }
+    ]
+  };
+}
 function createPresetConfig(type) {
-  if (type !== "default") {
-    throw new Error(`Unsupported preset type '${type}'.`);
-  }
-  return defaultPreset();
+  if (type === "default") return defaultPreset();
+  if (type === "strict") return strictPreset();
+  throw new Error(`Unsupported preset type '${type}'.`);
 }
 function listPresetTypes() {
-  return ["default"];
+  return ["default", "strict"];
 }
 
 // src/core/rule-engine.ts
@@ -213,9 +241,9 @@ function explainRules(config, repoRoot, absoluteFilePath) {
 }
 
 // src/core/schema-generator.ts
-import fs3 from "fs";
-import path3 from "path";
-import { globSync } from "glob";
+import fs4 from "fs";
+import path4 from "path";
+import { globSync as globSync2 } from "glob";
 
 // src/core/markdown.ts
 import fs2 from "fs";
@@ -253,6 +281,125 @@ ${body.trimStart()}`;
 function extractSections(markdownBody) {
   const matches = markdownBody.match(/^##+\s+(.+)$/gm) || [];
   return matches.map((line) => line.replace(/^##+\s+/, "").trim());
+}
+
+// src/core/path-ignore.ts
+import fs3 from "fs";
+import path3 from "path";
+import { globSync } from "glob";
+import { minimatch as minimatch2 } from "minimatch";
+var MATCH_OPTS = { dot: true, nocase: false, nocomment: true };
+var STATIC_IGNORES = ["**/node_modules/**", "**/.git/**", "**/dist/**", "**/build/**"];
+function normalize2(value) {
+  return value.replace(/\\/g, "/").replace(/^\.\/+/, "").replace(/\/+$/, "");
+}
+function parseIgnoreLine(line) {
+  const trimmed = line.trim();
+  if (!trimmed || trimmed.startsWith("#")) {
+    return null;
+  }
+  let raw = trimmed;
+  let negated = false;
+  if (raw.startsWith("!")) {
+    negated = true;
+    raw = raw.slice(1).trim();
+  }
+  if (!raw) {
+    return null;
+  }
+  const directoryOnly = raw.endsWith("/");
+  let pattern = directoryOnly ? raw.slice(0, -1) : raw;
+  pattern = pattern.replace(/^\/+/, "");
+  if (!pattern) {
+    return null;
+  }
+  return {
+    base: ".",
+    pattern,
+    negated,
+    directoryOnly,
+    hasSlash: pattern.includes("/")
+  };
+}
+function toLocalPath(base, relativePath) {
+  if (base === ".") {
+    return relativePath;
+  }
+  if (relativePath === base) {
+    return "";
+  }
+  if (relativePath.startsWith(`${base}/`)) {
+    return relativePath.slice(base.length + 1);
+  }
+  return null;
+}
+function matchesRule(localPath, rule) {
+  if (rule.directoryOnly) {
+    const directoryPattern = normalize2(rule.pattern);
+    if (!directoryPattern) {
+      return false;
+    }
+    return localPath === directoryPattern || minimatch2(localPath, `${directoryPattern}/**`, MATCH_OPTS);
+  }
+  if (rule.hasSlash) {
+    return minimatch2(localPath, rule.pattern, MATCH_OPTS);
+  }
+  return minimatch2(localPath, rule.pattern, { ...MATCH_OPTS, matchBase: true }) || minimatch2(localPath, `**/${rule.pattern}`, MATCH_OPTS);
+}
+function collectIgnoreRules(repoRoot) {
+  const root = path3.resolve(repoRoot);
+  const ignoreFiles = globSync("**/.*ignore*", {
+    cwd: root,
+    absolute: true,
+    nodir: true,
+    dot: true,
+    ignore: STATIC_IGNORES
+  }).sort((a, b) => {
+    const depthDiff = normalize2(path3.relative(root, path3.dirname(a))).split("/").length - normalize2(path3.relative(root, path3.dirname(b))).split("/").length;
+    return depthDiff !== 0 ? depthDiff : a.localeCompare(b);
+  });
+  const rules = [];
+  for (const ignoreFile of ignoreFiles) {
+    const dirRel = normalize2(path3.relative(root, path3.dirname(ignoreFile))) || ".";
+    const lines = fs3.readFileSync(ignoreFile, "utf8").split(/\r?\n/);
+    for (const line of lines) {
+      const parsed = parseIgnoreLine(line);
+      if (!parsed) {
+        continue;
+      }
+      rules.push({
+        ...parsed,
+        base: dirRel
+      });
+    }
+  }
+  return rules;
+}
+function createIgnoreMatcher(repoRoot) {
+  const root = path3.resolve(repoRoot);
+  const rules = collectIgnoreRules(root);
+  return {
+    isIgnored(absolutePath) {
+      const rel = normalize2(path3.relative(root, path3.resolve(absolutePath)));
+      if (!rel || rel.startsWith("..")) {
+        return false;
+      }
+      let ignored = false;
+      for (const rule of rules) {
+        const localPath = toLocalPath(rule.base, rel);
+        if (localPath === null) {
+          continue;
+        }
+        if (matchesRule(localPath, rule)) {
+          ignored = !rule.negated;
+        }
+      }
+      return ignored;
+    }
+  };
+}
+function getStaticIgnoreGlobs() {
+  return [...STATIC_IGNORES];
 }
 
 // src/core/schema-generator.ts
@@ -317,17 +464,20 @@ function inferPropertySchema(values) {
   };
 }
 function discoverMarkdownFiles(targetPath, pattern) {
-  const absolute = path3.resolve(targetPath);
-  const stat = fs3.statSync(absolute);
+  const absolute = path4.resolve(targetPath);
+  const stat = fs4.statSync(absolute);
+  const repoRoot = stat.isDirectory() ? absolute : path4.dirname(absolute);
+  const ignoreMatcher = createIgnoreMatcher(repoRoot);
   if (stat.isFile()) {
-    return [absolute];
+    return ignoreMatcher.isIgnored(absolute) ? [] : [absolute];
   }
-  return globSync(pattern, {
+  const discovered = globSync2(pattern, {
     cwd: absolute,
     absolute: true,
     nodir: true,
-    ignore: ["**/node_modules/**", "**/.git/**", "**/dist/**", "**/build/**"]
+    ignore: getStaticIgnoreGlobs()
   });
+  return discovered.filter((filePath) => !ignoreMatcher.isIgnored(filePath));
 }
 function generateFrontmatterSchemaFromContent(targetPath, outputPath, pattern = "**/*.md") {
   const files = discoverMarkdownFiles(targetPath, pattern);
@@ -363,9 +513,9 @@ function generateFrontmatterSchemaFromContent(targetPath, outputPath, pattern = 
     properties,
     additionalProperties: true
   };
-  const outputAbsolute = path3.resolve(outputPath);
-  fs3.mkdirSync(path3.dirname(outputAbsolute), { recursive: true });
-  fs3.writeFileSync(outputAbsolute, `${JSON.stringify(schema, null, 2)}
+  const outputAbsolute = path4.resolve(outputPath);
+  fs4.mkdirSync(path4.dirname(outputAbsolute), { recursive: true });
+  fs4.writeFileSync(outputAbsolute, `${JSON.stringify(schema, null, 2)}
 `);
   return {
     output: outputAbsolute,
@@ -378,10 +528,10 @@ function generateFrontmatterSchemaFromContent(targetPath, outputPath, pattern = 
 }
 
 // src/core/plugin-runner.ts
-import path4 from "path";
+import path5 from "path";
 import { execSync } from "child_process";
 function runCommand(command, repoRoot) {
-  const cwd = command.cwd ? path4.resolve(repoRoot, command.cwd) : repoRoot;
+  const cwd = command.cwd ? path5.resolve(repoRoot, command.cwd) : repoRoot;
   try {
     const output = execSync(command.cmd, {
       cwd,
@@ -484,47 +634,50 @@ function describePlugins(config) {
 }
 
 // src/core/template-engine.ts
-import fs4 from "fs";
-import path5 from "path";
+import fs5 from "fs";
+import path6 from "path";
 import Handlebars from "handlebars";
 function renderTemplate(config, repoRoot, templateId, variables) {
   const template = (config.templates || []).find((t) => t.id === templateId);
   if (!template) {
     throw new Error(`Template not found: ${templateId}`);
   }
-  const templatePath = path5.resolve(repoRoot, template.path);
-  const source = fs4.readFileSync(templatePath, "utf8");
+  const templatePath = path6.resolve(repoRoot, template.path);
+  const source = fs5.readFileSync(templatePath, "utf8");
   const compiled = Handlebars.compile(source, { noEscape: true });
   return compiled(variables);
 }
 
 // src/core/validator-framework.ts
-import fs5 from "fs";
-import path6 from "path";
-import { globSync as globSync2 } from "glob";
-function scanFiles(targetPath) {
-  const stats = fs5.statSync(targetPath);
+import fs6 from "fs";
+import path7 from "path";
+import { globSync as globSync3 } from "glob";
+function scanFiles(targetPath, repoRoot) {
+  const ignoreMatcher = createIgnoreMatcher(repoRoot);
+  const stats = fs6.statSync(targetPath);
   if (stats.isFile()) {
-    return [path6.resolve(targetPath)];
+    const absoluteFile = path7.resolve(targetPath);
+    return ignoreMatcher.isIgnored(absoluteFile) ? [] : [absoluteFile];
   }
-  return globSync2("**/*", {
+  const files = globSync3("**/*", {
     cwd: targetPath,
     absolute: true,
     nodir: true,
-    ignore: ["**/node_modules/**", "**/.git/**", "**/dist/**", "**/build/**"]
+    ignore: getStaticIgnoreGlobs()
   });
+  return files.filter((filePath) => !ignoreMatcher.isIgnored(filePath));
 }
 var ValidationEngine = class {
   constructor(adapters) {
     this.adapters = adapters;
   }
   async validate(targetPath, options) {
-    const absoluteTarget = path6.resolve(targetPath);
-    const targetRoot = fs5.existsSync(absoluteTarget) && fs5.statSync(absoluteTarget).isDirectory() ? absoluteTarget : path6.dirname(absoluteTarget);
-    const configPath = options?.configPath ? path6.resolve(options.configPath) : findConfig(absoluteTarget);
-    const repoRoot = options?.configPath ? targetRoot : path6.dirname(configPath);
+    const absoluteTarget = path7.resolve(targetPath);
+    const targetRoot = fs6.existsSync(absoluteTarget) && fs6.statSync(absoluteTarget).isDirectory() ? absoluteTarget : path7.dirname(absoluteTarget);
+    const configPath = options?.configPath ? path7.resolve(options.configPath) : findConfig(absoluteTarget);
+    const repoRoot = options?.configPath ? targetRoot : path7.dirname(configPath);
     const config = loadConfig(configPath);
-    const files = scanFiles(absoluteTarget);
+    const files = scanFiles(absoluteTarget, repoRoot);
     const diagnostics = [];
     for (const filePath of files) {
       const ruleSet = resolveEffectiveRules(config, repoRoot, filePath);
@@ -563,13 +716,13 @@ var ValidationEngine = class {
 };
 
 // src/cli/use-cases.ts
-import fs14 from "fs";
-import path15 from "path";
+import fs15 from "fs";
+import path16 from "path";
 
 // src/core/autofix.ts
-import fs6 from "fs";
+import fs7 from "fs";
 function applyToFile(file, action) {
-  const raw = fs6.readFileSync(file, "utf8");
+  const raw = fs7.readFileSync(file, "utf8");
   const parsed = parseMarkdownContent(raw);
   let body = parsed.body || "";
   const frontmatter = parsed.frontmatter || {};
@@ -598,7 +751,7 @@ function applyToFile(file, action) {
     }
     body = body.replaceAll(hint, "");
   }
-  fs6.writeFileSync(file, serializeMarkdown(frontmatter, body));
+  fs7.writeFileSync(file, serializeMarkdown(frontmatter, body));
   return true;
 }
 function applyAutofixes(actions) {
@@ -620,8 +773,8 @@ function applyAutofixes(actions) {
 }
 
 // src/adapters/cross-reference-adapter.ts
-import fs7 from "fs";
-import path7 from "path";
+import fs8 from "fs";
+import path8 from "path";
 function asStringArray(value) {
   if (Array.isArray(value)) {
     return value.filter((entry) => typeof entry === "string");
@@ -658,11 +811,11 @@ var CrossReferenceAdapter = class {
         }
       ];
     }
-    const base = path7.dirname(filePath);
+    const base = path8.dirname(filePath);
     for (const field of cross.fields) {
       const refs = asStringArray(parsed.frontmatter[field]);
       for (const ref of refs) {
-        if (!cross.allowAbsolute && path7.isAbsolute(ref)) {
+        if (!cross.allowAbsolute && path8.isAbsolute(ref)) {
           diagnostics.push({
             code: "invalid_reference_absolute",
             message: `Absolute path not allowed in ${field}: ${ref}`,
@@ -671,8 +824,8 @@ var CrossReferenceAdapter = class {
           });
           continue;
         }
-        const resolved = path7.resolve(base, ref);
-        if (!fs7.existsSync(resolved)) {
+        const resolved = path8.resolve(base, ref);
+        if (!fs8.existsSync(resolved)) {
           diagnostics.push({
             code: "broken_reference",
             message: `Broken reference in ${field}: ${ref}`,
@@ -683,7 +836,7 @@ var CrossReferenceAdapter = class {
           continue;
         }
         if (cross.allowedExtensions && cross.allowedExtensions.length > 0) {
-          const ext = path7.extname(resolved);
+          const ext = path8.extname(resolved);
           if (!cross.allowedExtensions.includes(ext)) {
             diagnostics.push({
               code: "reference_extension_not_allowed",
@@ -700,7 +853,7 @@ var CrossReferenceAdapter = class {
 };
 
 // src/adapters/content-policy-adapter.ts
-import fs8 from "fs";
+import fs9 from "fs";
 var ContentPolicyAdapter = class {
   id = "content-policy";
   supports(_filePath, context) {
@@ -710,7 +863,7 @@ var ContentPolicyAdapter = class {
   }
   async validate(filePath, context) {
     const diagnostics = [];
-    const raw = fs8.readFileSync(filePath, "utf8");
+    const raw = fs9.readFileSync(filePath, "utf8");
     for (const rule of context.ruleSet.fileRules) {
       for (const pattern of rule.forbidContentPatterns || []) {
         let regex = null;
@@ -747,16 +900,16 @@ var ContentPolicyAdapter = class {
 };
 
 // src/adapters/file-schema-adapter.ts
-import fs9 from "fs";
-import path8 from "path";
+import fs10 from "fs";
+import path9 from "path";
 import Ajv from "ajv";
 import addFormats from "ajv-formats";
 import yaml3 from "js-yaml";
 var ajv = new Ajv({ allErrors: true, strict: false });
 addFormats(ajv);
 function loadSchema(repoRoot, schemaRef) {
-  const schemaPath = path8.resolve(repoRoot, schemaRef);
-  const schemaRaw = fs9.readFileSync(schemaPath, "utf8");
+  const schemaPath = path9.resolve(repoRoot, schemaRef);
+  const schemaRaw = fs10.readFileSync(schemaPath, "utf8");
   return JSON.parse(schemaRaw);
 }
 var FileSchemaAdapter = class {
@@ -772,8 +925,8 @@ var FileSchemaAdapter = class {
       return diagnostics;
     }
     const schemaRef = binding.schema;
-    const schemaPath = path8.resolve(context.repoRoot, schemaRef);
-    if (!fs9.existsSync(schemaPath)) {
+    const schemaPath = path9.resolve(context.repoRoot, schemaRef);
+    if (!fs10.existsSync(schemaPath)) {
       return [
         {
           code: "schema_not_found",
@@ -796,7 +949,7 @@ var FileSchemaAdapter = class {
         }
       ];
     }
-    const raw = fs9.readFileSync(filePath, "utf8");
+    const raw = fs10.readFileSync(filePath, "utf8");
     let payload;
     try {
       if (binding.kind === "json") {
@@ -838,14 +991,14 @@ var FileSchemaAdapter = class {
 };
 
 // src/adapters/filename-adapter.ts
-import path9 from "path";
+import path10 from "path";
 var FilenameAdapter = class {
   id = "filename";
   supports(_filePath, context) {
     return context.ruleSet.fileRules.some((rule) => Boolean(rule.filenamePattern));
   }
   async validate(filePath, context) {
-    const name = path9.basename(filePath);
+    const name = path10.basename(filePath);
     const diagnostics = [];
     for (const rule of context.ruleSet.fileRules) {
       if (!rule.filenamePattern) {
@@ -867,28 +1020,31 @@ var FilenameAdapter = class {
 };
 
 // src/adapters/folder-structure-adapter.ts
-import fs10 from "fs";
-import path10 from "path";
-import { globSync as globSync3 } from "glob";
+import fs11 from "fs";
+import path11 from "path";
+import { globSync as globSync4 } from "glob";
 function hasGlobChars(value) {
   return /[*?[\]{}()!+@]/.test(value);
 }
 function matchesAny(name, patterns) {
   return patterns.some((pattern) => matchesGlob(name, pattern));
 }
-function collectTargetDirectories(rule, repoRoot) {
+function collectTargetDirectories(rule, repoRoot, ignoreMatcher) {
   if (rule.path) {
-    return [path10.resolve(repoRoot, rule.path)];
+    const resolved = path11.resolve(repoRoot, rule.path);
+    return ignoreMatcher.isIgnored(resolved) ? [] : [resolved];
   }
   if (rule.glob) {
-    const matched = globSync3(rule.glob, {
+    const matched = globSync4(rule.glob, {
       cwd: repoRoot,
       absolute: true,
       nodir: false,
       dot: true,
-      ignore: ["**/node_modules/**", "**/.git/**", "**/dist/**", "**/build/**"]
+      ignore: getStaticIgnoreGlobs()
     });
-    return matched.filter((entry) => fs10.existsSync(entry) && fs10.statSync(entry).isDirectory());
+    return matched.filter(
+      (entry) => !ignoreMatcher.isIgnored(entry) && fs11.existsSync(entry) && fs11.statSync(entry).isDirectory()
+    );
   }
   return [];
 }
@@ -1007,14 +1163,15 @@ var FolderStructureAdapter = class {
     this.evaluated = true;
     const diagnostics = [];
     const folderRules = context.config.folders || [];
+    const ignoreMatcher = createIgnoreMatcher(context.repoRoot);
     for (const rule of folderRules) {
-      const targets = collectTargetDirectories(rule, context.repoRoot);
-      if (rule.path && targets.length === 1 && !fs10.existsSync(targets[0])) {
+      const targets = collectTargetDirectories(rule, context.repoRoot, ignoreMatcher);
+      if (rule.path && targets.length === 1 && !fs11.existsSync(targets[0])) {
         diagnostics.push({
           code: "folder_rule_path_missing",
           message: `Folder rule target path does not exist: ${rule.path}`,
           severity: "error",
-          file: path10.resolve(context.repoRoot, rule.path),
+          file: path11.resolve(context.repoRoot, rule.path),
           ruleId: rule.id,
           details: {
             hint: "Create this folder or update the folder rule path in repotype.yaml."
@@ -1036,10 +1193,10 @@ var FolderStructureAdapter = class {
         continue;
       }
       for (const targetDir of targets) {
-        if (!fs10.existsSync(targetDir) || !fs10.statSync(targetDir).isDirectory()) {
+        if (!fs11.existsSync(targetDir) || !fs11.statSync(targetDir).isDirectory()) {
           continue;
         }
-        const entries = fs10.readdirSync(targetDir, { withFileTypes: true });
+        const entries = fs11.readdirSync(targetDir, { withFileTypes: true }).filter((entry) => !ignoreMatcher.isIgnored(path11.join(targetDir, entry.name)));
         const childFolders = entries.filter((e) => e.isDirectory()).map((e) => e.name);
         const childFiles = entries.filter((e) => e.isFile()).map((e) => e.name);
         checkRequiredFolders(targetDir, rule, childFolders, diagnostics);
@@ -1053,8 +1210,8 @@ var FolderStructureAdapter = class {
 };
 
 // src/adapters/frontmatter-schema-adapter.ts
-import fs11 from "fs";
-import path11 from "path";
+import fs12 from "fs";
+import path12 from "path";
 import Ajv2 from "ajv";
 import addFormats2 from "ajv-formats";
 var ajv2 = new Ajv2({ allErrors: true, strict: false });
@@ -1070,8 +1227,8 @@ var FrontmatterSchemaAdapter = class {
     if (!schemaRef) {
       return diagnostics;
     }
-    const schemaPath = path11.resolve(context.repoRoot, schemaRef);
-    if (!fs11.existsSync(schemaPath)) {
+    const schemaPath = path12.resolve(context.repoRoot, schemaRef);
+    if (!fs12.existsSync(schemaPath)) {
       return [
         {
           code: "schema_not_found",
@@ -1081,7 +1238,7 @@ var FrontmatterSchemaAdapter = class {
         }
       ];
     }
-    const schemaRaw = fs11.readFileSync(schemaPath, "utf8");
+    const schemaRaw = fs12.readFileSync(schemaPath, "utf8");
     const schema = JSON.parse(schemaRaw);
     const validate = ajv2.compile(schema);
     let parsed;
@@ -1117,9 +1274,9 @@ var FrontmatterSchemaAdapter = class {
 };
 
 // src/adapters/guidance-adapter.ts
-import path12 from "path";
-import fs12 from "fs";
-import { minimatch as minimatch2 } from "minimatch";
+import path13 from "path";
+import fs13 from "fs";
+import { minimatch as minimatch3 } from "minimatch";
 function isInManagedFolderScope(relativePath, context) {
   const folders = context.config.folders || [];
   if (folders.length === 0) {
@@ -1130,46 +1287,95 @@ function isInManagedFolderScope(relativePath, context) {
       return relativePath === folder.path || relativePath.startsWith(`${folder.path}/`);
     }
     if (folder.glob) {
-      return minimatch2(relativePath, folder.glob, { dot: true });
+      return minimatch3(relativePath, folder.glob, { dot: true });
     }
     return false;
   });
 }
+function normalizePath(p) {
+  return p.replace(/\\/g, "/").replace(/^\.\//, "");
+}
 function isTemplateSource(relativePath) {
-  const normalized = relativePath.replace(/\\/g, "/");
+  const normalized = normalizePath(relativePath);
   return normalized.includes("/templates/") || normalized.endsWith(".template.md");
+}
+function isRepotypeSystemFile(relativePath) {
+  const normalized = normalizePath(relativePath);
+  return normalized === "repotype.yaml" || normalized === "repo-schema.yaml";
+}
+function isReferencedByConfig(relativePath, context) {
+  const normalized = normalizePath(relativePath);
+  if ((context.config.templates || []).some((t) => normalizePath(t.path) === normalized)) {
+    return true;
+  }
+  for (const rule of context.config.files || []) {
+    if (rule.schema && normalizePath(rule.schema.schema) === normalized) {
+      return true;
+    }
+  }
+  for (const folder of context.config.folders || []) {
+    const bindings = folder.schemaBindings || {};
+    for (const key of Object.keys(bindings)) {
+      const binding = bindings[key];
+      if (normalizePath(binding.schema) === normalized) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 var GuidanceAdapter = class {
   id = "guidance";
-  supports(filePath, _context) {
-    return filePath.endsWith(".md");
+  supports(_filePath, _context) {
+    return true;
   }
   async validate(filePath, context) {
     const diagnostics = [];
     const relative = context.ruleSet.filePath;
+    const strictUnmatchedPolicy = context.config.defaults?.unmatchedFiles ?? "deny";
     if (context.ruleSet.fileRules.length === 0) {
-      if (!isInManagedFolderScope(relative, context)) {
+      if (isRepotypeSystemFile(relative) || isReferencedByConfig(relative, context)) {
         return diagnostics;
+      }
+      if (strictUnmatchedPolicy === "allow") {
+        diagnostics.push({
+          code: "no_matching_file_rule",
+          message: `No file rule matched '${relative}'. Legacy permissive mode is enabled (defaults.unmatchedFiles=allow).`,
+          severity: "suggestion",
+          file: filePath,
+          details: {
+            mode: "permissive",
+            recommendation: "Set defaults.unmatchedFiles to deny for strict deny-by-default enforcement."
+          }
+        });
+        return diagnostics;
+      }
+      if (!isInManagedFolderScope(relative, context) && (context.config.folders || []).length > 0) {
       }
       diagnostics.push({
         code: "no_matching_file_rule",
-        message: `No file rule matched '${relative}'. Add a files rule in repotype.yaml to enforce expectations.`,
-        severity: "suggestion",
+        message: `No file rule matched '${relative}'. Deny-by-default policy requires explicit file allow rules.`,
+        severity: "error",
         file: filePath,
         details: {
+          mode: "deny",
           example: `files:
-  - id: ${path12.basename(relative, ".md") || "rule-id"}
-    glob: "${relative}"`
+  - id: ${path13.basename(relative, path13.extname(relative)) || "rule-id"}
+    glob: "${relative}"`,
+          compatibilityEscapeHatch: "defaults.unmatchedFiles: allow"
         }
       });
       return diagnostics;
     }
-    const body = fs12.readFileSync(filePath, "utf8");
+    if (!filePath.endsWith(".md")) {
+      return diagnostics;
+    }
+    const body = fs13.readFileSync(filePath, "utf8");
     const hasFrontmatter = body.startsWith("---\n");
     if (!context.ruleSet.schema && hasFrontmatter && !isTemplateSource(relative)) {
       diagnostics.push({
         code: "missing_schema_binding",
-        message: `Matched rule(s) for '${relative}' but no frontmatter schema is bound. Generate one with: repotype generate schema "${path12.dirname(filePath)}" "schemas/${path12.basename(path12.dirname(filePath))}.frontmatter.schema.json"`,
+        message: `Matched rule(s) for '${relative}' but no frontmatter schema is bound. Generate one with: repotype generate schema "${path13.dirname(filePath)}" "schemas/${path13.basename(path13.dirname(filePath))}.frontmatter.schema.json"`,
         severity: "suggestion",
         file: filePath
       });
@@ -1187,8 +1393,8 @@ var GuidanceAdapter = class {
 };
 
 // src/adapters/markdown-template-adapter.ts
-import fs13 from "fs";
-import path13 from "path";
+import fs14 from "fs";
+import path14 from "path";
 function stripFencedCodeBlocks(content) {
   return content.replace(/```[\s\S]*?```/g, "");
 }
@@ -1196,18 +1402,18 @@ function stripInlineCode(content) {
   return content.replace(/`[^`]*`/g, "");
 }
 function loadTemplateRequiredFields(templatePath) {
-  if (!fs13.existsSync(templatePath)) {
+  if (!fs14.existsSync(templatePath)) {
     return [];
   }
-  const raw = fs13.readFileSync(templatePath, "utf8");
+  const raw = fs14.readFileSync(templatePath, "utf8");
   const parsed = parseMarkdownContent(raw);
   return Object.keys(parsed.frontmatter || {}).filter((key) => !key.startsWith("_"));
 }
 function loadTemplateSections(templatePath) {
-  if (!fs13.existsSync(templatePath)) {
+  if (!fs14.existsSync(templatePath)) {
     return [];
   }
-  const raw = fs13.readFileSync(templatePath, "utf8");
+  const raw = fs14.readFileSync(templatePath, "utf8");
   const parsed = parseMarkdownContent(raw);
   return extractSections(parsed.body || "");
 }
@@ -1255,7 +1461,7 @@ var MarkdownTemplateAdapter = class {
     if (templateId) {
       const template = (context.config.templates || []).find((t) => t.id === templateId);
       if (template) {
-        const templatePath = path13.resolve(context.repoRoot, template.path);
+        const templatePath = path14.resolve(context.repoRoot, template.path);
         const requiredFields = loadTemplateRequiredFields(templatePath);
         const requiredTemplateSections = loadTemplateSections(templatePath);
         for (const field of requiredFields) {
@@ -1316,8 +1522,8 @@ var MarkdownTemplateAdapter = class {
 };
 
 // src/adapters/path-policy-adapter.ts
-import path14 from "path";
-function normalize2(p) {
+import path15 from "path";
+function normalize3(p) {
   return p.replace(/\\/g, "/");
 }
 function matchesCase(value, mode) {
@@ -1333,13 +1539,13 @@ function matchesCase(value, mode) {
   return /^[a-z0-9]+$/.test(value);
 }
 function segmentsForCase(relativePath) {
-  const normalized = normalize2(relativePath);
+  const normalized = normalize3(relativePath);
   const parts = normalized.split("/").filter(Boolean);
   if (parts.length === 0) {
     return [];
   }
   const last = parts[parts.length - 1];
-  const ext = path14.extname(last);
+  const ext = path15.extname(last);
   if (ext) {
     parts[parts.length - 1] = last.slice(0, last.length - ext.length);
   }
@@ -1567,16 +1773,16 @@ function renderComplianceReportFromJson(json, format = "html") {
 // src/cli/use-cases.ts
 import yaml4 from "js-yaml";
 function deriveTargetRoot(targetPath) {
-  if (fs14.existsSync(targetPath) && fs14.statSync(targetPath).isDirectory()) {
+  if (fs15.existsSync(targetPath) && fs15.statSync(targetPath).isDirectory()) {
     return targetPath;
   }
-  return path15.dirname(targetPath);
+  return path16.dirname(targetPath);
 }
 async function validatePath(target, configOverridePath) {
-  const absolute = path15.resolve(target);
+  const absolute = path16.resolve(target);
   const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path15.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path15.dirname(configPath);
+  const configPath = configOverridePath ? path16.resolve(configOverridePath) : findConfig(absolute);
+  const repoRoot = configOverridePath ? targetRoot : path16.dirname(configPath);
   const config = loadConfig(configPath);
   const engine = createDefaultEngine();
   const result = await engine.validate(target, { configPath });
@@ -1589,18 +1795,18 @@ async function validatePath(target, configOverridePath) {
   };
 }
 function explainPath(target, configOverridePath) {
-  const absolute = path15.resolve(target);
+  const absolute = path16.resolve(target);
   const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path15.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path15.dirname(configPath);
+  const configPath = configOverridePath ? path16.resolve(configOverridePath) : findConfig(absolute);
+  const repoRoot = configOverridePath ? targetRoot : path16.dirname(configPath);
   const config = loadConfig(configPath);
   return explainRules(config, repoRoot, absolute);
 }
 async function fixPath(target, configOverridePath) {
-  const absolute = path15.resolve(target);
+  const absolute = path16.resolve(target);
   const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path15.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path15.dirname(configPath);
+  const configPath = configOverridePath ? path16.resolve(configOverridePath) : findConfig(absolute);
+  const repoRoot = configOverridePath ? targetRoot : path16.dirname(configPath);
   const config = loadConfig(configPath);
   const result = await validatePath(target, configPath);
   const actions = result.diagnostics.map((d) => d.autofix).filter((action) => Boolean(action));
@@ -1617,16 +1823,16 @@ async function fixPath(target, configOverridePath) {
   };
 }
 function scaffoldFromTemplate(templateId, outputPath, variables) {
-  const absolute = path15.resolve(outputPath);
+  const absolute = path16.resolve(outputPath);
   const configPath = findConfig(absolute);
-  const repoRoot = path15.dirname(configPath);
+  const repoRoot = path16.dirname(configPath);
   const config = loadConfig(configPath);
   const content = renderTemplate(config, repoRoot, templateId, variables);
-  const parent = path15.dirname(absolute);
-  if (!fs14.existsSync(parent)) {
-    fs14.mkdirSync(parent, { recursive: true });
+  const parent = path16.dirname(absolute);
+  if (!fs15.existsSync(parent)) {
+    fs15.mkdirSync(parent, { recursive: true });
   }
-  fs14.writeFileSync(absolute, content);
+  fs15.writeFileSync(absolute, content);
   return absolute;
 }
 function generateSchemaFromContent(target, output, pattern = "**/*.md") {
@@ -1635,21 +1841,21 @@ function generateSchemaFromContent(target, output, pattern = "**/*.md") {
 function initRepotypeConfig(targetDir, options = {}) {
   const type = options.type ?? "default";
   const force = options.force ?? false;
-  const absoluteTarget = path15.resolve(targetDir);
-  const outputPath = path15.join(absoluteTarget, "repotype.yaml");
-  if (fs14.existsSync(outputPath) && !force) {
+  const absoluteTarget = path16.resolve(targetDir);
+  const outputPath = path16.join(absoluteTarget, "repotype.yaml");
+  if (fs15.existsSync(outputPath) && !force) {
     throw new Error(`repotype.yaml already exists at ${outputPath}. Use --force to overwrite.`);
   }
-  const config = options.from ? yaml4.load(fs14.readFileSync(path15.resolve(options.from), "utf8")) : createPresetConfig(type);
+  const config = options.from ? yaml4.load(fs15.readFileSync(path16.resolve(options.from), "utf8")) : createPresetConfig(type);
   if (!config || typeof config !== "object" || !config.version) {
     throw new Error('Source config is invalid. Expected YAML with top-level "version".');
   }
   const rendered = yaml4.dump(config, { lineWidth: 120 });
-  fs14.mkdirSync(absoluteTarget, { recursive: true });
-  fs14.writeFileSync(outputPath, rendered);
+  fs15.mkdirSync(absoluteTarget, { recursive: true });
+  fs15.writeFileSync(outputPath, rendered);
   return {
     outputPath,
-    source: options.from ? `file:${path15.resolve(options.from)}` : `preset:${type}`
+    source: options.from ? `file:${path16.resolve(options.from)}` : `preset:${type}`
   };
 }
 function getRepotypePresetMetadata() {
@@ -1658,9 +1864,9 @@ function getRepotypePresetMetadata() {
   };
 }
 function installPluginRequirements(target) {
-  const absolute = path15.resolve(target);
+  const absolute = path16.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path15.dirname(configPath);
+  const repoRoot = path16.dirname(configPath);
   const config = loadConfig(configPath);
   const installs = installPlugins(config, repoRoot);
   return {
@@ -1671,9 +1877,9 @@ function installPluginRequirements(target) {
   };
 }
 function pluginStatus(target) {
-  const absolute = path15.resolve(target);
+  const absolute = path16.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path15.dirname(configPath);
+  const repoRoot = path16.dirname(configPath);
   const config = loadConfig(configPath);
   const plugins = describePlugins(config);
   return {
@@ -1683,10 +1889,10 @@ function pluginStatus(target) {
   };
 }
 async function generateComplianceReport(target, format = "markdown", configOverridePath) {
-  const absolute = path15.resolve(target);
+  const absolute = path16.resolve(target);
   const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path15.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path15.dirname(configPath);
+  const configPath = configOverridePath ? path16.resolve(configOverridePath) : findConfig(absolute);
+  const repoRoot = configOverridePath ? targetRoot : path16.dirname(configPath);
   const result = await validatePath(target, configPath);
   const totals = result.diagnostics.reduce(
     (acc, diagnostic) => {
@@ -1747,26 +1953,26 @@ async function generateComplianceReport(target, format = "markdown", configOverr
 }
 
 // src/cli/operations.ts
-import fs17 from "fs";
-import path18 from "path";
+import fs18 from "fs";
+import path19 from "path";
 
 // src/cli/git-hooks.ts
-import fs15 from "fs";
-import path16 from "path";
+import fs16 from "fs";
+import path17 from "path";
 var START_MARKER = "# >>> repotype-checks >>>";
 var END_MARKER = "# <<< repotype-checks <<<";
 var MARKER_REGEX = new RegExp(`${START_MARKER}[\\s\\S]*?${END_MARKER}\\n?`, "m");
 function findGitRoot(startPath) {
-  let dir = path16.resolve(startPath);
-  if (fs15.existsSync(dir) && fs15.statSync(dir).isFile()) {
-    dir = path16.dirname(dir);
+  let dir = path17.resolve(startPath);
+  if (fs16.existsSync(dir) && fs16.statSync(dir).isFile()) {
+    dir = path17.dirname(dir);
   }
   while (true) {
-    const gitPath = path16.join(dir, ".git");
-    if (fs15.existsSync(gitPath)) {
+    const gitPath = path17.join(dir, ".git");
+    if (fs16.existsSync(gitPath)) {
       return dir;
     }
-    const parent = path16.dirname(dir);
+    const parent = path17.dirname(dir);
     if (parent === dir) {
       throw new Error("No .git directory found in current or parent directories");
     }
@@ -1774,30 +1980,30 @@ function findGitRoot(startPath) {
   }
 }
 function resolveGitDir(repoRoot) {
-  const dotGit = path16.join(repoRoot, ".git");
-  if (!fs15.existsSync(dotGit)) {
+  const dotGit = path17.join(repoRoot, ".git");
+  if (!fs16.existsSync(dotGit)) {
     throw new Error(`.git path not found for repo root: ${repoRoot}`);
   }
-  const stat = fs15.statSync(dotGit);
+  const stat = fs16.statSync(dotGit);
   if (stat.isDirectory()) {
     return dotGit;
   }
   if (stat.isFile()) {
-    const content = fs15.readFileSync(dotGit, "utf8").trim();
+    const content = fs16.readFileSync(dotGit, "utf8").trim();
     const match = content.match(/^gitdir:\s*(.+)$/i);
     if (!match) {
       throw new Error(`Unsupported .git file format at: ${dotGit}`);
     }
     const rawGitDir = match[1].trim();
-    return path16.isAbsolute(rawGitDir) ? rawGitDir : path16.resolve(repoRoot, rawGitDir);
+    return path17.isAbsolute(rawGitDir) ? rawGitDir : path17.resolve(repoRoot, rawGitDir);
   }
   throw new Error(`Unsupported .git path type at: ${dotGit}`);
 }
 function resolveHooksDir(repoRoot) {
   const gitDir = resolveGitDir(repoRoot);
-  const hooksDir = path16.join(gitDir, "hooks");
-  if (!fs15.existsSync(hooksDir)) {
-    fs15.mkdirSync(hooksDir, { recursive: true });
+  const hooksDir = path17.join(gitDir, "hooks");
+  if (!fs16.existsSync(hooksDir)) {
+    fs16.mkdirSync(hooksDir, { recursive: true });
   }
   return hooksDir;
 }
@@ -1817,28 +2023,28 @@ ${END_MARKER}
 }
 function upsertHook(hookFile, snippet) {
   const shebang = "#!/usr/bin/env bash\nset -euo pipefail\n\n";
-  if (!fs15.existsSync(hookFile)) {
-    fs15.writeFileSync(hookFile, `${shebang}${snippet}`);
-    fs15.chmodSync(hookFile, 493);
+  if (!fs16.existsSync(hookFile)) {
+    fs16.writeFileSync(hookFile, `${shebang}${snippet}`);
+    fs16.chmodSync(hookFile, 493);
     return "created";
   }
-  let current = fs15.readFileSync(hookFile, "utf8");
+  let current = fs16.readFileSync(hookFile, "utf8");
   if (!current.startsWith("#!")) {
     current = `${shebang}${current}`;
   }
   if (MARKER_REGEX.test(current)) {
     const next = current.replace(MARKER_REGEX, snippet);
     if (next === current) {
-      fs15.chmodSync(hookFile, 493);
+      fs16.chmodSync(hookFile, 493);
       return "unchanged";
     }
-    fs15.writeFileSync(hookFile, next);
-    fs15.chmodSync(hookFile, 493);
+    fs16.writeFileSync(hookFile, next);
+    fs16.chmodSync(hookFile, 493);
     return "updated";
   }
   const separator = current.endsWith("\n") ? "\n" : "\n\n";
-  fs15.writeFileSync(hookFile, `${current}${separator}${snippet}`);
-  fs15.chmodSync(hookFile, 493);
+  fs16.writeFileSync(hookFile, `${current}${separator}${snippet}`);
+  fs16.chmodSync(hookFile, 493);
   return "updated";
 }
 function installChecks(options) {
@@ -1847,7 +2053,7 @@ function installChecks(options) {
   const hookNames = options.hook === "both" ? ["pre-commit", "pre-push"] : [options.hook];
   const snippet = makeHookSnippet(repoRoot);
   const hooks = hookNames.map((hook) => {
-    const hookPath = path16.join(hooksDir, hook);
+    const hookPath = path17.join(hooksDir, hook);
     const status = upsertHook(hookPath, snippet);
     return { hook, status, path: hookPath };
   });
@@ -1858,11 +2064,11 @@ function inspectChecks(target) {
   const hooksDir = resolveHooksDir(repoRoot);
   const hookNames = ["pre-commit", "pre-push"];
   const hooks = hookNames.map((hook) => {
-    const hookPath = path16.join(hooksDir, hook);
-    if (!fs15.existsSync(hookPath)) {
+    const hookPath = path17.join(hooksDir, hook);
+    if (!fs16.existsSync(hookPath)) {
       return { hook, path: hookPath, exists: false, managed: false };
     }
-    const content = fs15.readFileSync(hookPath, "utf8");
+    const content = fs16.readFileSync(hookPath, "utf8");
     return {
       hook,
       path: hookPath,
@@ -1877,26 +2083,26 @@ function uninstallChecks(options) {
   const hooksDir = resolveHooksDir(repoRoot);
   const hookNames = options.hook === "both" ? ["pre-commit", "pre-push"] : [options.hook];
   const hooks = hookNames.map((hook) => {
-    const hookPath = path16.join(hooksDir, hook);
-    if (!fs15.existsSync(hookPath)) {
+    const hookPath = path17.join(hooksDir, hook);
+    if (!fs16.existsSync(hookPath)) {
       return { hook, status: "not_found", path: hookPath };
     }
-    const current = fs15.readFileSync(hookPath, "utf8");
+    const current = fs16.readFileSync(hookPath, "utf8");
     if (!MARKER_REGEX.test(current)) {
       return { hook, status: "unchanged", path: hookPath };
     }
     const next = current.replace(MARKER_REGEX, "").trimEnd();
-    fs15.writeFileSync(hookPath, next.length > 0 ? `${next}
+    fs16.writeFileSync(hookPath, next.length > 0 ? `${next}
 ` : "");
-    fs15.chmodSync(hookPath, 493);
+    fs16.chmodSync(hookPath, 493);
     return { hook, status: "removed", path: hookPath };
   });
   return { repoRoot, hooks };
 }
 
 // src/cli/watcher.ts
-import fs16 from "fs";
-import path17 from "path";
+import fs17 from "fs";
+import path18 from "path";
 import { spawnSync } from "child_process";
 function shQuote(input) {
   return `'${input.replace(/'/g, `'"'"'`)}'`;
@@ -1915,11 +2121,11 @@ function writeCrontab(content) {
   }
 }
 function installWatcher(options) {
-  const target = path17.resolve(options.target);
-  const queueDir = path17.resolve(options.queueDir);
-  const logFile = path17.resolve(options.logFile);
-  fs16.mkdirSync(path17.dirname(logFile), { recursive: true });
-  fs16.mkdirSync(queueDir, { recursive: true });
+  const target = path18.resolve(options.target);
+  const queueDir = path18.resolve(options.queueDir);
+  const logFile = path18.resolve(options.logFile);
+  fs17.mkdirSync(path18.dirname(logFile), { recursive: true });
+  fs17.mkdirSync(queueDir, { recursive: true });
   const marker = `# REPOTYPE_WATCHER:${target}`;
   const command = [
     `cd ${shQuote(target)}`,
@@ -1948,7 +2154,7 @@ function installWatcher(options) {
   };
 }
 function inspectWatcher(target) {
-  const resolved = path17.resolve(target);
+  const resolved = path18.resolve(target);
   const marker = `# REPOTYPE_WATCHER:${resolved}`;
   const current = readCrontab();
   const lines = current.split("\n").map((entry) => entry.trimEnd()).filter((entry) => entry.length > 0);
@@ -1960,7 +2166,7 @@ function inspectWatcher(target) {
   };
 }
 function uninstallWatcher(target, dryRun = false) {
-  const resolved = path17.resolve(target);
+  const resolved = path18.resolve(target);
   const marker = `# REPOTYPE_WATCHER:${resolved}`;
   const current = readCrontab();
   const lines = current.split("\n").map((entry) => entry.trimEnd()).filter((entry) => entry.length > 0);
@@ -1980,9 +2186,9 @@ function uninstallWatcher(target, dryRun = false) {
 
 // src/cli/operations.ts
 function resolveRepoRoot(target) {
-  const absolute = path18.resolve(target);
+  const absolute = path19.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path18.dirname(configPath);
+  const repoRoot = path19.dirname(configPath);
   return { repoRoot, configPath };
 }
 function normalizeOperations(target) {
@@ -1996,9 +2202,9 @@ function normalizeOperations(target) {
     watcher: {
       enabled: config.operations?.watcher?.enabled ?? false,
       schedule: config.operations?.watcher?.schedule ?? "*/15 * * * *",
-      queueDir: path18.resolve(repoRoot, config.operations?.watcher?.queueDir ?? "sort_queue"),
+      queueDir: path19.resolve(repoRoot, config.operations?.watcher?.queueDir ?? "sort_queue"),
       minErrors: config.operations?.watcher?.minErrors ?? 3,
-      logFile: path18.resolve(repoRoot, config.operations?.watcher?.logFile ?? ".repotype/logs/watcher.log")
+      logFile: path19.resolve(repoRoot, config.operations?.watcher?.logFile ?? ".repotype/logs/watcher.log")
     }
   };
   return {
@@ -2008,11 +2214,11 @@ function normalizeOperations(target) {
   };
 }
 function readLastCleanupEntry(queueDir) {
-  const logPath = path18.join(queueDir, "cleanup-log.jsonl");
-  if (!fs17.existsSync(logPath)) {
+  const logPath = path19.join(queueDir, "cleanup-log.jsonl");
+  if (!fs18.existsSync(logPath)) {
     return { found: false };
   }
-  const lines = fs17.readFileSync(logPath, "utf8").split("\n").map((line) => line.trim()).filter(Boolean);
+  const lines = fs18.readFileSync(logPath, "utf8").split("\n").map((line) => line.trim()).filter(Boolean);
   if (lines.length === 0) {
     return { found: false };
   }
@@ -2100,14 +2306,14 @@ async function startService(options) {
 
 // src/universal-commands.ts
 import { UniversalCommand } from "@supernal/universal-command";
-import path20 from "path";
+import path21 from "path";
 
 // src/cli/cleanup.ts
-import fs18 from "fs";
-import path19 from "path";
+import fs19 from "fs";
+import path20 from "path";
 function ensureDir(dir) {
-  if (!fs18.existsSync(dir)) {
-    fs18.mkdirSync(dir, { recursive: true });
+  if (!fs19.existsSync(dir)) {
+    fs19.mkdirSync(dir, { recursive: true });
   }
 }
 function getTimestamp() {
@@ -2117,22 +2323,22 @@ function dedupe(items) {
   return [...new Set(items)];
 }
 function safeDestination(baseQueue, targetRoot, sourceFile) {
-  const relative = path19.relative(targetRoot, sourceFile);
-  const clamped = relative.startsWith("..") ? path19.basename(sourceFile) : relative;
-  const destination = path19.join(baseQueue, clamped);
-  if (!fs18.existsSync(destination)) {
+  const relative = path20.relative(targetRoot, sourceFile);
+  const clamped = relative.startsWith("..") ? path20.basename(sourceFile) : relative;
+  const destination = path20.join(baseQueue, clamped);
+  if (!fs19.existsSync(destination)) {
     return destination;
   }
-  const ext = path19.extname(destination);
+  const ext = path20.extname(destination);
   const stem = destination.slice(0, destination.length - ext.length);
   return `${stem}.moved-${Date.now()}${ext}`;
 }
 function writeAuditLogs(queueDir, entries) {
   ensureDir(queueDir);
-  const jsonlPath = path19.join(queueDir, "cleanup-log.jsonl");
-  const textPath = path19.join(queueDir, "cleanup-log.md");
+  const jsonlPath = path20.join(queueDir, "cleanup-log.jsonl");
+  const textPath = path20.join(queueDir, "cleanup-log.md");
   for (const entry of entries) {
-    fs18.appendFileSync(jsonlPath, `${JSON.stringify(entry)}
+    fs19.appendFileSync(jsonlPath, `${JSON.stringify(entry)}
 `);
     const summary = [
       `- ${entry.timestamp}`,
@@ -2143,12 +2349,12 @@ function writeAuditLogs(queueDir, entries) {
       ...entry.diagnostics.map((d) => `  - ${d.code}: ${d.message}`),
       ""
     ].join("\n");
-    fs18.appendFileSync(textPath, summary);
+    fs19.appendFileSync(textPath, summary);
   }
 }
 async function runCleanup(options) {
-  const targetRoot = path19.resolve(options.target);
-  const queueDir = path19.resolve(options.queueDir);
+  const targetRoot = path20.resolve(options.target);
+  const queueDir = path20.resolve(options.queueDir);
   ensureDir(queueDir);
   const validation = await validatePath(targetRoot);
   const errorDiagnostics = validation.diagnostics.filter((d) => d.severity === "error");
@@ -2156,7 +2362,7 @@ async function runCleanup(options) {
   const entries = [];
   let moved = 0;
   for (const file of files) {
-    if (!fs18.existsSync(file)) {
+    if (!fs19.existsSync(file)) {
       continue;
     }
     const diagnostics = errorDiagnostics.filter((d) => d.file === file);
@@ -2164,9 +2370,9 @@ async function runCleanup(options) {
       continue;
     }
     const destination = safeDestination(queueDir, targetRoot, file);
-    ensureDir(path19.dirname(destination));
+    ensureDir(path20.dirname(destination));
     if (!options.dryRun) {
-      fs18.renameSync(file, destination);
+      fs19.renameSync(file, destination);
       moved += 1;
     }
     entries.push({
@@ -2401,8 +2607,8 @@ var repotypeCleanupRunCommand = new UniversalCommand({
   },
   output: { type: "json" },
   async handler({ target = ".", queue = "sort_queue", minErrors = 3, dryRun = false }) {
-    const absoluteTarget = path20.resolve(target);
-    const queueDir = path20.isAbsolute(queue) ? queue : path20.resolve(absoluteTarget, queue);
+    const absoluteTarget = path21.resolve(target);
+    const queueDir = path21.isAbsolute(queue) ? queue : path21.resolve(absoluteTarget, queue);
     return runCleanup({ target: absoluteTarget, queueDir, minErrors, dryRun });
   }
 });
@@ -2446,9 +2652,9 @@ var repotypeInstallWatcherCommand = new UniversalCommand({
     logFile = ".repotype/logs/watcher.log",
     dryRun = true
   }) {
-    const resolvedTarget = path20.resolve(target);
-    const queueDir = path20.isAbsolute(queue) ? queue : path20.resolve(resolvedTarget, queue);
-    const resolvedLogFile = path20.isAbsolute(logFile) ? logFile : path20.resolve(resolvedTarget, logFile);
+    const resolvedTarget = path21.resolve(target);
+    const queueDir = path21.isAbsolute(queue) ? queue : path21.resolve(resolvedTarget, queue);
+    const resolvedLogFile = path21.isAbsolute(logFile) ? logFile : path21.resolve(resolvedTarget, logFile);
     return installWatcher({
       target: resolvedTarget,
       schedule,

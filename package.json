@@ -1,5 +1,5 @@
 {
-  "name": "@supernal/repotype",
+  "name": "repotype",
   "version": "0.1.0",
   "description": "Repository schema validation, scaffolding, autofix, and service runtime",
   "homepage": "https://supernalintelligence.github.io/repotype/",
@@ -42,7 +42,7 @@
     "self:report:all": "pnpm run self:report:repotype && pnpm run self:report:supernal"
   },
   "dependencies": {
-    "@supernal/universal-command": "workspace:*",
+    "@supernal/universal-command": "^0.1.0",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "chalk": "^5.3.0",
