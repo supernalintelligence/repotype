@@ -136,6 +136,33 @@ files:
   return root;
 }
 
+function makeIgnoreFixtureRepo(): string {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-ignore-test-'));
+  fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'scratch'), { recursive: true });
+  fs.mkdirSync(path.join(root, 'generated'), { recursive: true });
+
+  fs.writeFileSync(
+    path.join(root, 'repotype.yaml'),
+    `version: "1"
+defaults:
+  unmatchedFiles: deny
+files:
+  - id: docs-txt
+    glob: "docs/**/*.txt"
+`,
+  );
+
+  fs.writeFileSync(path.join(root, '.gitignore'), 'scratch/\n*.tmp\n');
+  fs.writeFileSync(path.join(root, '.customignore'), 'generated/\n');
+  fs.writeFileSync(path.join(root, 'docs', 'keep.txt'), 'kept\n');
+  fs.writeFileSync(path.join(root, 'scratch', 'rogue.md'), '# should be ignored\n');
+  fs.writeFileSync(path.join(root, 'generated', 'rogue.json'), '{"ignored":true}\n');
+  fs.writeFileSync(path.join(root, 'rogue.tmp'), 'ignored by extension rule\n');
+
+  return root;
+}
+
 function makeTypedFileFixtureRepo(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-typed-test-'));
   fs.mkdirSync(path.join(root, 'config'), { recursive: true });
@@ -503,6 +530,32 @@ description: something: else
     expect(result.ok).toBe(true);
     const unmatched = result.diagnostics.find((d) => d.code === 'no_matching_file_rule' && d.file.endsWith('README.md'));
     expect(unmatched?.severity).toBe('suggestion');
+  });
+
+  it('ignores paths from .gitignore and .*ignore* files during validation', async () => {
+    const root = makeIgnoreFixtureRepo();
+    const result = await validatePath(root);
+
+    expect(result.ok).toBe(true);
+    expect(result.diagnostics.some((d) => d.code === 'no_matching_file_rule' && d.file.endsWith('rogue.tmp'))).toBe(
+      false,
+    );
+    expect(
+      result.diagnostics.some((d) => d.code === 'no_matching_file_rule' && d.file.includes('/scratch/rogue.md')),
+    ).toBe(false);
+    expect(
+      result.diagnostics.some((d) => d.code === 'no_matching_file_rule' && d.file.includes('/generated/rogue.json')),
+    ).toBe(false);
+  });
+
+  it('ignores .gitignore and .*ignore* paths in schema generation', () => {
+    const root = makeIgnoreFixtureRepo();
+    const outputSchema = path.join(root, 'schema.json');
+    fs.writeFileSync(path.join(root, 'docs', 'included.md'), '---\nid: "A"\n---\n');
+    fs.writeFileSync(path.join(root, 'scratch', 'ignored.md'), '---\nid: "B"\n---\n');
+
+    const generated = generateSchemaFromContent(root, outputSchema, '**/*.md');
+    expect(generated.filesParsed).toBe(1);
   });
 
   it('runs plugin fix commands through repotype fix', async () => {

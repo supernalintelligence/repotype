@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { globSync } from 'glob';
 import { parseMarkdown } from './markdown.js';
+import { createIgnoreMatcher, getStaticIgnoreGlobs } from './path-ignore.js';
 
 type JsonSchema = Record<string, unknown>;
 
@@ -83,17 +84,20 @@ function inferPropertySchema(values: unknown[]): JsonSchema {
 function discoverMarkdownFiles(targetPath: string, pattern: string): string[] {
   const absolute = path.resolve(targetPath);
   const stat = fs.statSync(absolute);
+  const repoRoot = stat.isDirectory() ? absolute : path.dirname(absolute);
+  const ignoreMatcher = createIgnoreMatcher(repoRoot);
 
   if (stat.isFile()) {
-    return [absolute];
+    return ignoreMatcher.isIgnored(absolute) ? [] : [absolute];
   }
 
-  return globSync(pattern, {
+  const discovered = globSync(pattern, {
     cwd: absolute,
     absolute: true,
     nodir: true,
-    ignore: ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**'],
+    ignore: getStaticIgnoreGlobs(),
   });
+  return discovered.filter((filePath) => !ignoreMatcher.isIgnored(filePath));
 }
 
 export function generateFrontmatterSchemaFromContent(

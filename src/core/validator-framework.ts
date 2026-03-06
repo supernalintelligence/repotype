@@ -2,21 +2,25 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { globSync } from 'glob';
 import { findConfig, loadConfig } from './config-loader.js';
+import { createIgnoreMatcher, getStaticIgnoreGlobs } from './path-ignore.js';
 import { resolveEffectiveRules } from './rule-engine.js';
 import type { Diagnostic, ValidationResult, ValidatorAdapter, ValidatorContext } from './types.js';
 
-function scanFiles(targetPath: string): string[] {
+function scanFiles(targetPath: string, repoRoot: string): string[] {
+  const ignoreMatcher = createIgnoreMatcher(repoRoot);
   const stats = fs.statSync(targetPath);
   if (stats.isFile()) {
-    return [path.resolve(targetPath)];
+    const absoluteFile = path.resolve(targetPath);
+    return ignoreMatcher.isIgnored(absoluteFile) ? [] : [absoluteFile];
   }
 
-  return globSync('**/*', {
+  const files = globSync('**/*', {
     cwd: targetPath,
     absolute: true,
     nodir: true,
-    ignore: ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**'],
+    ignore: getStaticIgnoreGlobs(),
   });
+  return files.filter((filePath) => !ignoreMatcher.isIgnored(filePath));
 }
 
 export class ValidationEngine {
@@ -32,7 +36,7 @@ export class ValidationEngine {
       : findConfig(absoluteTarget);
     const repoRoot = options?.configPath ? targetRoot : path.dirname(configPath);
     const config = loadConfig(configPath);
-    const files = scanFiles(absoluteTarget);
+    const files = scanFiles(absoluteTarget, repoRoot);
     const diagnostics: Diagnostic[] = [];
 
     for (const filePath of files) {

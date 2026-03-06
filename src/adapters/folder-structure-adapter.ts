@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { globSync } from 'glob';
 import { matchesGlob } from '../core/glob.js';
+import { createIgnoreMatcher, getStaticIgnoreGlobs, type IgnoreMatcher } from '../core/path-ignore.js';
 import type { Diagnostic, FolderRule, ValidatorAdapter, ValidatorContext } from '../core/types.js';
 
 function hasGlobChars(value: string): boolean {
@@ -12,9 +13,10 @@ function matchesAny(name: string, patterns: string[]): boolean {
   return patterns.some((pattern) => matchesGlob(name, pattern));
 }
 
-function collectTargetDirectories(rule: FolderRule, repoRoot: string): string[] {
+function collectTargetDirectories(rule: FolderRule, repoRoot: string, ignoreMatcher: IgnoreMatcher): string[] {
   if (rule.path) {
-    return [path.resolve(repoRoot, rule.path)];
+    const resolved = path.resolve(repoRoot, rule.path);
+    return ignoreMatcher.isIgnored(resolved) ? [] : [resolved];
   }
   if (rule.glob) {
     const matched = globSync(rule.glob, {
@@ -22,9 +24,14 @@ function collectTargetDirectories(rule: FolderRule, repoRoot: string): string[] 
       absolute: true,
       nodir: false,
       dot: true,
-      ignore: ['**/node_modules/**', '**/.git/**', '**/dist/**', '**/build/**'],
+      ignore: getStaticIgnoreGlobs(),
     });
-    return matched.filter((entry) => fs.existsSync(entry) && fs.statSync(entry).isDirectory());
+    return matched.filter(
+      (entry) =>
+        !ignoreMatcher.isIgnored(entry) &&
+        fs.existsSync(entry) &&
+        fs.statSync(entry).isDirectory(),
+    );
   }
   return [];
 }
@@ -173,9 +180,10 @@ export class FolderStructureAdapter implements ValidatorAdapter {
 
     const diagnostics: Diagnostic[] = [];
     const folderRules = context.config.folders || [];
+    const ignoreMatcher = createIgnoreMatcher(context.repoRoot);
 
     for (const rule of folderRules) {
-      const targets = collectTargetDirectories(rule, context.repoRoot);
+      const targets = collectTargetDirectories(rule, context.repoRoot, ignoreMatcher);
 
       if (rule.path && targets.length === 1 && !fs.existsSync(targets[0])) {
         diagnostics.push({
@@ -210,7 +218,9 @@ export class FolderStructureAdapter implements ValidatorAdapter {
           continue;
         }
 
-        const entries = fs.readdirSync(targetDir, { withFileTypes: true });
+        const entries = fs
+          .readdirSync(targetDir, { withFileTypes: true })
+          .filter((entry) => !ignoreMatcher.isIgnored(path.join(targetDir, entry.name)));
         const childFolders = entries.filter((e) => e.isDirectory()).map((e) => e.name);
         const childFiles = entries.filter((e) => e.isFile()).map((e) => e.name);
 
