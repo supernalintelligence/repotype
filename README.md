@@ -1,10 +1,9 @@
 # @supernal/repotype
 
 [![node](https://img.shields.io/badge/node-%3E%3D20-0ea5e9)](https://nodejs.org/)
-[![license](https://img.shields.io/badge/license-CC--BY--NC--SA--4.0-22c55e)](./LICENSE)
-[![status](https://img.shields.io/badge/status-experimental-f59e0b)](#)
-[![repotype](https://github.com/supernalintelligence/supernal-coding/actions/workflows/repotype.yml/badge.svg)](https://github.com/supernalintelligence/supernal-coding/actions/workflows/repotype.yml)
-[![tests](https://img.shields.io/badge/tests-8%20passing-16a34a)](./tests)
+[![license](https://img.shields.io/badge/license-MIT-22c55e)](./LICENSE)
+[![tests](https://img.shields.io/badge/tests-49%20passing-16a34a)](./tests)
+[![docs](https://img.shields.io/badge/docs-repotype.dev-blue)](https://supernalintelligence.github.io/repotype/)
 
 Repotype is your repository contract engine.
 
