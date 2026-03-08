@@ -1,49 +1,161 @@
 version: "1"
 extends: "profiles/repotype/repotype.yaml"
 
-files:
+defaults:
+  unmatchedFiles: deny
 
+# Folder structure
+folders:
+  - id: root-structure
+    path: .
+    requiredFolders:
+      - src
+      - bin
+      - site
+      - docs-site
+    allowedFolders:
+      - src
+      - bin
+      - dist
+      - site
+      - docs
+      - docs-site
+      - examples
+      - profiles
+      - scripts
+      - skills
+      - stories
+      - tests
+      - node_modules
+      - .supernal
+      - .github
+      - .husky
+      - .turbo
+      - .vscode
+      - sort_queue
+
+# Source files
+files:
+  - id: typescript-source
+    glob: "src/**/*.ts"
+    pathCase: kebab
+
+  - id: cli-entry
+    glob: "bin/*.js"
+
+  - id: dist-files
+    glob: "dist/**/*.{js,ts,map}"
+
+  # Config files
+  - id: root-configs
+    glob: "*.{json,yaml,yml,mjs,cjs,ts}"
+
+  - id: license-file
+    glob: "LICENSE"
+
+  - id: typescript-config
+    glob: "tsconfig.json"
+
+  - id: package-json
+    glob: "package.json"
+
+  # Documentation
   - id: package-readme
     glob: "README.md"
-    requiredSections:
-      - Why Repotype
-      - Core Commands
-      - CI Integration (GitHub Actions)
 
-  - id: package-agents
-    glob: "AGENTS.md"
-    requiredSections:
-      - Purpose
-      - Use This Package For
-      - Recommended Agent Workflow
+  - id: package-docs
+    glob: "{AGENTS,CONTRIBUTING,CHANGELOG,ROADMAP,LICENSE}.md"
 
-  - id: package-contributing
-    glob: "CONTRIBUTING.md"
-    requiredSections:
-      - Scope
-      - Local Development
-      - Commit Guidance
+  - id: docs-migration
+    glob: "docs/**/*.md"
 
-  - id: package-changelog
-    glob: "CHANGELOG.md"
-    requiredSections:
-      - Added
-
-  - id: package-site-readme
+  # Site (landing page)
+  - id: site-readme
     glob: "site/README.md"
-    requiredSections:
-      - Local Preview
-      - GitHub Pages
 
-  - id: package-template-sources
+  - id: site-files
+    glob: "site/**/*.{html,css,js,json,ico,png,svg,webp}"
+
+  - id: site-assets
+    glob: "site/assets/**/*"
+
+  # Docs site (Starlight)
+  - id: docs-site-config
+    glob: "docs-site/*.{json,mjs,ts}"
+
+  - id: docs-site-content
+    glob: "docs-site/src/**/*.{mdx,md,ts,css,png,webp,svg}"
+
+  - id: docs-site-scripts
+    glob: "docs-site/scripts/*.mjs"
+
+  - id: docs-site-public
+    glob: "docs-site/public/**/*"
+
+  - id: docs-site-dist
+    glob: "docs-site/dist/**/*"
+
+  - id: docs-site-misc
+    glob: "docs-site/{.gitignore,README.md}"
+
+  - id: docs-site-vscode
+    glob: "docs-site/.vscode/*.json"
+
+  # Examples
+  - id: example-configs
+    glob: "examples/**/*.{yaml,yml,md}"
+
+  - id: example-schemas
+    glob: "examples/**/*.json"
+
+  - id: example-templates
     glob: "examples/templates/*.md"
-    requiredSections:
-      - Description
-      - Acceptance Criteria
-      - Test Strategy
 
-  - id: package-roadmap
-    glob: "ROADMAP.md"
-    requiredSections:
-      - Near Term
-      - Runtime Portability
+  # Profiles
+  - id: profile-configs
+    glob: "profiles/**/*.yaml"
+
+  # Scripts
+  - id: build-scripts
+    glob: "scripts/*.{mjs,js,sh}"
+
+  # Skills
+  - id: skill-files
+    glob: "skills/**/*.{md,sh}"
+
+  # Tests
+  - id: test-files
+    glob: "tests/**/*.{ts,mjs}"
+
+  - id: generated-tests
+    glob: "tests/generated/**/*.ts"
+
+  # GitHub
+  - id: github-workflows
+    glob: ".github/workflows/*.yml"
+
+  # Husky
+  - id: husky-hooks
+    glob: ".husky/*"
+
+  # Hidden/misc
+  - id: gitignore
+    glob: ".gitignore"
+
+  - id: vscode-config
+    glob: ".vscode/**/*.json"
+
+  # Lockfiles
+  - id: lockfiles
+    glob: "*.lock"
+
+  - id: package-lock
+    glob: "package-lock.json"
+
+  # Node modules (always allow)
+  - id: node-modules
+    glob: "node_modules/**/*"
+
+  # Sort queue (quarantine)
+  - id: sort-queue
+    glob: "sort_queue/**/*"
