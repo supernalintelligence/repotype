@@ -25,37 +25,29 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10
           
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: pnpm
           
-      - name: Install dependencies
-        run: pnpm install --frozen-lockfile
+      - name: Install root dependencies
+        run: npm install
         
-      - name: Build repotype CLI (for doc generation)
-        run: pnpm build
+      - name: Build repotype CLI
+        run: npm run build
         
       - name: Build docs site
         working-directory: docs-site
         run: |
-          pnpm install
-          pnpm run build
+          npm install
+          npm run build
           
       - name: Prepare deployment
         run: |
-          # Create combined output
           mkdir -p _site
-          
           # Copy landing page to root
           cp -r site/* _site/
-          
-          # Copy docs to /docs/
+          # Copy docs (Starlight builds to dist/)
           cp -r docs-site/dist/* _site/
           
       - uses: actions/upload-pages-artifact@v3
