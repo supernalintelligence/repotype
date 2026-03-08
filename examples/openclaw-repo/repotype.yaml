@@ -1,0 +1,123 @@
+# repotype.yaml for OpenClaw
+# Repository structure enforcement for the lobster way 🦞
+
+version: "1"
+
+defaults:
+  unmatchedFiles: allow  # Start permissive, tighten over time
+
+# Core directory structure
+folders:
+  - id: skills-root
+    path: skills
+    allowedFolders:
+      - "*"  # Any skill name
+
+  - id: skill-structure
+    path: skills/*
+    requiredFiles:
+      - SKILL.md
+
+  - id: packages-root
+    path: packages
+    allowedFolders:
+      - "*"
+
+  - id: package-structure
+    path: packages/*
+    requiredFiles:
+      - package.json
+      - README.md
+
+# File rules
+files:
+  # Skills must have SKILL.md
+  - id: skill-readme
+    glob: "skills/*/SKILL.md"
+    requiredSections:
+      - Description
+
+  # Package structure
+  - id: package-json
+    glob: "packages/*/package.json"
+
+  - id: package-readme
+    glob: "packages/*/README.md"
+
+  # TypeScript source
+  - id: typescript-source
+    glob: "src/**/*.ts"
+    pathCase: kebab
+
+  - id: packages-typescript
+    glob: "packages/*/src/**/*.ts"
+
+  # Test files
+  - id: test-files
+    glob: "test/**/*.ts"
+
+  # Config files
+  - id: root-configs
+    glob: "*.{json,yaml,yml,mjs,ts,toml}"
+
+  - id: vitest-configs
+    glob: "vitest.*.ts"
+
+  # Documentation
+  - id: root-docs
+    glob: "{README,CONTRIBUTING,VISION,CHANGELOG,LICENSE}.md"
+
+  - id: docs-folder
+    glob: "docs/**/*.md"
+
+  # GitHub
+  - id: github-workflows
+    glob: ".github/workflows/*.{yml,yaml}"
+
+  - id: github-actions
+    glob: ".github/actions/**/*.{yml,yaml}"
+
+  # Scripts
+  - id: scripts
+    glob: "scripts/**/*.{sh,mjs,js,ts}"
+
+  # UI
+  - id: ui-components
+    glob: "ui/**/*.{ts,tsx,css,html}"
+
+  # Secret detection - critical for a tool handling API keys
+  - id: env-example
+    glob: ".env.example"
+
+  - id: env-safety
+    glob: ".env*"
+    forbidContentPatterns:
+      - "sk-[a-zA-Z0-9]{20,}"       # OpenAI keys
+      - "ANTHROPIC_API_KEY=[^$]"    # Real Anthropic keys (not env vars)
+      - "ghp_[a-zA-Z0-9]{36}"        # GitHub PATs
+      - "npm_[a-zA-Z0-9]{36}"        # npm tokens
+
+  - id: source-secrets
+    glob: "src/**/*.ts"
+    forbidContentPatterns:
+      - "sk-[a-zA-Z0-9]{48}"        # Full OpenAI keys
+      - "BEGIN.*PRIVATE.*KEY"
+
+  # Hidden configs
+  - id: dotfiles
+    glob: ".{gitignore,dockerignore,npmrc,mailmap,shellcheckrc}"
+
+  - id: linter-configs
+    glob: ".{markdownlint,oxlintrc,swiftlint,swiftformat}*"
+
+  - id: pre-commit
+    glob: ".pre-commit-config.yaml"
+
+  - id: secrets-baseline
+    glob: ".secrets.baseline"
+
+# Operations - optional, enable when ready
+operations:
+  hooks:
+    enabled: false  # Enable when adopted
+    hook: pre-push
