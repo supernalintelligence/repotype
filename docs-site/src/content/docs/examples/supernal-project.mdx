@@ -1,0 +1,352 @@
+---
+title: Supernal Project
+description: Example Repotype config for projects using Supernal workflow
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+A complete example for projects using the [Supernal](https://supernal.ai) development workflow with requirements, features, and traceability.
+
+## Project Structure
+
+```
+my-supernal-project/
+├── .supernal/
+│   ├── features/
+│   │   ├── FEAT-AUTH-001-user-login.md
+│   │   └── FEAT-API-002-rate-limiting.md
+│   ├── requirements/
+│   │   ├── README.md
+│   │   ├── REQ-AUTH-001-password-validation.md
+│   │   └── REQ-API-001-response-format.md
+│   └── traceability/
+│       └── traceability.md
+├── src/
+│   └── ...
+├── tests/
+│   └── ...
+├── stories/
+│   ├── user-login.feature
+│   └── rate-limiting.feature
+├── docs/
+│   └── ...
+├── supernal.yaml
+├── repotype.yaml
+└── package.json
+```
+
+## Configuration
+
+```yaml title="repotype.yaml"
+version: "1"
+
+defaults:
+  unmatchedFiles: deny
+
+# Supernal directory structure
+folders:
+  - id: supernal-root
+    path: .supernal
+    requiredFolders:
+      - features
+      - requirements
+      - traceability
+    allowedFolders:
+      - features
+      - requirements
+      - traceability
+      - evidence
+      - reports
+
+  - id: src-structure
+    path: src
+    requiredFolders:
+      - components
+      - lib
+    pathCase: kebab
+
+# Supernal workflow files
+files:
+  # Supernal config
+  - id: supernal-config
+    glob: "supernal.yaml"
+    schema:
+      kind: yaml
+      schema: schemas/supernal.schema.json
+
+  # Feature documents
+  - id: feature-docs
+    glob: ".supernal/features/FEAT-*.md"
+    frontmatter:
+      required:
+        - title
+        - status
+        - priority
+    requiredSections:
+      - Feature
+      - Scope
+      - Acceptance Criteria
+      - Evidence
+
+  # Requirement documents  
+  - id: requirement-docs
+    glob: ".supernal/requirements/REQ-*.md"
+    frontmatter:
+      required:
+        - title
+        - status
+        - feature
+    requiredSections:
+      - Requirement
+      - Acceptance Criteria
+      - Test Strategy
+      - Notes
+
+  # Requirements index
+  - id: requirements-index
+    glob: ".supernal/requirements/README.md"
+    requiredSections:
+      - Requirements
+      - Requirement Summary
+
+  # Traceability matrix
+  - id: traceability-output
+    glob: ".supernal/traceability/traceability.md"
+    requiredSections:
+      - Traceability Matrix
+      - Summary
+
+  # Gherkin stories
+  - id: gherkin-stories
+    glob: "stories/*.feature"
+    pathCase: kebab
+
+  # Generated story tests
+  - id: story-tests
+    glob: "tests/generated/stories/*.spec.ts"
+    pathCase: kebab
+
+  # Source code
+  - id: typescript-source
+    glob: "src/**/*.{ts,tsx}"
+    pathCase: kebab
+    forbidContentPatterns:
+      - "console\\.log"
+      - "debugger"
+
+  # Test files
+  - id: test-files
+    glob: "tests/**/*.{test,spec}.ts"
+    pathCase: kebab
+
+  # Documentation
+  - id: docs
+    glob: "docs/**/*.md"
+    frontmatter:
+      required:
+        - title
+
+  # Config files
+  - id: configs
+    glob: "*.{json,yaml,yml,mjs,ts}"
+
+  - id: root-readme
+    glob: "README.md"
+
+  - id: license
+    glob: "LICENSE"
+
+  - id: gitignore
+    glob: ".gitignore"
+
+  # Secret detection
+  - id: env-safety
+    glob: ".env*"
+    forbidContentPatterns:
+      - "sk-[a-zA-Z0-9]{20,}"
+      - "ghp_[a-zA-Z0-9]{36}"
+```
+
+## Supernal Config Schema
+
+```json title="schemas/supernal.schema.json"
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["project", "version"],
+  "properties": {
+    "project": {
+      "type": "string",
+      "description": "Project identifier"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "features": {
+      "type": "object",
+      "properties": {
+        "directory": { "type": "string", "default": ".supernal/features" },
+        "pattern": { "type": "string", "default": "FEAT-{DOMAIN}-{NUM}" }
+      }
+    },
+    "requirements": {
+      "type": "object", 
+      "properties": {
+        "directory": { "type": "string", "default": ".supernal/requirements" },
+        "pattern": { "type": "string", "default": "REQ-{DOMAIN}-{NUM}" }
+      }
+    },
+    "traceability": {
+      "type": "object",
+      "properties": {
+        "enabled": { "type": "boolean", "default": true },
+        "output": { "type": "string", "default": ".supernal/traceability/traceability.md" }
+      }
+    }
+  }
+}
+```
+
+## Feature Document Template
+
+```markdown title=".supernal/features/FEAT-EXAMPLE-001-feature-name.md"
+---
+title: Feature Name
+status: draft
+priority: high
+created: 2026-03-08
+---
+
+# Feature
+
+Brief description of what this feature does.
+
+## Scope
+
+What's included and excluded.
+
+## Acceptance Criteria
+
+- [ ] Criterion 1
+- [ ] Criterion 2
+- [ ] Criterion 3
+
+## Evidence
+
+| Requirement | Test | Status |
+|-------------|------|--------|
+| REQ-EXAMPLE-001 | tests/example.spec.ts | ✅ |
+```
+
+## Requirement Document Template
+
+```markdown title=".supernal/requirements/REQ-EXAMPLE-001-requirement-name.md"
+---
+title: Requirement Name  
+status: approved
+feature: FEAT-EXAMPLE-001
+created: 2026-03-08
+---
+
+# Requirement
+
+System must [verb] [measurable outcome] when [condition].
+
+## Acceptance Criteria
+
+1. Given [context], when [action], then [outcome]
+2. Given [context], when [action], then [outcome]
+
+## Test Strategy
+
+- Unit test: `tests/unit/example.test.ts`
+- Integration: `tests/integration/example.spec.ts`
+- Story: `stories/example.feature`
+
+## Notes
+
+Implementation notes and constraints.
+```
+
+## Gherkin Story
+
+```gherkin title="stories/user-login.feature"
+Feature: User Login
+  As a user
+  I want to log in to my account
+  So that I can access my data
+
+  Scenario: Successful login with valid credentials
+    Given I am on the login page
+    When I enter valid credentials
+    And I click the login button
+    Then I should be redirected to the dashboard
+    And I should see a welcome message
+
+  Scenario: Failed login with invalid password
+    Given I am on the login page
+    When I enter an invalid password
+    And I click the login button
+    Then I should see an error message
+    And I should remain on the login page
+```
+
+## CI Integration
+
+```yaml title=".github/workflows/supernal.yml"
+name: Supernal Workflow
+on: [push, pull_request]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      
+      # Validate repo structure
+      - name: Repotype validation
+        run: npx repotype validate . --json
+        
+      # Generate traceability
+      - name: Generate traceability
+        run: npx sc traceability generate
+        
+      # Check traceability coverage
+      - name: Check coverage
+        run: npx sc traceability check --min-coverage 80
+```
+
+<Aside type="tip">
+  The Supernal workflow ensures every feature has requirements, 
+  every requirement has tests, and traceability is automatically maintained.
+</Aside>
+
+## Commands
+
+```bash
+# Validate structure
+npx repotype validate .
+
+# Create new feature
+npx sc planning feature new --title "User Authentication"
+
+# Create requirement
+npx sc planning req new --feature FEAT-AUTH-001 --title "Password must be 8+ chars"
+
+# Generate traceability
+npx sc traceability generate
+
+# Validate traceability coverage
+npx sc traceability check
+```
+
+## Learn More
+
+- [Supernal Code CLI](https://github.com/supernalintelligence/supernal-code) — Planning and traceability tools
+- [Supernal Interface](https://github.com/supernalintelligence/supernal-interface) — Story-based testing
+- [Supernal Intelligence](https://supernal.ai) — AI-native development platform
