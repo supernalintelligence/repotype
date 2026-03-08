@@ -78,10 +78,23 @@ folders:
     requiredFiles:
       - SOUL.md
       - AGENTS.md
+      - TOOLS.md
+      - USER.md
+      - IDENTITY.md
     allowedFolders:
       - memory
       - work
       - research
+    allowedFiles:
+      - SOUL.md
+      - AGENTS.md
+      - TOOLS.md
+      - USER.md
+      - IDENTITY.md
+      - RESOURCES.md
+      - MEMORY.md
+      - HEARTBEAT.md
+      - BOOTSTRAP.md
 
   - id: shared-root
     path: shared
@@ -257,6 +270,87 @@ Be the assistant you'd actually want to talk to.
 Concise when needed, thorough when it matters.
 ```
 
+## TOOLS.md Template
+
+```markdown title="agents/my-agent/TOOLS.md"
+# TOOLS.md - Agent Tools
+
+## Task Management
+
+```bash
+sc task list --assignee @me
+sc task start TASK-XXX
+sc task done TASK-XXX --notes "evidence"
+```
+
+## Agent Communication
+
+```bash
+agent-msg inbox --to my-agent
+agent-msg send --to other-agent --type handoff --subject "..." --body "..."
+```
+
+## Orchestration
+
+```bash
+orch capacity
+orch spawn <agent> --task "..." --verify "..."
+```
+
+## Agent-Specific Tools
+
+### API Keys
+*(Store API keys in environment, reference here)*
+
+### SSH Hosts
+*(Remote servers this agent connects to)*
+
+### Custom Commands
+*(Agent-specific tooling)*
+```
+
+## USER.md Template
+
+```markdown title="agents/my-agent/USER.md"
+# USER.md - About Your Human
+
+*Learn about the person you're helping.*
+
+- **Name:** 
+- **What to call them:** 
+- **Timezone:** 
+- **Notes:** 
+
+## Context
+
+*(What do they care about? What projects are they working on?)*
+
+---
+
+The more you know, the better you can help.
+```
+
+## IDENTITY.md Template
+
+```markdown title="agents/my-agent/IDENTITY.md"
+---
+Name: MyAgent
+Creature: Specialist agent
+Emoji: 🤖
+---
+
+# IDENTITY.md - Who Am I?
+
+- **Name:** MyAgent
+- **Creature:** Development specialist
+- **Vibe:** Helpful, methodical, evidence-based
+- **Emoji:** 🤖
+
+---
+
+*Brief description of what this agent does.*
+```
+
 ## SKILL.md Template
 
 ```markdown title=".openclaw/skills/my-skill/SKILL.md"
@@ -375,6 +469,9 @@ jobs:
             echo "Checking $agent"
             test -f "${agent}SOUL.md" || exit 1
             test -f "${agent}AGENTS.md" || exit 1
+            test -f "${agent}TOOLS.md" || exit 1
+            test -f "${agent}USER.md" || exit 1
+            test -f "${agent}IDENTITY.md" || exit 1
           done
           
       # Validate skills
