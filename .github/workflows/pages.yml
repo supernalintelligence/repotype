@@ -32,7 +32,7 @@ jobs:
         working-directory: docs-site
         run: |
           npm install
-          # Generate docs (skip CLI generation that needs repotype built)
+          # Generate config reference
           npm run generate:config
           # Build Astro/Starlight
           npx astro build
@@ -40,10 +40,12 @@ jobs:
       - name: Prepare deployment
         run: |
           mkdir -p _site
-          # Copy landing page to root
-          cp -r site/* _site/
-          # Copy docs
+          # Copy docs FIRST (they go in subdirs)
           cp -r docs-site/dist/* _site/
+          # Copy landing page LAST (overwrites root index.html)
+          cp -r site/* _site/
+          # Verify landing page is the root
+          head -3 _site/index.html
           
       - uses: actions/upload-pages-artifact@v3
         with:
