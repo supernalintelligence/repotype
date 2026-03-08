@@ -23,8 +23,11 @@
     }
   },
   "scripts": {
+    "prepare": "husky || true",
     "build": "tsup",
     "dev": "tsup --watch",
+    "typecheck": "tsc --noEmit",
+    "prepush": "npm run typecheck && npm run build",
     "test": "pnpm run test:generate-cli && vitest run",
     "test:generate-cli": "node scripts/generate-cli-tests.mjs",
     "test:e2e": "vitest run tests/e2e-cli.test.ts tests/generated/universal-cli.generated.test.ts tests/universal-interface.integration.test.ts",
@@ -55,7 +58,9 @@
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
+    "@types/js-yaml": "^4.0.9",
     "@types/node": "^20.0.0",
+    "husky": "^9.0.0",
     "tsup": "^8.0.0",
     "typescript": "^5.3.0",
     "vitest": "^1.0.0"

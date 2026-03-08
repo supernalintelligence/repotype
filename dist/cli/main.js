@@ -1206,6 +1206,46 @@ function scanFiles(targetPath, repoRoot) {
   });
   return files.filter((filePath) => !ignoreMatcher.isIgnored(filePath));
 }
+function hasOverbroadGlob(glob) {
+  const normalized = glob.replace(/\\+/g, "/");
+  return normalized === "**/*" || normalized.includes("/**/*") || normalized.endsWith("/**");
+}
+function lintConfigGlobs(config, configPath) {
+  const diagnostics = [];
+  for (const rule of config.files || []) {
+    if (!rule.glob) continue;
+    if (hasOverbroadGlob(rule.glob)) {
+      diagnostics.push({
+        code: "overbroad_glob_pattern",
+        message: `Overbroad file glob '${rule.glob}' in rule '${rule.id || "unnamed"}'. Avoid '**/*' style catch-alls; use explicit allowlist paths.`,
+        severity: "warning",
+        file: configPath,
+        ruleId: rule.id,
+        details: {
+          glob: rule.glob,
+          recommendation: "Replace broad glob with explicit folder/file rules."
+        }
+      });
+    }
+  }
+  for (const rule of config.folders || []) {
+    if (!rule.glob) continue;
+    if (hasOverbroadGlob(rule.glob)) {
+      diagnostics.push({
+        code: "overbroad_glob_pattern",
+        message: `Overbroad folder glob '${rule.glob}' in rule '${rule.id || "unnamed"}'. Avoid catch-all patterns in allow-only schemas.`,
+        severity: "warning",
+        file: configPath,
+        ruleId: rule.id,
+        details: {
+          glob: rule.glob,
+          recommendation: "Use explicit folder paths in allowedFolders/requiredFolders."
+        }
+      });
+    }
+  }
+  return diagnostics;
+}
 var ValidationEngine = class {
   constructor(adapters) {
     this.adapters = adapters;
@@ -1217,7 +1257,7 @@ var ValidationEngine = class {
     const repoRoot = options?.configPath ? targetRoot : path12.dirname(configPath);
     const config = loadConfig(configPath);
     const files = scanFiles(absoluteTarget, repoRoot);
-    const diagnostics = [];
+    const diagnostics = [...lintConfigGlobs(config, configPath)];
     for (const filePath of files) {
       const ruleSet = resolveEffectiveRules(config, repoRoot, filePath);
       const context = {
