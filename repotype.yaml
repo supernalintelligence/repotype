@@ -28,6 +28,7 @@ folders:
       - tests
       - node_modules
       - .supernal
+      - .git
       - .github
       - .husky
       - .turbo
