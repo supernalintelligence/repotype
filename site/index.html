@@ -3,231 +3,811 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Repotype | The Auto-Vacuum for AI Repo Entropy</title>
-  <meta name="description" content="Repotype keeps repos clean as AI agents create files and docs. Contract-based validation and cleanup with clear reports and CI evidence." />
-  <link rel="icon" href="favicon.ico" sizes="any" />
-  <link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32" />
-  <link rel="icon" href="assets/favicon-16.png" type="image/png" sizes="16x16" />
-  <link rel="apple-touch-icon" href="assets/apple-touch-icon.png" sizes="180x180" />
+  <title>Repotype — Repository-Level Linting for High-Quality Codebases</title>
+  <meta name="description" content="Repotype is a repo-level linter that enforces structure, schemas, naming conventions, and documentation standards across your entire codebase. Keep every repository clean, consistent, and maintainable." />
+  <meta name="keywords" content="repository linting, repo structure, code quality, documentation standards, schema validation, developer tools" />
+  <meta property="og:title" content="Repotype — Repository-Level Linting" />
+  <meta property="og:description" content="Enforce structure, schemas, and standards across your entire codebase. Keep every repo clean and maintainable." />
+  <meta property="og:type" content="website" />
+  <meta property="og:url" content="https://supernalintelligence.github.io/repotype/" />
+  <link rel="canonical" href="https://supernalintelligence.github.io/repotype/" />
+  
+  <!-- Favicons -->
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="assets/favicon-64.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="assets/apple-touch-icon.png" />
+  <link rel="manifest" href="manifest.json" />
+  <meta name="theme-color" content="#0a0e17" />
+
   <style>
     :root {
-      --bg: #f4f7fb;
-      --paper: #ffffff;
-      --ink: #0f172a;
-      --muted: #475569;
-      --line: #d9e2ef;
-      --brand: #0ea5e9;
-      --brand-2: #22c55e;
-      --rose: #f43f5e;
-      --shadow: 0 12px 28px rgba(15, 23, 42, 0.08);
+      --bg: #0a0e17;
+      --bg-surface: #111827;
+      --bg-elevated: #1f2937;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --border: rgba(148, 163, 184, 0.12);
+      --border-bright: rgba(148, 163, 184, 0.25);
+      --accent-cyan: #06b6d4;
+      --accent-emerald: #10b981;
+      --accent-violet: #8b5cf6;
+      --danger: #ef4444;
+      --warning: #f59e0b;
+      --glow-cyan: rgba(6, 182, 212, 0.15);
+      --glow-emerald: rgba(16, 185, 129, 0.15);
     }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      color: var(--ink);
-      font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
-      background:
-        radial-gradient(circle at 10% 0%, rgba(14,165,233,.12), transparent 35%),
-        radial-gradient(circle at 90% 0%, rgba(34,197,94,.10), transparent 34%),
-        var(--bg);
-      line-height: 1.6;
-    }
-    .wrap { max-width: 1020px; margin: 0 auto; padding: 24px 18px 72px; }
-    .hero {
-      border: 1px solid var(--line);
-      border-radius: 22px;
-      background: linear-gradient(155deg, #fff, #f8fcff 55%, #f7fff9);
-      box-shadow: var(--shadow);
-      padding: 22px;
-    }
-    .hero-top { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; }
-    .logo {
-      width: 74px; height: 74px; border-radius: 16px; object-fit: cover;
-      border: 1px solid var(--line); background: #fff;
-    }
-    .chip {
-      display: inline-block; font-size: .78rem; font-weight: 700; text-transform: uppercase;
-      letter-spacing: .04em; margin-right: 8px; margin-bottom: 8px;
-      border-radius: 999px; padding: 4px 10px;
-      border: 1px solid #bae6fd; background: #e0f2fe; color: #075985;
-    }
-    h1 {
-      margin: 10px 0 8px;
-      font-size: clamp(1.8rem, 4vw, 2.7rem);
-      line-height: 1.13;
-    }
-    .lede { margin: 0; color: var(--muted); font-size: 1.05rem; max-width: 76ch; }
-    .cta { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
-    .btn {
-      text-decoration: none; border-radius: 12px; padding: 10px 14px; font-weight: 700;
-      border: 1px solid transparent; display: inline-block;
-    }
-    .btn-primary { background: var(--brand); color: #fff; }
-    .btn-secondary { background: #fff; color: #075985; border-color: #bae6fd; }
 
-    .grid { display: grid; gap: 14px; margin-top: 16px; }
-    @media (min-width: 900px) {
-      .grid-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-      .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: "Inter", "SF Pro Display", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Animated gradient background */
+    .bg-glow {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .bg-glow::before,
+    .bg-glow::after {
+      content: '';
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.4;
+      animation: float 20s ease-in-out infinite;
+    }
+
+    .bg-glow::before {
+      width: 600px;
+      height: 600px;
+      background: var(--glow-cyan);
+      top: -200px;
+      left: -100px;
+    }
+
+    .bg-glow::after {
+      width: 500px;
+      height: 500px;
+      background: var(--glow-emerald);
+      bottom: -150px;
+      right: -100px;
+      animation-delay: -10s;
+    }
+
+    @keyframes float {
+      0%, 100% { transform: translate(0, 0) scale(1); }
+      33% { transform: translate(30px, -30px) scale(1.05); }
+      66% { transform: translate(-20px, 20px) scale(0.95); }
+    }
+
+    .wrap {
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 32px 24px 80px;
+    }
+
+    /* Header */
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 16px 0 48px;
+    }
+
+    .logo-group {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      border: 1px solid var(--border-bright);
+      background: var(--bg-surface);
+      object-fit: cover;
+    }
+
+    .logo-text {
+      font-size: 1.4rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      background: linear-gradient(135deg, var(--text) 0%, var(--accent-cyan) 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 8px;
+    }
+
+    .nav-link {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      font-weight: 500;
+      padding: 8px 14px;
+      border-radius: 8px;
+      transition: all 0.2s ease;
+    }
+
+    .nav-link:hover {
+      color: var(--text);
+      background: var(--bg-elevated);
+    }
+
+    /* Hero */
+    .hero {
+      text-align: center;
+      padding: 40px 0 60px;
+    }
+
+    .badge-row {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin-bottom: 24px;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--accent-cyan);
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px solid rgba(6, 182, 212, 0.2);
+      border-radius: 100px;
+      padding: 6px 14px;
+    }
+
+    .badge--emerald {
+      color: var(--accent-emerald);
+      background: rgba(16, 185, 129, 0.1);
+      border-color: rgba(16, 185, 129, 0.2);
+    }
+
+    .badge--violet {
+      color: var(--accent-violet);
+      background: rgba(139, 92, 246, 0.1);
+      border-color: rgba(139, 92, 246, 0.2);
+    }
+
+    h1 {
+      font-size: clamp(2.2rem, 5vw, 3.5rem);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      line-height: 1.1;
+      margin-bottom: 20px;
+      background: linear-gradient(180deg, #fff 0%, #94a3b8 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .hero-sub {
+      font-size: 1.15rem;
+      color: var(--text-muted);
+      max-width: 640px;
+      margin: 0 auto 32px;
+      line-height: 1.7;
+    }
+
+    .hero-actions {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      text-decoration: none;
+      font-size: 0.95rem;
+      font-weight: 600;
+      padding: 14px 24px;
+      border-radius: 12px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-emerald) 100%);
+      color: #0a0e17;
+      box-shadow: 0 4px 20px rgba(6, 182, 212, 0.3);
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 30px rgba(6, 182, 212, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--bg-surface);
+      color: var(--text);
+      border: 1px solid var(--border-bright);
+    }
+
+    .btn-secondary:hover {
+      background: var(--bg-elevated);
+      border-color: var(--text-dim);
+    }
+
+    .btn svg {
+      width: 18px;
+      height: 18px;
+    }
+
+    /* Terminal preview */
+    .terminal {
+      max-width: 720px;
+      margin: 48px auto 0;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 
+        0 20px 50px rgba(0, 0, 0, 0.4),
+        0 0 0 1px rgba(255, 255, 255, 0.03) inset;
+    }
+
+    .terminal-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 14px 16px;
+      background: var(--bg-elevated);
+      border-bottom: 1px solid var(--border);
+    }
+
+    .terminal-dot {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+    }
+
+    .terminal-dot--red { background: #ef4444; }
+    .terminal-dot--yellow { background: #f59e0b; }
+    .terminal-dot--green { background: #22c55e; }
+
+    .terminal-title {
+      flex: 1;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+
+    .terminal-body {
+      padding: 20px;
+      font-family: "JetBrains Mono", "SF Mono", "Fira Code", monospace;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      text-align: left;
+    }
+
+    .terminal-line {
+      display: flex;
+      gap: 8px;
+    }
+
+    .terminal-prompt {
+      color: var(--accent-emerald);
+      user-select: none;
+    }
+
+    .terminal-cmd {
+      color: var(--text);
+    }
+
+    .terminal-output {
+      color: var(--text-dim);
+      padding-left: 24px;
+    }
+
+    .terminal-success { color: var(--accent-emerald); }
+    .terminal-error { color: var(--danger); }
+    .terminal-warn { color: var(--warning); }
+
+    /* Feature grid */
+    .section-title {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .section-title h2 {
+      font-size: 1.8rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+      margin-bottom: 12px;
+    }
+
+    .section-title p {
+      color: var(--text-muted);
+      max-width: 540px;
+      margin: 0 auto;
+    }
+
+    .features {
+      padding: 80px 0;
+    }
+
+    .grid {
+      display: grid;
+      gap: 20px;
+    }
+
+    @media (min-width: 768px) {
+      .grid-3 { grid-template-columns: repeat(3, 1fr); }
+      .grid-2 { grid-template-columns: repeat(2, 1fr); }
     }
 
     .card {
-      border: 1px solid var(--line);
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
       border-radius: 16px;
-      background: var(--paper);
-      padding: 16px;
-      box-shadow: 0 6px 14px rgba(15,23,42,.05);
-    }
-    .card h2, .card h3 { margin: 0 0 8px; line-height: 1.3; }
-    .card p { margin: 0; color: var(--muted); }
-    .list { margin: 10px 0 0; padding-left: 18px; color: var(--muted); }
-    .list li { margin: 6px 0; }
-
-    .blog {
-      border: 1px solid var(--line);
-      border-radius: 16px;
-      background: #fff;
-      padding: 18px;
-      margin-top: 16px;
-    }
-    .blog h2 { margin: 0 0 10px; }
-    .blog p { margin: 0 0 12px; color: #334155; }
-    .quote {
-      border-left: 4px solid var(--brand);
-      padding: 10px 12px;
-      background: #f0f9ff;
-      border-radius: 8px;
-      color: #0c4a6e;
-      font-weight: 600;
-      margin: 0 0 12px;
+      padding: 28px;
+      transition: all 0.3s ease;
     }
 
-    pre {
-      margin: 0;
-      padding: 12px;
+    .card:hover {
+      border-color: var(--border-bright);
+      transform: translateY(-4px);
+      box-shadow: 0 12px 40px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-icon {
+      width: 48px;
+      height: 48px;
       border-radius: 12px;
-      border: 1px solid #1e293b;
-      background: #0b1220;
-      color: #e2e8f0;
-      overflow: auto;
-      font-size: .88rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin-bottom: 16px;
+      font-size: 1.5rem;
     }
 
-    .signal-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 10px; }
+    .card-icon--cyan {
+      background: rgba(6, 182, 212, 0.1);
+      border: 1px solid rgba(6, 182, 212, 0.2);
+    }
+
+    .card-icon--emerald {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid rgba(16, 185, 129, 0.2);
+    }
+
+    .card-icon--violet {
+      background: rgba(139, 92, 246, 0.1);
+      border: 1px solid rgba(139, 92, 246, 0.2);
+    }
+
+    .card h3 {
+      font-size: 1.15rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .card p {
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      margin-bottom: 16px;
+    }
+
+    .card ul {
+      list-style: none;
+      padding: 0;
+    }
+
+    .card li {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      padding: 6px 0;
+      padding-left: 20px;
+      position: relative;
+    }
+
+    .card li::before {
+      content: '→';
+      position: absolute;
+      left: 0;
+      color: var(--accent-cyan);
+    }
+
+    /* How it works */
+    .how-it-works {
+      padding: 60px 0;
+    }
+
+    .steps {
+      display: grid;
+      gap: 16px;
+      max-width: 700px;
+      margin: 0 auto;
+    }
+
+    .step {
+      display: flex;
+      align-items: flex-start;
+      gap: 20px;
+      padding: 24px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      transition: all 0.2s ease;
+    }
+
+    .step:hover {
+      border-color: var(--border-bright);
+    }
+
+    .step-num {
+      flex-shrink: 0;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, var(--accent-cyan) 0%, var(--accent-emerald) 100%);
+      color: #0a0e17;
+      font-weight: 700;
+      font-size: 0.9rem;
+      border-radius: 10px;
+    }
+
+    .step-content h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 4px;
+    }
+
+    .step-content p {
+      color: var(--text-muted);
+      font-size: 0.9rem;
+    }
+
+    .step-content code {
+      background: var(--bg-elevated);
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-family: "JetBrains Mono", "SF Mono", monospace;
+      font-size: 0.85rem;
+      color: var(--accent-cyan);
+    }
+
+    /* Signals */
+    .signals {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-top: 40px;
+    }
+
     .signal {
-      border-radius: 999px; padding: 5px 10px; font-size: .78rem; font-weight: 700; border: 1px solid transparent;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 10px 16px;
+      border-radius: 100px;
+      font-size: 0.85rem;
+      font-weight: 600;
     }
-    .bad { background: #ffe4e6; color: #9f1239; border-color: #fecdd3; }
-    .warn { background: #ffedd5; color: #9a3412; border-color: #fed7aa; }
-    .good { background: #dcfce7; color: #166534; border-color: #bbf7d0; }
 
-    .footer { margin-top: 20px; color: #64748b; font-size: .92rem; }
-    .footer a { color: #0369a1; text-decoration: none; }
-    .footer a:hover { text-decoration: underline; }
+    .signal--error {
+      background: rgba(239, 68, 68, 0.1);
+      color: #fca5a5;
+      border: 1px solid rgba(239, 68, 68, 0.2);
+    }
+
+    .signal--warn {
+      background: rgba(245, 158, 11, 0.1);
+      color: #fcd34d;
+      border: 1px solid rgba(245, 158, 11, 0.2);
+    }
+
+    .signal--success {
+      background: rgba(34, 197, 94, 0.1);
+      color: #86efac;
+      border: 1px solid rgba(34, 197, 94, 0.2);
+    }
+
+    .signal-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+    }
+
+    .signal--error .signal-dot { background: #ef4444; }
+    .signal--warn .signal-dot { background: #f59e0b; }
+    .signal--success .signal-dot { background: #22c55e; }
+
+    /* Footer */
+    footer {
+      padding: 40px 0;
+      text-align: center;
+      border-top: 1px solid var(--border);
+    }
+
+    .footer-links {
+      display: flex;
+      justify-content: center;
+      gap: 24px;
+      margin-bottom: 24px;
+      flex-wrap: wrap;
+    }
+
+    .footer-links a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.9rem;
+      transition: color 0.2s;
+    }
+
+    .footer-links a:hover {
+      color: var(--accent-cyan);
+    }
+
+    .footer-credit {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+    }
+
+    .footer-credit a {
+      color: var(--accent-cyan);
+      text-decoration: none;
+    }
+
+    .footer-credit a:hover {
+      text-decoration: underline;
+    }
+
+    .footer-credit .heart {
+      color: var(--danger);
+      display: inline-block;
+      animation: pulse 1.5s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.15); }
+    }
+
+    .footer-legal {
+      color: var(--text-dim);
+      font-size: 0.8rem;
+    }
+
+    .footer-legal a {
+      color: var(--text-dim);
+      text-decoration: none;
+    }
+
+    .footer-legal a:hover {
+      color: var(--accent-cyan);
+    }
+
+    /* Responsive */
+    @media (max-width: 640px) {
+      .nav-links { display: none; }
+      
+      .hero-actions {
+        flex-direction: column;
+        align-items: stretch;
+      }
+
+      .btn {
+        justify-content: center;
+      }
+
+      .terminal-body {
+        font-size: 0.75rem;
+        padding: 14px;
+      }
+
+      .step {
+        flex-direction: column;
+        gap: 14px;
+      }
+    }
   </style>
 </head>
 <body>
-  <main class="wrap">
-    <section class="hero" aria-label="Intro">
-      <div class="hero-top">
-        <img src="assets/logo.png" alt="Repotype logo" class="logo" />
-        <div>
-          <span class="chip">Repo Contracts</span>
-          <span class="chip">AI-Human Teams</span>
-          <span class="chip">Auto Cleanup</span>
+  <div class="bg-glow" aria-hidden="true"></div>
+
+  <div class="wrap">
+    <header>
+      <div class="logo-group">
+        <img src="assets/logo.png" alt="Repotype" class="logo" />
+        <span class="logo-text">Repotype</span>
+      </div>
+      <nav class="nav-links">
+        <a href="https://github.com/supernalintelligence/repotype/blob/main/README.md" class="nav-link">Docs</a>
+        <a href="https://github.com/supernalintelligence/repotype" class="nav-link">GitHub</a>
+      </nav>
+    </header>
+
+    <section class="hero">
+      <div class="badge-row">
+        <span class="badge">Repo-Level Linting</span>
+        <span class="badge badge--emerald">Schema Validation</span>
+        <span class="badge badge--violet">CI-Ready</span>
+      </div>
+
+      <h1>Linting for your entire repository.<br/>Not just code.</h1>
+
+      <p class="hero-sub">
+        ESLint checks your code. Repotype checks your repo. Enforce folder structure, 
+        file naming, markdown schemas, frontmatter, and documentation standards — 
+        keeping every repository clean, consistent, and maintainable.
+      </p>
+
+      <div class="hero-actions">
+        <a class="btn btn-primary" href="https://github.com/supernalintelligence/repotype">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          View on GitHub
+        </a>
+        <a class="btn btn-secondary" href="https://github.com/supernalintelligence/repotype/blob/main/README.md">
+          Read Documentation
+        </a>
+      </div>
+
+      <div class="terminal">
+        <div class="terminal-bar">
+          <div class="terminal-dot terminal-dot--red"></div>
+          <div class="terminal-dot terminal-dot--yellow"></div>
+          <div class="terminal-dot terminal-dot--green"></div>
+          <span class="terminal-title">Terminal</span>
+        </div>
+        <div class="terminal-body">
+          <div class="terminal-line"><span class="terminal-prompt">$</span><span class="terminal-cmd">npx repotype init</span></div>
+          <div class="terminal-output">✓ Created repotype.yaml</div>
+          <br/>
+          <div class="terminal-line"><span class="terminal-prompt">$</span><span class="terminal-cmd">npx repotype validate .</span></div>
+          <div class="terminal-output terminal-error">✗ docs/guide.md missing required frontmatter</div>
+          <div class="terminal-output terminal-warn">⚠ src/Utils.ts should be kebab-case</div>
+          <div class="terminal-output terminal-error">✗ config/ missing required README.md</div>
+          <br/>
+          <div class="terminal-line"><span class="terminal-prompt">$</span><span class="terminal-cmd">npx repotype fix . && npx repotype validate .</span></div>
+          <div class="terminal-output terminal-success">✓ All 142 files valid. Repository standards enforced.</div>
         </div>
       </div>
-      <h1>Repotype is the auto-vacuum for AI-generated repo entropy.</h1>
-      <p class="lede">
-        Claude, ChatGPT, Copilot, and local agents can generate useful output fast, but they can also scatter files,
-        invent folders, and drift your structure. Repotype adds friction in the right places so your repository stays
-        clean, predictable, and maintainable without constant manual cleanup.
-      </p>
-      <div class="cta">
-        <a class="btn btn-primary" href="https://github.com/supernalintelligence/repotype">Get Repotype</a>
-        <a class="btn btn-secondary" href="https://supernalintelligence.github.io/repotype/">Live Docs</a>
+    </section>
+
+    <section class="features">
+      <div class="section-title">
+        <h2>What Repotype Validates</h2>
+        <p>Everything that makes a repository maintainable — beyond just code syntax.</p>
+      </div>
+
+      <div class="grid grid-3">
+        <article class="card">
+          <div class="card-icon card-icon--cyan">📁</div>
+          <h3>Folder Structure</h3>
+          <p>Define required and allowed directories. Catch misplaced files before they become permanent.</p>
+          <ul>
+            <li>Required folders per project type</li>
+            <li>Allowlists to prevent sprawl</li>
+            <li>Path patterns and glob rules</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <div class="card-icon card-icon--emerald">📋</div>
+          <h3>File Standards</h3>
+          <p>Enforce naming conventions, required files, and file-level schemas across the repo.</p>
+          <ul>
+            <li>Naming conventions (kebab, camel, etc)</li>
+            <li>Required companion files</li>
+            <li>JSON/YAML schema validation</li>
+          </ul>
+        </article>
+
+        <article class="card">
+          <div class="card-icon card-icon--violet">📝</div>
+          <h3>Documentation Quality</h3>
+          <p>Validate markdown structure, frontmatter schemas, and required sections in docs.</p>
+          <ul>
+            <li>Frontmatter schema enforcement</li>
+            <li>Required sections per doc type</li>
+            <li>Template placeholder detection</li>
+          </ul>
+        </article>
       </div>
     </section>
 
-    <article class="blog" aria-label="Why this matters">
-      <h2>Why this matters now</h2>
-      <p class="quote">AI can write faster than teams can review. Entropy wins unless structure is enforced by default.</p>
-      <p>
-        In most teams, the first phase of AI adoption increases output and decreases consistency. You get extra markdown,
-        duplicate requirement files, scripts parked in random folders, and subtle naming drift. None of this is dramatic
-        in one PR, but after a few weeks it creates drag everywhere: slower onboarding, brittle automation, and arguments
-        about where content should live.
-      </p>
-      <p>
-        Repotype solves that by defining your repo as a contract. It decides what belongs where, what metadata is required,
-        what sections are mandatory, and how cross-references must resolve. If a file does not fit, it fails clearly or
-        gets queued for cleanup with logs. The result: less policing, less cleanup labor, and more trust in agent output.
-      </p>
-    </article>
+    <section class="how-it-works">
+      <div class="section-title">
+        <h2>How It Works</h2>
+        <p>Add repo-level linting to any project in minutes.</p>
+      </div>
 
-    <section class="grid grid-3" aria-label="Use cases">
-      <article class="card">
-        <h3>Agent Sprawl Control</h3>
-        <p>Stop random docs and code from being dropped in arbitrary places.</p>
-        <ul class="list">
-          <li>Deny-by-default unmatched files</li>
-          <li>Folder allowlists and required folders</li>
-          <li>Path naming and case policies</li>
-        </ul>
-      </article>
-      <article class="card">
-        <h3>Document Quality Guardrails</h3>
-        <p>Require frontmatter + structure so docs remain usable for automation.</p>
-        <ul class="list">
-          <li>JSON Schema validation</li>
-          <li>Required markdown sections</li>
-          <li>Template compliance checks</li>
-        </ul>
-      </article>
-      <article class="card">
-        <h3>Automatic Hygiene</h3>
-        <p>Use hooks/watchers to keep the repo tidy continuously, not occasionally.</p>
-        <ul class="list">
-          <li>Pre-commit/pre-push enforcement</li>
-          <li>Cleanup queue + move logs</li>
-          <li>Machine-readable reports for CI</li>
-        </ul>
-      </article>
-    </section>
-
-    <section class="grid grid-2" aria-label="How to run">
-      <article class="card">
-        <h3>Install + Quickstart</h3>
-<pre><code>npm install -g repotype
-# or: npx repotype validate .
-
-repotype init .
-repotype validate . --json
-repotype apply .</code></pre>
-      </article>
-      <article class="card">
-        <h3>Operational Signals</h3>
-        <p>Repotype outputs clear severity so teams and agents know what to do next.</p>
-        <div class="signal-row">
-          <span class="signal bad">Error: contract violation</span>
-          <span class="signal warn">Warning: policy risk</span>
-          <span class="signal good">Pass: repo conforms</span>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <div class="step-content">
+            <h4>Define your standards</h4>
+            <p>Create a <code>repotype.yaml</code> defining your folder structure, file rules, and schemas.</p>
+          </div>
         </div>
-      </article>
+        <div class="step">
+          <div class="step-num">2</div>
+          <div class="step-content">
+            <h4>Validate continuously</h4>
+            <p>Run <code>repotype validate</code> locally, in pre-commit hooks, and in CI pipelines.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <div class="step-content">
+            <h4>Auto-fix violations</h4>
+            <p>Use <code>repotype fix</code> to automatically resolve fixable issues like naming and structure.</p>
+          </div>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <div class="step-content">
+            <h4>Generate reports</h4>
+            <p>Export compliance reports with <code>repotype report</code> for audits and documentation.</p>
+          </div>
+        </div>
+      </div>
+
+      <div class="signals">
+        <span class="signal signal--error">
+          <span class="signal-dot"></span>
+          Error: Structure violation
+        </span>
+        <span class="signal signal--warn">
+          <span class="signal-dot"></span>
+          Warning: Convention mismatch
+        </span>
+        <span class="signal signal--success">
+          <span class="signal-dot"></span>
+          Pass: Standards enforced
+        </span>
+      </div>
     </section>
 
-    <article class="blog" aria-label="Share blurb">
-      <h2>Share With Your Agents</h2>
-      <p>Copy/paste this into agent instructions:</p>
-<pre><code>Use repotype to enforce repository structure and doc contracts before writing files.
-Run `repotype validate . --json` first, then only create or modify files that match repotype.yaml rules.
-If validation fails, follow diagnostics or run `repotype fix` / `repotype cleanup-run` to restore compliance.</code></pre>
-    </article>
-
-    <p class="footer">
-      MIT Licensed. Works with any agent workflow that writes to your repository.
-      Source + issues: <a href="https://github.com/supernalintelligence/repotype">github.com/supernalintelligence/repotype</a>
-    </p>
-  </main>
+    <footer>
+      <div class="footer-links">
+        <a href="https://github.com/supernalintelligence/repotype">GitHub</a>
+        <a href="https://github.com/supernalintelligence/repotype/blob/main/README.md">Documentation</a>
+        <a href="https://github.com/supernalintelligence/repotype/blob/main/CONTRIBUTING.md">Contributing</a>
+        <a href="https://github.com/supernalintelligence/repotype/blob/main/CHANGELOG.md">Changelog</a>
+        <a href="https://github.com/supernalintelligence/repotype/issues">Issues</a>
+      </div>
+      <p class="footer-credit">
+        Built to Help Fight Entropy with <span class="heart">♥</span> from <a href="https://supernal.ai">Supernal Intelligence</a>
+      </p>
+      <p class="footer-legal">
+        MIT Licensed · <a href="https://github.com/supernalintelligence/repotype/blob/main/LICENSE">View License</a>
+      </p>
+    </footer>
+  </div>
 </body>
 </html>
