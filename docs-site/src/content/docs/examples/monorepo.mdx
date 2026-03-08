@@ -109,16 +109,18 @@ files:
     glob: "{packages,apps}/*/src/**/*.{ts,tsx}"
     pathCase: kebab
 
-  # Test files
+  # Test files (scoped to packages/apps)
   - id: test-files
-    glob: "**/*.{test,spec}.{ts,tsx}"
+    glob: "{packages,apps}/*/src/**/*.{test,spec}.{ts,tsx}"
     pathCase: kebab
 
-  # Documentation
-  - id: readme-files
-    glob: "**/README.md"
-    frontmatter:
-      required: []  # No frontmatter required for READMEs
+  # Package READMEs
+  - id: package-readmes
+    glob: "{packages,apps}/*/README.md"
+    
+  # Root README
+  - id: root-readme
+    glob: "README.md"
 
   - id: docs
     glob: "docs/**/*.md"

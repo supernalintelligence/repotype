@@ -36,7 +36,7 @@ folders:
 # File rules
 files:
   - id: file-rule-id
-    glob: "**/*.ts"
+    glob: "src/**/*.ts"
     # ...
 
 # External tool plugins
@@ -211,10 +211,13 @@ files:
     requiredCompanion:
       - pattern: "*.test.tsx"
         
-  - id: markdown
-    glob: "**/*.md"
+  - id: markdown-docs
+    glob: "docs/**/*.md"
     frontmatter:
       required: [title]
+      
+  - id: root-readme
+    glob: "README.md"
       
   - id: package-json
     glob: "package.json"

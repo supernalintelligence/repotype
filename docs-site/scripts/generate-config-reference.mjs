@@ -148,14 +148,20 @@ defaults:
   unmatchedFiles: deny
 
 folders:
-  - id: example-folder
+  - id: src-structure
     path: src
-    requiredFolders: [components]
+    requiredFolders: [components, utils]
+    pathCase: kebab
 
 files:
-  - id: example-files
-    glob: "**/*.ts"
+  - id: typescript-source
+    glob: "src/**/*.ts"
     pathCase: kebab
+    
+  - id: docs
+    glob: "docs/**/*.md"
+    frontmatter:
+      required: [title]
 \`\`\`
 
 ## Schema Reference
@@ -282,11 +288,17 @@ files:
       kind: json
       schema: schemas/package.schema.json
       
-  - id: all-files
-    glob: "**/*"
+  - id: source-secrets
+    glob: "src/**/*.{ts,js}"
     forbidContentPatterns:
-      - "API_KEY\\\\s*="
-      - "password\\\\s*[:=]"
+      - "sk-[a-zA-Z0-9]{20,}"      # OpenAI keys
+      - "ghp_[a-zA-Z0-9]{36}"       # GitHub PATs
+      
+  - id: env-safety
+    glob: ".env*"
+    forbidContentPatterns:
+      - "sk-[a-zA-Z0-9]{20,}"
+      - "npm_[a-zA-Z0-9]{36}"
 
 plugins:
   - id: eslint

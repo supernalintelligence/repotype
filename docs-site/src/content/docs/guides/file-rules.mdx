@@ -105,17 +105,36 @@ Block files containing sensitive patterns:
 
 ```yaml
 files:
-  - id: all-source
-    glob: "**/*.{ts,js}"
+  - id: source-secrets
+    glob: "src/**/*.{ts,js}"
     forbidContentPatterns:
-      - "API_KEY ="
+      - "API_KEY\\s*="
       - "password\\s*[:=]"
-      - "BEGIN_PRIVATE_KEY"
+      - "BEGIN.*PRIVATE.*KEY"
+      - "sk-[a-zA-Z0-9]{20,}"      # OpenAI keys
+      - "ghp_[a-zA-Z0-9]{36}"       # GitHub PATs
+      - "npm_[a-zA-Z0-9]{36}"       # npm tokens
+      - "xox[baprs]-[a-zA-Z0-9-]+"  # Slack tokens
+
+  - id: env-files
+    glob: ".env*"
+    forbidContentPatterns:
+      - "sk-[a-zA-Z0-9]{20,}"      # Real OpenAI keys
+      - "ghp_[a-zA-Z0-9]{36}"       # Real GitHub tokens
+
+  - id: npmrc-safety
+    glob: ".npmrc"
+    forbidContentPatterns:
+      - "//registry.npmjs.org/:_authToken="  # Hardcoded npm tokens
 ```
 
 <Aside type="caution">
-  This is a simple pattern match, not a full secret scanner. 
-  For production secret scanning, use dedicated tools.
+  This catches common patterns but is not a full secret scanner.
+  For production, combine with tools like `gitleaks` or `trufflehog`.
+</Aside>
+
+<Aside type="tip">
+  Use `.env.example` with placeholder values instead of real `.env` files in repos.
 </Aside>
 
 ## Template Hints
@@ -141,17 +160,22 @@ A file can match multiple rules. All matching rules are applied:
 
 ```yaml
 files:
-  # All TypeScript files
-  - id: typescript-base
-    glob: "**/*.ts"
+  # Source TypeScript files
+  - id: typescript-source
+    glob: "src/**/*.ts"
     pathCase: kebab
     
-  # Additional rules for test files
+  # Test files get additional rules
   - id: test-files
-    glob: "**/*.test.ts"
+    glob: "src/**/*.test.ts"
     requiredCompanion:
       - pattern: "../*.ts"  # Source file must exist
 ```
+
+<Aside type="caution">
+  Avoid overly broad globs like `**/*.ts` — they match everything and provide no structure.
+  Prefer scoped patterns like `src/**/*.ts` or `lib/**/*.ts`.
+</Aside>
 
 ## Common Patterns
 
