@@ -1,0 +1,237 @@
+---
+title: Configuration
+description: Complete guide to repotype.yaml configuration
+---
+
+import { Aside, Badge } from '@astrojs/starlight/components';
+
+## Config File Location
+
+Repotype looks for configuration in this order:
+
+1. `repotype.yaml` (preferred)
+2. `repo-schema.yaml` (legacy, still supported)
+
+Place the file at your repository root.
+
+## Basic Structure
+
+```yaml title="repotype.yaml"
+version: "1"
+
+# Inherit from other configs
+extends:
+  - ./profiles/base.yaml
+
+# Default behavior
+defaults:
+  unmatchedFiles: deny  # deny | allow
+
+# Folder structure rules
+folders:
+  - id: folder-rule-id
+    path: src
+    # ...
+
+# File rules
+files:
+  - id: file-rule-id
+    glob: "**/*.ts"
+    # ...
+
+# External tool plugins
+plugins:
+  - id: markdownlint
+    # ...
+
+# Operational settings
+operations:
+  hooks:
+    enabled: true
+  watcher:
+    enabled: false
+```
+
+## Inheritance with `extends`
+
+Configs can inherit from other files:
+
+```yaml
+version: "1"
+extends:
+  - ../../profiles/base/repotype.yaml
+  - ../../profiles/typescript/repotype.yaml
+```
+
+Child configs override parent values. Arrays are merged.
+
+<Aside type="tip">
+  Use inheritance to create team-wide base configs, then customize per-project.
+</Aside>
+
+## Defaults
+
+Control behavior for files that don't match any rule:
+
+```yaml
+defaults:
+  # deny = unmatched files are errors (recommended)
+  # allow = unmatched files emit suggestions only
+  unmatchedFiles: deny
+```
+
+<Aside type="caution">
+  `deny` mode prevents new files from appearing in unexpected places.
+  This is the recommended setting for production repos.
+</Aside>
+
+## File Rules
+
+See [File Rules Guide](/repotype/guides/file-rules) for complete documentation.
+
+```yaml
+files:
+  - id: typescript-source
+    glob: "src/**/*.ts"
+    pathCase: kebab              # kebab | camel | pascal | snake
+    pathPattern: '^src/[a-z-/]+\.ts$'
+    
+  - id: markdown-docs
+    glob: "docs/**/*.md"
+    frontmatter:
+      required: [title, description]
+      schema: schemas/doc.schema.json
+      
+  - id: config-json
+    glob: "config/*.json"
+    schema:
+      kind: json
+      schema: schemas/config.schema.json
+```
+
+## Folder Rules
+
+See [Folder Rules Guide](/repotype/guides/folder-rules) for complete documentation.
+
+```yaml
+folders:
+  - id: docs-structure
+    path: docs
+    requiredFolders:
+      - guides
+      - reference
+    allowedFolders:
+      - guides
+      - reference
+      - examples
+    requiredFiles:
+      - README.md
+```
+
+## Plugins
+
+Wrap external tools (linters, formatters) as Repotype plugins:
+
+```yaml
+plugins:
+  - id: markdownlint
+    enabled: true
+    install:
+      - cmd: "pnpm add -D markdownlint-cli2"
+    validate:
+      cmd: "pnpm exec markdownlint-cli2 '**/*.md'"
+    severityOnFailure: error
+    
+  - id: biome
+    enabled: true
+    validate:
+      cmd: "pnpm exec biome check ."
+    fix:
+      cmd: "pnpm exec biome check --write ."
+```
+
+## Operations
+
+Configure git hooks and watchers:
+
+```yaml
+operations:
+  hooks:
+    enabled: true
+    hook: both  # pre-commit | pre-push | both
+    
+  watcher:
+    enabled: true
+    schedule: "*/15 * * * *"
+    queueDir: sort_queue
+    minErrors: 3
+    logFile: .repotype/logs/watcher.log
+```
+
+Apply operations with:
+
+```bash
+npx repotype apply .
+```
+
+## Validation
+
+Validate your config syntax:
+
+```bash
+npx repotype validate . --json
+```
+
+## Full Example
+
+```yaml title="repotype.yaml"
+version: "1"
+
+defaults:
+  unmatchedFiles: deny
+
+folders:
+  - id: src-structure
+    path: src
+    requiredFolders: [components, hooks, utils]
+    pathCase: kebab
+
+  - id: docs-structure
+    path: docs
+    requiredFiles: [README.md]
+    allowedFolders: [guides, reference, api]
+
+files:
+  - id: typescript
+    glob: "src/**/*.{ts,tsx}"
+    pathCase: kebab
+    
+  - id: components
+    glob: "src/components/**/*.tsx"
+    requiredCompanion:
+      - pattern: "*.test.tsx"
+        
+  - id: markdown
+    glob: "**/*.md"
+    frontmatter:
+      required: [title]
+      
+  - id: package-json
+    glob: "package.json"
+    schema:
+      kind: json
+      schema: schemas/package.schema.json
+
+plugins:
+  - id: eslint
+    enabled: true
+    validate:
+      cmd: "pnpm exec eslint ."
+    fix:
+      cmd: "pnpm exec eslint --fix ."
+
+operations:
+  hooks:
+    enabled: true
+    hook: pre-commit
+```

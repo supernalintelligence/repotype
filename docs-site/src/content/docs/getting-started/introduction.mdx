@@ -1,0 +1,89 @@
+---
+title: Introduction
+description: What is Repotype and why you need it
+---
+
+import { Card, CardGrid, Badge } from '@astrojs/starlight/components';
+
+# Repotype
+
+**Linting for your entire repository. Not just code.**
+
+ESLint checks your code. Prettier formats it. But what checks your *repository structure*?
+
+Repotype is a **repo-level linter** that enforces:
+
+- 📁 **Folder structure** — required directories, allowlists, path patterns
+- 📋 **File standards** — naming conventions, required files, JSON/YAML schemas
+- 📝 **Documentation quality** — frontmatter schemas, required sections, template detection
+
+## Why Repotype?
+
+<CardGrid>
+  <Card title="Prevent Drift" icon="warning">
+    Stop files from ending up in random places. Enforce where things belong.
+  </Card>
+  <Card title="Consistent Standards" icon="document">
+    Every markdown file has proper frontmatter. Every config file matches the schema.
+  </Card>
+  <Card title="CI-Ready" icon="rocket">
+    Validate in pre-commit hooks and CI pipelines. Catch issues before merge.
+  </Card>
+  <Card title="Auto-Fix" icon="setting">
+    Many violations can be automatically fixed. Rename files, add missing sections.
+  </Card>
+</CardGrid>
+
+## How It Works
+
+1. **Define** your repository contract in `repotype.yaml`
+2. **Validate** with `repotype validate .` — locally or in CI
+3. **Fix** violations with `repotype fix .`
+4. **Report** compliance with `repotype report .`
+
+```bash
+$ npx repotype validate .
+✗ docs/guide.md missing required frontmatter
+⚠ src/Utils.ts should be kebab-case
+✗ config/ missing required README.md
+
+$ npx repotype fix .
+✓ Fixed 3 issues
+
+$ npx repotype validate .
+✓ All 142 files valid. Repository standards enforced.
+```
+
+## Quick Example
+
+```yaml title="repotype.yaml"
+version: "1"
+
+folders:
+  - id: src-root
+    path: src
+    requiredFolders: [components, utils, hooks]
+    pathCase: kebab
+
+files:
+  - id: typescript-files
+    glob: "src/**/*.ts"
+    pathCase: kebab
+    
+  - id: markdown-docs
+    glob: "docs/**/*.md"
+    frontmatter:
+      required: [title, description]
+      
+  - id: package-json
+    glob: "package.json"
+    schema:
+      kind: json
+      schema: schemas/package.schema.json
+```
+
+## Next Steps
+
+- [Installation](/repotype/getting-started/installation) — Add Repotype to your project
+- [Quick Start](/repotype/getting-started/quick-start) — Validate your first repo in 60 seconds
+- [Configuration Guide](/repotype/guides/configuration) — Full config reference

@@ -1,0 +1,52 @@
+/* Custom Repotype theme - matches landing page */
+:root {
+  --sl-color-accent-low: #083344;
+  --sl-color-accent: #06b6d4;
+  --sl-color-accent-high: #67e8f9;
+  --sl-color-white: #f1f5f9;
+  --sl-color-gray-1: #e2e8f0;
+  --sl-color-gray-2: #cbd5e1;
+  --sl-color-gray-3: #94a3b8;
+  --sl-color-gray-4: #64748b;
+  --sl-color-gray-5: #475569;
+  --sl-color-gray-6: #1e293b;
+  --sl-color-black: #0a0e17;
+}
+
+:root[data-theme='dark'] {
+  --sl-color-bg: #0a0e17;
+  --sl-color-bg-nav: #111827;
+  --sl-color-bg-sidebar: #0f1524;
+  --sl-color-hairline-light: rgba(148, 163, 184, 0.12);
+  --sl-color-hairline: rgba(148, 163, 184, 0.2);
+}
+
+/* Terminal code blocks */
+.expressive-code pre {
+  background: #0f172a !important;
+  border: 1px solid rgba(148, 163, 184, 0.15);
+}
+
+/* Links */
+a:not(.sl-badge) {
+  text-decoration-color: var(--sl-color-accent);
+}
+
+/* Hero adjustments */
+.hero {
+  border-bottom: 1px solid var(--sl-color-hairline);
+}
+
+/* Badges */
+.sl-badge {
+  font-weight: 600;
+}
+
+/* Footer credit */
+.sl-footer::after {
+  content: 'Built to Help Fight Entropy with ♥ from Supernal Intelligence';
+  display: block;
+  margin-top: 1rem;
+  font-size: 0.85rem;
+  color: var(--sl-color-gray-4);
+}

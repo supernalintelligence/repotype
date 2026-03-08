@@ -1,0 +1,163 @@
+---
+title: Frontmatter Schemas
+description: Validate markdown frontmatter with JSON Schema
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Repotype can validate the YAML frontmatter in markdown files against JSON Schema, ensuring documentation consistency.
+
+## Basic Frontmatter Validation
+
+```yaml title="repotype.yaml"
+files:
+  - id: docs
+    glob: "docs/**/*.md"
+    frontmatter:
+      required:
+        - title
+        - description
+```
+
+This ensures every markdown file has `title` and `description` in its frontmatter.
+
+## Schema Validation
+
+For complex validation, use a JSON Schema:
+
+```yaml title="repotype.yaml"
+files:
+  - id: blog-posts
+    glob: "blog/**/*.md"
+    frontmatter:
+      required: [title, date, author]
+      schema: schemas/blog-post.schema.json
+```
+
+```json title="schemas/blog-post.schema.json"
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["title", "date", "author"],
+  "properties": {
+    "title": {
+      "type": "string",
+      "minLength": 5,
+      "maxLength": 100
+    },
+    "date": {
+      "type": "string",
+      "format": "date"
+    },
+    "author": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": { "type": "string" },
+      "minItems": 1
+    },
+    "draft": {
+      "type": "boolean",
+      "default": false
+    }
+  },
+  "additionalProperties": false
+}
+```
+
+## Generate Schema from Existing Files
+
+Bootstrap a schema from your current content:
+
+```bash
+npx repotype generate schema docs/ schemas/doc.schema.json --pattern "**/*.md"
+```
+
+This analyzes existing frontmatter and generates a schema that matches.
+
+<Aside type="tip">
+  Generate schemas from your best-structured files, then tighten the rules.
+</Aside>
+
+## Different Schemas for Different Doc Types
+
+```yaml
+files:
+  - id: guides
+    glob: "docs/guides/**/*.md"
+    frontmatter:
+      required: [title, description]
+      schema: schemas/guide.schema.json
+      
+  - id: api-docs
+    glob: "docs/api/**/*.md"
+    frontmatter:
+      required: [title, endpoint, method]
+      schema: schemas/api-doc.schema.json
+      
+  - id: changelog
+    glob: "CHANGELOG.md"
+    frontmatter:
+      required: [title]
+```
+
+## Common Frontmatter Patterns
+
+### Blog Posts
+
+```json
+{
+  "type": "object",
+  "required": ["title", "date", "author"],
+  "properties": {
+    "title": { "type": "string" },
+    "date": { "type": "string", "format": "date" },
+    "author": { "type": "string" },
+    "tags": { "type": "array", "items": { "type": "string" } },
+    "image": { "type": "string", "format": "uri" },
+    "draft": { "type": "boolean" }
+  }
+}
+```
+
+### Technical Docs
+
+```json
+{
+  "type": "object",
+  "required": ["title", "description"],
+  "properties": {
+    "title": { "type": "string" },
+    "description": { "type": "string", "maxLength": 160 },
+    "sidebar_position": { "type": "integer", "minimum": 0 },
+    "sidebar_label": { "type": "string" },
+    "keywords": { "type": "array", "items": { "type": "string" } }
+  }
+}
+```
+
+### API Reference
+
+```json
+{
+  "type": "object",
+  "required": ["title", "endpoint", "method"],
+  "properties": {
+    "title": { "type": "string" },
+    "endpoint": { "type": "string", "pattern": "^/" },
+    "method": { "enum": ["GET", "POST", "PUT", "PATCH", "DELETE"] },
+    "auth": { "type": "boolean" },
+    "deprecated": { "type": "boolean" }
+  }
+}
+```
+
+## Diagnostics
+
+| Code | Meaning |
+|------|---------|
+| `missing_frontmatter` | File has no frontmatter block |
+| `missing_required_frontmatter_field` | Required field missing |
+| `frontmatter_schema_violation` | Frontmatter doesn't match schema |
+| `invalid_frontmatter_yaml` | Frontmatter YAML is malformed |

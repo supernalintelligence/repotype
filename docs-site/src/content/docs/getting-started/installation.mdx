@@ -1,0 +1,68 @@
+---
+title: Installation
+description: How to install Repotype in your project
+---
+
+import { Tabs, TabItem, Steps } from '@astrojs/starlight/components';
+
+## Package Manager
+
+<Tabs>
+  <TabItem label="npm">
+    ```bash
+    npm install -D @supernal/repotype
+    ```
+  </TabItem>
+  <TabItem label="pnpm">
+    ```bash
+    pnpm add -D @supernal/repotype
+    ```
+  </TabItem>
+  <TabItem label="yarn">
+    ```bash
+    yarn add -D @supernal/repotype
+    ```
+  </TabItem>
+  <TabItem label="bun">
+    ```bash
+    bun add -D @supernal/repotype
+    ```
+  </TabItem>
+</Tabs>
+
+## Quick Run (npx)
+
+You can also run Repotype without installing:
+
+```bash
+npx @supernal/repotype validate .
+```
+
+## Global Installation
+
+For system-wide access:
+
+```bash
+npm install -g @supernal/repotype
+repotype --version
+```
+
+## Requirements
+
+- **Node.js** 20.0.0 or higher
+- Works on macOS, Linux, and Windows
+
+## Verify Installation
+
+```bash
+npx repotype --version
+# @supernal/repotype 0.1.0
+
+npx repotype --help
+# Usage: repotype [command] [options]
+# ...
+```
+
+## Next Steps
+
+Once installed, [initialize your first config →](/repotype/getting-started/quick-start)

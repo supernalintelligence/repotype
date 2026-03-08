@@ -1,0 +1,263 @@
+---
+title: Monorepo
+description: Example Repotype config for a pnpm/turborepo monorepo
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+A complete example for a monorepo with multiple packages.
+
+## Project Structure
+
+```
+my-monorepo/
+├── packages/
+│   ├── core/
+│   │   ├── src/
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   └── README.md
+│   ├── ui/
+│   │   ├── src/
+│   │   ├── package.json
+│   │   ├── tsconfig.json
+│   │   └── README.md
+│   └── utils/
+│       ├── src/
+│       ├── package.json
+│       └── README.md
+├── apps/
+│   ├── web/
+│   │   └── ...
+│   └── api/
+│       └── ...
+├── docs/
+│   └── README.md
+├── package.json
+├── pnpm-workspace.yaml
+├── turbo.json
+└── repotype.yaml
+```
+
+## Configuration
+
+```yaml title="repotype.yaml"
+version: "1"
+
+defaults:
+  unmatchedFiles: deny
+
+# Root structure
+folders:
+  - id: root
+    path: .
+    requiredFolders:
+      - packages
+      - apps
+      - docs
+    allowedFolders:
+      - packages
+      - apps
+      - docs
+      - scripts
+      - .github
+      - node_modules
+      - .turbo
+
+  # Every package must have these files
+  - id: package-structure
+    path: packages/*
+    requiredFiles:
+      - package.json
+      - README.md
+      - tsconfig.json
+    requiredFolders:
+      - src
+    pathCase: kebab
+
+  # Every app must have these files  
+  - id: app-structure
+    path: apps/*
+    requiredFiles:
+      - package.json
+      - README.md
+    requiredFolders:
+      - src
+    pathCase: kebab
+
+# File rules
+files:
+  # Root config files
+  - id: root-configs
+    glob: "{package.json,pnpm-workspace.yaml,turbo.json,tsconfig.json,.gitignore,.npmrc}"
+
+  # Package configs
+  - id: package-json
+    glob: "{packages,apps}/*/package.json"
+    schema:
+      kind: json
+      schema: schemas/package.schema.json
+
+  - id: tsconfig
+    glob: "**/tsconfig.json"
+    schema:
+      kind: json
+      schema: schemas/tsconfig.schema.json
+
+  # Source code - kebab-case
+  - id: typescript-source
+    glob: "{packages,apps}/*/src/**/*.{ts,tsx}"
+    pathCase: kebab
+
+  # Test files
+  - id: test-files
+    glob: "**/*.{test,spec}.{ts,tsx}"
+    pathCase: kebab
+
+  # Documentation
+  - id: readme-files
+    glob: "**/README.md"
+    frontmatter:
+      required: []  # No frontmatter required for READMEs
+
+  - id: docs
+    glob: "docs/**/*.md"
+    frontmatter:
+      required:
+        - title
+
+  # Changesets
+  - id: changesets
+    glob: ".changeset/*.md"
+    frontmatter:
+      required: []
+
+  # GitHub workflows
+  - id: github-workflows
+    glob: ".github/workflows/*.yml"
+
+  # Allow common hidden/config files
+  - id: misc-hidden
+    glob: ".{eslintrc,prettierrc,editorconfig}*"
+
+# Plugins
+plugins:
+  - id: turbo-lint
+    enabled: true
+    validate:
+      cmd: "pnpm turbo lint"
+    severityOnFailure: error
+
+  - id: turbo-typecheck
+    enabled: true
+    validate:
+      cmd: "pnpm turbo typecheck"
+    severityOnFailure: error
+
+# Operations
+operations:
+  hooks:
+    enabled: true
+    hook: pre-push  # pre-push for monorepos (faster commits)
+```
+
+## Schemas
+
+### Package.json Schema
+
+```json title="schemas/package.schema.json"
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["name", "version"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^@[a-z0-9-]+/[a-z0-9-]+$",
+      "description": "Must be scoped package name"
+    },
+    "version": {
+      "type": "string"
+    },
+    "main": {
+      "type": "string"
+    },
+    "types": {
+      "type": "string"
+    },
+    "scripts": {
+      "type": "object",
+      "properties": {
+        "build": { "type": "string" },
+        "test": { "type": "string" },
+        "lint": { "type": "string" },
+        "typecheck": { "type": "string" }
+      }
+    },
+    "dependencies": {
+      "type": "object"
+    },
+    "devDependencies": {
+      "type": "object"
+    }
+  }
+}
+```
+
+## Per-Package Override
+
+Individual packages can have their own `repotype.yaml` that extends the root:
+
+```yaml title="packages/ui/repotype.yaml"
+version: "1"
+
+extends:
+  - ../../repotype.yaml
+
+files:
+  # UI package needs Storybook stories
+  - id: stories
+    glob: "src/**/*.stories.tsx"
+    
+  - id: components
+    glob: "src/components/**/*.tsx"
+    requiredCompanion:
+      - pattern: "*.stories.tsx"
+```
+
+## Tips for Monorepos
+
+<Aside type="tip">
+  Use `pre-push` instead of `pre-commit` for monorepos — full validation can be slow.
+</Aside>
+
+<Aside type="tip">
+  Run Repotype via Turborepo for caching:
+  ```json
+  {
+    "tasks": {
+      "repotype": {
+        "cache": true,
+        "inputs": ["**/*", "!node_modules/**"]
+      }
+    }
+  }
+  ```
+</Aside>
+
+## CI Integration
+
+```yaml title=".github/workflows/ci.yml"
+jobs:
+  repotype:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm turbo repotype
+```

@@ -1,8 +1,14 @@
-name: Pages
+name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [main]
+    paths:
+      - 'site/**'
+      - 'docs-site/**'
+      - 'src/**'
+      - 'bin/**'
+      - '.github/workflows/pages.yml'
   workflow_dispatch:
 
 permissions:
@@ -15,16 +21,53 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+        
+      - name: Build repotype CLI (for doc generation)
+        run: pnpm build
+        
+      - name: Build docs site
+        working-directory: docs-site
+        run: |
+          pnpm install
+          pnpm run build
+          
+      - name: Prepare deployment
+        run: |
+          # Create combined output
+          mkdir -p _site
+          
+          # Copy landing page to root
+          cp -r site/* _site/
+          
+          # Copy docs to /docs/
+          cp -r docs-site/dist/* _site/
+          
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
   deploy:
+    needs: build
     runs-on: ubuntu-latest
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
-        with:
-          path: site
       - id: deployment
         uses: actions/deploy-pages@v4

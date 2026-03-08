@@ -1,0 +1,289 @@
+---
+title: Diagnostic Codes
+description: Reference for all Repotype diagnostic codes and their meanings
+---
+
+import { Badge } from '@astrojs/starlight/components';
+
+When Repotype validates your repository, it produces diagnostics with specific codes. This reference explains each code and how to fix it.
+
+## Severity Levels
+
+| Level | Badge | Meaning |
+|-------|-------|---------|
+| Error | <Badge text="error" variant="danger" /> | Must be fixed. Blocks CI if configured. |
+| Warning | <Badge text="warning" variant="caution" /> | Should be fixed but won't block. |
+| Suggestion | <Badge text="suggestion" variant="note" /> | Optional improvement. |
+
+---
+
+## File Matching
+
+### `no_matching_file_rule`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** File doesn't match any rule in `files[]` config.
+
+**When:** `defaults.unmatchedFiles` is `deny` (default).
+
+**Fix:** Add a file rule that matches this file, or set `unmatchedFiles: allow`.
+
+```yaml
+files:
+  - id: catch-this-file
+    glob: "path/to/file.ext"
+```
+
+---
+
+## Path Validation
+
+### `path_case_violation`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** File path doesn't match required naming convention.
+
+**Example:** File is `src/MyComponent.ts` but rule requires `pathCase: kebab`.
+
+**Fix:** Rename file to match convention, or run `repotype fix`.
+
+### `path_pattern_violation`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** File path doesn't match the `pathPattern` regex.
+
+**Fix:** Rename file to match pattern.
+
+---
+
+## Folder Structure
+
+### `missing_required_folder`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** A folder specified in `requiredFolders` doesn't exist.
+
+**Fix:** Create the required directory.
+
+### `disallowed_folder`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** A folder exists but isn't in `allowedFolders` list.
+
+**Fix:** Remove the folder, move its contents, or add it to `allowedFolders`.
+
+### `missing_required_file`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** A file required by folder rule doesn't exist.
+
+**Fix:** Create the required file.
+
+### `disallowed_file_in_folder`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** A file exists in a folder but doesn't match `allowedFiles` patterns.
+
+**Fix:** Remove or relocate the file.
+
+### `folder_path_case_violation`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** Folder name doesn't match required `pathCase`.
+
+**Fix:** Rename the folder.
+
+---
+
+## Schema Validation
+
+### `json_schema_violation`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** JSON file content doesn't match the specified JSON Schema.
+
+**Details:** The diagnostic message includes specific schema errors.
+
+**Fix:** Update file content to match schema.
+
+### `yaml_schema_violation`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** YAML file content doesn't match the specified JSON Schema.
+
+**Fix:** Update file content to match schema.
+
+### `invalid_json`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** JSON file has syntax errors and can't be parsed.
+
+**Fix:** Fix JSON syntax.
+
+### `invalid_yaml`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** YAML file has syntax errors and can't be parsed.
+
+**Fix:** Fix YAML syntax.
+
+---
+
+## Frontmatter
+
+### `missing_frontmatter`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** Markdown file has no YAML frontmatter block.
+
+**Fix:** Add frontmatter:
+
+```markdown
+---
+title: My Document
+description: Description here
+---
+
+Content starts here...
+```
+
+### `missing_required_frontmatter_field`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** Frontmatter is missing a field listed in `frontmatter.required`.
+
+**Fix:** Add the required field to frontmatter.
+
+### `frontmatter_schema_violation`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** Frontmatter doesn't match the specified JSON Schema.
+
+**Fix:** Update frontmatter to match schema.
+
+### `invalid_frontmatter_yaml`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** Frontmatter YAML has syntax errors.
+
+**Fix:** Fix YAML syntax in frontmatter block.
+
+---
+
+## Companion Files
+
+### `missing_companion_file`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** Required companion file (from `requiredCompanion`) doesn't exist.
+
+**Example:** Component file exists but matching `.test.tsx` doesn't.
+
+**Fix:** Create the companion file.
+
+---
+
+## Content Patterns
+
+### `forbidden_content_pattern`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** File contains a pattern listed in `forbidContentPatterns`.
+
+**Common use:** Detecting accidentally committed secrets.
+
+**Fix:** Remove the forbidden content from the file.
+
+### `template_hint_present`
+
+<Badge text="warning" variant="caution" />
+
+**Meaning:** File contains a placeholder from `templateHints` (like `TODO:` or `[Description]`).
+
+**Fix:** Replace placeholder with actual content.
+
+---
+
+## Plugins
+
+### `plugin_validation_failed`
+
+<Badge text="error" variant="danger" /> or <Badge text="warning" variant="caution" />
+
+**Meaning:** External plugin validation command failed.
+
+**Severity:** Depends on plugin's `severityOnFailure` setting.
+
+**Fix:** Fix issues reported by the plugin.
+
+### `plugin_not_installed`
+
+<Badge text="warning" variant="caution" />
+
+**Meaning:** Plugin is enabled but dependencies aren't installed.
+
+**Fix:** Run `repotype plugins install`.
+
+---
+
+## Configuration
+
+### `invalid_config`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** `repotype.yaml` has syntax or schema errors.
+
+**Fix:** Check config syntax against documentation.
+
+### `extends_not_found`
+
+<Badge text="error" variant="danger" />
+
+**Meaning:** Config file referenced in `extends` doesn't exist.
+
+**Fix:** Check path in `extends` array.
+
+---
+
+## Using Diagnostics
+
+### JSON Output
+
+Get machine-readable diagnostics:
+
+```bash
+npx repotype validate . --json
+```
+
+### Explain a File
+
+See why a specific file produces diagnostics:
+
+```bash
+npx repotype explain path/to/file.ts --json
+```
+
+### Filter by Severity
+
+The exit code reflects error presence:
+- Exit 0: No errors (warnings/suggestions okay)
+- Exit 1: One or more errors

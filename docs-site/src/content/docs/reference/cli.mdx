@@ -1,0 +1,601 @@
+---
+title: CLI Commands
+description: Complete reference for all Repotype CLI commands
+---
+
+{/* AUTO-GENERATED - DO NOT EDIT DIRECTLY */}
+{/* Run: pnpm run docs:generate to regenerate */}
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Overview
+
+```bash
+Usage: repotype [options] [command]
+
+Repository schema validation, scaffolding, fix, and service runtime
+
+Options:
+  -V, --version                             output the version number
+  -h, --help                                display help for command
+
+Commands:
+  validate [options] [target]
+  report [options] [target]
+  fix [options] [target]
+  cleanup-run [options] [target]
+  install-checks [options]
+  install-watcher [options]
+```
+
+## Commands
+
+### validate
+
+Validate repository against rules
+
+```bash
+repotype validate repotype validate [options] [target]
+```
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--json` | emit machine-readable JSON (default: false) |
+| `--config <path>` | explicit config file path (repotype.yaml) (default: "") |
+| `-h,` | --help       display help for command |
+
+<details>
+<summary>Full help output</summary>
+
+```
+Usage: repotype validate [options] [target]
+
+Arguments:
+  target           file or directory to validate (default: ".")
+
+Options:
+  --json           emit machine-readable JSON (default: false)
+  --config <path>  explicit config file path (repotype.yaml) (default: "")
+  -h, --help       display help for command
+
+```
+
+</details>
+
+---
+
+### fix
+
+Auto-fix violations
+
+```bash
+repotype fix repotype fix [options] [target]
+```
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--config <path>` | explicit config file path (repotype.yaml) (default: "") |
+| `-h,` | --help       display help for command |
+
+<details>
+<summary>Full help output</summary>
+
+```
+Usage: repotype fix [options] [target]
+
+Arguments:
+  target           file or directory to validate/fix (default: ".")
+
+Options:
+  --config <path>  explicit config file path (repotype.yaml) (default: "")
+  -h, --help       display help for command
+
+```
+
+</details>
+
+---
+
+### report
+
+Generate compliance reports
+
+```bash
+repotype report repotype report [options] [target]
+```
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--json` | emit machine-readable JSON report (default: false) |
+| `--format <format>` | report format: markdown | json | html (default: |
+| `--config <path>` | explicit config file path (repotype.yaml) (default: "") |
+| `--output <file>` | write report to file |
+| `-h,` | --help         display help for command |
+
+<details>
+<summary>Full help output</summary>
+
+```
+Usage: repotype report [options] [target]
+
+Arguments:
+  target             file or directory to report on (default: ".")
+
+Options:
+  --json             emit machine-readable JSON report (default: false)
+  --format <format>  report format: markdown | json | html (default:
+                     "markdown")
+  --config <path>    explicit config file path (repotype.yaml) (default: "")
+  --output <file>    write report to file
+  -h, --help         display help for command
+
+```
+
+</details>
+
+---
+
+### explain
+
+Explain rules for a specific file
+
+```bash
+repotype explain repotype explain [options] <file>
+```
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--json` | emit machine-readable JSON (default: false) |
+| `--config <path>` | explicit config file path (repotype.yaml) (default: "") |
+| `-h,` | --help       display help for command |
+
+<details>
+<summary>Full help output</summary>
+
+```
+Usage: repotype explain [options] <file>
+
+Arguments:
+  file             file path
+
+Options:
+  --json           emit machine-readable JSON (default: false)
+  --config <path>  explicit config file path (repotype.yaml) (default: "")
+  -h, --help       display help for command
+
+```
+
+</details>
+
+---
+
+### init
+
+Initialize repotype.yaml config
+
+```bash
+repotype init repotype init [options] [target]
+```
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--type <type>` | preset type: default|strict (default: "default") |
+| `--from <path>` | external YAML config to copy as repotype.yaml |
+| `--force` | overwrite existing repotype.yaml if present (default: false) |
+| `-h,` | --help     display help for command |
+
+<details>
+<summary>Full help output</summary>
+
+```
+Usage: repotype init [options] [target]
+
+Initialize repotype.yaml from generic preset or external source
+
+Arguments:
+  target         target directory for repotype.yaml (default: ".")
+
+Options:
+  --type <type>  preset type: default|strict (default: "default")
+  --from <path>  external YAML config to copy as repotype.yaml
+  --force        overwrite existing repotype.yaml if present (default: false)
+  -h, --help     display help for command
+
+```
+
+</details>
+
+---
+
+### status
+
+Show operations status
+
+```bash
+repotype status repotype status [options] [target]
+```
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--json` | emit machine-readable JSON (default: false) |
+| `-h,` | --help  display help for command |
+
+<details>
+<summary>Full help output</summary>
+
+```
+Usage: repotype status [options] [target]
+
+Arguments:
+  target      repository path (default: ".")
+
+Options:
+  --json      emit machine-readable JSON (default: false)
+  -h, --help  display help for command
+
+```
+
+</details>
+
+---
+
+### apply
+
+Apply operations (hooks, watcher)
+
+```bash
+repotype apply repotype apply [options] [target]
+```
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--json` | emit machine-readable JSON (default: false) |
+| `-h,` | --help  display help for command |
+
+<details>
+<summary>Full help output</summary>
+
+```
+Usage: repotype apply [options] [target]
+
+Arguments:
+  target      repository path (default: ".")
+
+Options:
+  --json      emit machine-readable JSON (default: false)
+  -h, --help  display help for command
+
+```
+
+</details>
+
+---
+
+### scaffold
+
+Generate files from templates
+
+```bash
+repotype scaffold repotype scaffold [options] <templateId> <output>
+```
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--set <kv>` | template variable key=value (default: []) |
+| `-h,` | --help  display help for command |
+
+<details>
+<summary>Full help output</summary>
+
+```
+Usage: repotype scaffold [options] <templateId> <output>
+
+Arguments:
+  templateId  template id from repotype.yaml
+  output      output file path
+
+Options:
+  --set <kv>  template variable key=value (default: [])
+  -h, --help  display help for command
+
+```
+
+</details>
+
+---
+
+### cleanup-run
+
+Move severely invalid files to queue
+
+```bash
+repotype cleanup-run repotype cleanup-run [options] [target]
+```
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--queue <dir>` | sort queue directory (default: "sort_queue") |
+| `--min-errors <n>` | minimum error count before moving file (default: "3") |
+| `--dry-run` | show what would be moved without moving files (default: |
+| `--json` | emit machine-readable JSON (default: false) |
+| `-h,` | --help        display help for command |
+
+<details>
+<summary>Full help output</summary>
+
+```
+Usage: repotype cleanup-run [options] [target]
+
+Arguments:
+  target            file or directory to validate/cleanup (default: ".")
+
+Options:
+  --queue <dir>     sort queue directory (default: "sort_queue")
+  --min-errors <n>  minimum error count before moving file (default: "3")
+  --dry-run         show what would be moved without moving files (default:
+                    false)
+  --json            emit machine-readable JSON (default: false)
+  -h, --help        display help for command
+
+```
+
+</details>
+
+---
+
+### install-checks
+
+Install git hooks
+
+```bash
+repotype install-checks repotype install-checks [options]
+```
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--hook <hook>` | pre-commit | pre-push | both (default: "both") |
+| `--target <dir>` | repository path (default: ".") |
+| `-h,` | --help      display help for command |
+
+<details>
+<summary>Full help output</summary>
+
+```
+Usage: repotype install-checks [options]
+
+Options:
+  --hook <hook>   pre-commit | pre-push | both (default: "both")
+  --target <dir>  repository path (default: ".")
+  -h, --help      display help for command
+
+```
+
+</details>
+
+---
+
+### install-watcher
+
+Install file watcher
+
+```bash
+repotype install-watcher repotype install-watcher [options]
+```
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--target <dir>` | repository path (default: ".") |
+| `--schedule <cron>` | cron schedule expression (default: "*/15 * * * *") |
+| `--queue <dir>` | sort queue directory (default: "sort_queue") |
+| `--min-errors <n>` | minimum errors before moving file (default: "3") |
+| `--log-file <file>` | watcher stdout/stderr log file (default: |
+| `--dry-run` | print cron line without writing crontab (default: false) |
+| `-h,` | --help         display help for command |
+
+<details>
+<summary>Full help output</summary>
+
+```
+Usage: repotype install-watcher [options]
+
+Options:
+  --target <dir>     repository path (default: ".")
+  --schedule <cron>  cron schedule expression (default: "*/15 * * * *")
+  --queue <dir>      sort queue directory (default: "sort_queue")
+  --min-errors <n>   minimum errors before moving file (default: "3")
+  --log-file <file>  watcher stdout/stderr log file (default:
+                     ".repotype/logs/watcher.log")
+  --dry-run          print cron line without writing crontab (default: false)
+  -h, --help         display help for command
+
+```
+
+</details>
+
+---
+
+### generate schema
+
+Generate schema from existing files
+
+```bash
+repotype generate schema repotype generate schema [options] <target> <output>
+```
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--pattern <glob>` | glob pattern when target is a directory (default: |
+| `-h,` | --help        display help for command |
+
+<details>
+<summary>Full help output</summary>
+
+```
+Usage: repotype generate schema [options] <target> <output>
+
+Arguments:
+  target            file or directory to infer frontmatter schema from
+  output            output JSON schema path
+
+Options:
+  --pattern <glob>  glob pattern when target is a directory (default:
+                    "**/*.md")
+  -h, --help        display help for command
+
+```
+
+</details>
+
+---
+
+### plugins status
+
+Show plugin status
+
+```bash
+repotype plugins status repotype plugins status [options] [target]
+```
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--json` | emit machine-readable JSON (default: false) |
+| `-h,` | --help  display help for command |
+
+<details>
+<summary>Full help output</summary>
+
+```
+Usage: repotype plugins status [options] [target]
+
+Arguments:
+  target      repository path (default: ".")
+
+Options:
+  --json      emit machine-readable JSON (default: false)
+  -h, --help  display help for command
+
+```
+
+</details>
+
+---
+
+### plugins install
+
+Install plugin dependencies
+
+```bash
+repotype plugins install repotype plugins install [options] [target]
+```
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--json` | emit machine-readable JSON (default: false) |
+| `-h,` | --help  display help for command |
+
+<details>
+<summary>Full help output</summary>
+
+```
+Usage: repotype plugins install [options] [target]
+
+Arguments:
+  target      repository path (default: ".")
+
+Options:
+  --json      emit machine-readable JSON (default: false)
+  -h, --help  display help for command
+
+```
+
+</details>
+
+---
+
+### serve
+
+Start HTTP API server
+
+```bash
+repotype serve repotype serve [options]
+```
+
+**Options:**
+
+| Flag | Description |
+|------|-------------|
+| `--port <port>` | service port (default: "4310") |
+| `--cwd <cwd>` | service working directory (default: |
+| `-h,` | --help     display help for command |
+
+<details>
+<summary>Full help output</summary>
+
+```
+Usage: repotype serve [options]
+
+Options:
+  --port <port>  service port (default: "4310")
+  --cwd <cwd>    service working directory (default:
+                 "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype")
+  -h, --help     display help for command
+
+```
+
+</details>
+
+---
+
+
+## Global Options
+
+These options work with all commands:
+
+| Flag | Description |
+|------|-------------|
+| `--help` | Show help for command |
+| `--version` | Show version number |
+| `--json` | Output in JSON format |
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | Success |
+| `1` | Validation errors found |
+| `2` | Configuration or runtime error |
+
+---
+
+<Aside>
+This reference is auto-generated from CLI help output.
+Run `pnpm run docs:generate` to update.
+</Aside>

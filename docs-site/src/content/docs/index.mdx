@@ -1,0 +1,73 @@
+---
+title: Repotype Documentation
+description: Repository-level linting for high-quality codebases
+template: splash
+hero:
+  tagline: Linting for your entire repository. Not just code.
+  image:
+    file: ../../assets/logo.png
+  actions:
+    - text: Get Started
+      link: /repotype/getting-started/introduction/
+      icon: right-arrow
+      variant: primary
+    - text: View on GitHub
+      link: https://github.com/supernalintelligence/repotype
+      icon: external
+---
+
+import { Card, CardGrid } from '@astrojs/starlight/components';
+
+## What is Repotype?
+
+ESLint checks your code. Prettier formats it. **Repotype checks your repository.**
+
+Enforce folder structure, file naming, documentation standards, and schema validation across your entire codebase.
+
+<CardGrid stagger>
+  <Card title="Folder Structure" icon="folder">
+    Define required directories, allowlists, and path conventions.
+  </Card>
+  <Card title="File Standards" icon="document">
+    Enforce naming conventions, companion files, and content schemas.
+  </Card>
+  <Card title="Documentation Quality" icon="pencil">
+    Validate frontmatter, required sections, and template completion.
+  </Card>
+  <Card title="CI-Ready" icon="rocket">
+    Run in pre-commit hooks and CI pipelines with JSON output.
+  </Card>
+</CardGrid>
+
+## Quick Start
+
+```bash
+# Install
+npm install -D @supernal/repotype
+
+# Initialize config
+npx repotype init .
+
+# Validate
+npx repotype validate .
+
+# Fix auto-fixable issues
+npx repotype fix .
+```
+
+## Learn More
+
+<CardGrid>
+  <Card title="Installation" icon="setting">
+    [Add Repotype to your project →](/repotype/getting-started/installation/)
+  </Card>
+  <Card title="Configuration" icon="document">
+    [Learn the config format →](/repotype/guides/configuration/)
+  </Card>
+  <Card title="CLI Reference" icon="laptop">
+    [All commands documented →](/repotype/reference/cli/)
+  </Card>
+  <Card title="Examples" icon="puzzle">
+    [Real-world configs →](/repotype/examples/typescript-project/)
+  </Card>
+</CardGrid>

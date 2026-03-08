@@ -1,0 +1,174 @@
+---
+title: Git Hooks
+description: Validate on commit and push with git hooks
+---
+
+import { Aside, Steps } from '@astrojs/starlight/components';
+
+Catch validation errors before they reach the repository by running Repotype in git hooks.
+
+## Quick Setup
+
+```bash
+npx repotype install-checks --hook both --target .
+```
+
+This installs both pre-commit and pre-push hooks.
+
+## Hook Options
+
+| Option | Effect |
+|--------|--------|
+| `--hook pre-commit` | Validate before each commit |
+| `--hook pre-push` | Validate before pushing |
+| `--hook both` | Install both hooks |
+
+<Aside type="tip">
+  `pre-commit` catches issues early but runs on every commit.
+  `pre-push` is less frequent but delays feedback.
+  Use `both` for maximum safety.
+</Aside>
+
+## Config-Based Installation
+
+Define hooks in your config file:
+
+```yaml title="repotype.yaml"
+operations:
+  hooks:
+    enabled: true
+    hook: both  # pre-commit | pre-push | both
+```
+
+Then apply:
+
+```bash
+npx repotype apply .
+```
+
+## What the Hooks Do
+
+The installed hooks run:
+
+```bash
+npx repotype validate . --json
+```
+
+If validation fails, the commit/push is blocked with error output.
+
+## Manual Hook Scripts
+
+If you prefer manual control, add to `.git/hooks/pre-commit`:
+
+```bash
+#!/bin/sh
+npx repotype validate . --json
+exit $?
+```
+
+Make it executable:
+
+```bash
+chmod +x .git/hooks/pre-commit
+```
+
+## Integration with Husky
+
+If you use Husky for hook management:
+
+<Steps>
+1. Install Husky
+   ```bash
+   npm install -D husky
+   npx husky init
+   ```
+
+2. Add Repotype to pre-commit
+   ```bash
+   echo "npx repotype validate ." > .husky/pre-commit
+   ```
+</Steps>
+
+## Integration with lint-staged
+
+For faster commits, only validate changed files:
+
+```json title="package.json"
+{
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "npx repotype explain"
+    ],
+    "*.md": [
+      "npx repotype validate"
+    ]
+  }
+}
+```
+
+<Aside type="caution">
+  `lint-staged` validates individual files, not repo structure.
+  Folder rules won't be checked this way.
+  Consider running full validation on push instead.
+</Aside>
+
+## Bypassing Hooks (Emergency)
+
+In emergencies, you can skip hooks:
+
+```bash
+git commit --no-verify -m "emergency fix"
+git push --no-verify
+```
+
+<Aside type="caution">
+  Only use `--no-verify` for genuine emergencies.
+  CI should still catch any violations.
+</Aside>
+
+## Disabling Hooks
+
+Remove hooks from config:
+
+```yaml title="repotype.yaml"
+operations:
+  hooks:
+    enabled: false
+```
+
+Then reapply:
+
+```bash
+npx repotype apply .
+```
+
+Or manually remove:
+
+```bash
+rm .git/hooks/pre-commit .git/hooks/pre-push
+```
+
+## Troubleshooting
+
+### Hook not running
+
+Check hook is executable:
+
+```bash
+ls -la .git/hooks/pre-commit
+# Should show: -rwxr-xr-x
+```
+
+### Hook too slow
+
+Consider:
+- Using `pre-push` instead of `pre-commit`
+- Using `lint-staged` for file-specific validation
+- Caching node_modules
+
+### Permission denied
+
+```bash
+chmod +x .git/hooks/pre-commit
+chmod +x .git/hooks/pre-push
+```

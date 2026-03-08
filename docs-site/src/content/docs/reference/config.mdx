@@ -1,0 +1,321 @@
+---
+title: Configuration Schema
+description: Complete reference for repotype.yaml configuration
+---
+
+{/* AUTO-GENERATED - DO NOT EDIT DIRECTLY */}
+{/* Run: pnpm run docs:generate to regenerate */}
+
+import { Aside } from '@astrojs/starlight/components';
+
+## Config File
+
+Repotype configuration is defined in `repotype.yaml` at your repository root.
+
+```yaml title="repotype.yaml"
+version: "1"
+
+defaults:
+  unmatchedFiles: deny
+
+folders:
+  - id: example-folder
+    path: src
+    requiredFolders: [components]
+
+files:
+  - id: example-files
+    glob: "**/*.ts"
+    pathCase: kebab
+```
+
+## Schema Reference
+
+### `version`
+
+**Type:** `string` **(required)**
+
+Config version. Currently always `"1"`.
+
+```yaml
+version: "1"
+```
+
+---
+
+### `extends`
+
+**Type:** `string[]`
+
+Paths to parent configs to inherit from.
+
+```yaml
+extends: ["./profiles/base.yaml"]
+```
+
+---
+
+### `defaults`
+
+**Type:** `object`
+
+Default behavior settings.
+
+**Properties:**
+
+- `unmatchedFiles`: `"deny" | "allow"` (default: `"deny"`)
+  How to handle files not matching any rule. `deny` = error, `allow` = suggestion.
+
+---
+
+### `folders`
+
+**Type:** `FolderRule[]`
+
+Folder structure rules.
+
+**Properties:**
+
+- `id`: `string` **(required)**
+  Unique identifier for this rule.
+
+- `path`: `string` **(required)**
+  Folder path (can include globs like `src/*`).
+
+- `requiredFolders`: `string[]`
+  Subdirectories that must exist.
+
+- `allowedFolders`: `string[]`
+  Only these subdirectories are allowed.
+
+- `requiredFiles`: `string[]`
+  Files that must exist in this folder.
+
+- `allowedFiles`: `string[]`
+  Only these files are allowed (glob patterns).
+
+- `pathCase`: `"kebab" | "camel" | "pascal" | "snake"`
+  Naming convention for folder.
+
+---
+
+### `files`
+
+**Type:** `FileRule[]`
+
+File validation rules.
+
+**Properties:**
+
+- `id`: `string` **(required)**
+  Unique identifier for this rule.
+
+- `glob`: `string` **(required)**
+  Glob pattern to match files.
+
+- `pathCase`: `"kebab" | "camel" | "pascal" | "snake"`
+  Naming convention for file paths.
+
+- `pathPattern`: `string`
+  Regex pattern for path validation.
+
+- `schema`: `SchemaConfig`
+  JSON/YAML schema validation.
+
+- `frontmatter`: `FrontmatterConfig`
+  Markdown frontmatter validation.
+
+- `requiredCompanion`: `CompanionRule[]`
+  Required companion files.
+
+- `forbidContentPatterns`: `string[]`
+  Block files containing these patterns.
+
+- `templateHints`: `string[]`
+  Warn if these placeholders exist.
+
+---
+
+### `plugins`
+
+**Type:** `Plugin[]`
+
+External tool integrations.
+
+**Properties:**
+
+- `id`: `string` **(required)**
+  Unique plugin identifier.
+
+- `enabled`: `boolean` (default: `true`)
+  Whether plugin is active.
+
+- `install`: `Command[]`
+  Commands to install plugin dependencies.
+
+- `validate`: `Command`
+  Command to run for validation.
+
+- `fix`: `Command`
+  Command to run for auto-fix.
+
+- `severityOnFailure`: `"error" | "warning"` (default: `"error"`)
+  Severity when plugin fails.
+
+---
+
+### `operations`
+
+**Type:** `object`
+
+Git hooks and watcher configuration.
+
+**Properties:**
+
+- `hooks`: `HooksConfig`
+  Git hooks settings.
+
+  - `enabled`: `boolean` (default: `false`)
+    Enable git hooks.
+  - `hook`: `"pre-commit" | "pre-push" | "both"` (default: `"pre-commit"`)
+    Which hooks to install.
+
+- `watcher`: `WatcherConfig`
+  File watcher settings.
+
+  - `enabled`: `boolean` (default: `false`)
+    Enable file watcher.
+  - `schedule`: `string`
+    Cron schedule for watcher.
+  - `queueDir`: `string` (default: `"sort_queue"`)
+    Directory for quarantined files.
+  - `minErrors`: `number` (default: `3`)
+    Minimum errors before quarantine.
+  - `logFile`: `string`
+    Path to watcher log file.
+
+---
+
+
+## Type Definitions
+
+### SchemaConfig
+
+```typescript
+interface SchemaConfig {
+  kind: "json" | "yaml";
+  schema: string; // Path to JSON Schema file
+}
+```
+
+### FrontmatterConfig
+
+```typescript
+interface FrontmatterConfig {
+  required?: string[];      // Required field names
+  schema?: string;          // Path to JSON Schema for frontmatter
+}
+```
+
+### CompanionRule
+
+```typescript
+interface CompanionRule {
+  pattern: string;  // Glob pattern relative to matched file
+}
+```
+
+### Command
+
+```typescript
+interface Command {
+  cmd: string;  // Shell command to execute
+}
+```
+
+## Full Example
+
+```yaml title="repotype.yaml"
+version: "1"
+
+extends:
+  - ./profiles/base.yaml
+
+defaults:
+  unmatchedFiles: deny
+
+folders:
+  - id: src-structure
+    path: src
+    requiredFolders:
+      - components
+      - hooks
+      - utils
+    pathCase: kebab
+
+  - id: docs-structure
+    path: docs
+    requiredFiles:
+      - README.md
+    allowedFolders:
+      - guides
+      - reference
+      - api
+
+files:
+  - id: typescript
+    glob: "src/**/*.{ts,tsx}"
+    pathCase: kebab
+    
+  - id: react-components
+    glob: "src/components/**/*.tsx"
+    requiredCompanion:
+      - pattern: "*.test.tsx"
+      
+  - id: markdown-docs
+    glob: "docs/**/*.md"
+    frontmatter:
+      required:
+        - title
+        - description
+      schema: schemas/doc.schema.json
+      
+  - id: package-json
+    glob: "package.json"
+    schema:
+      kind: json
+      schema: schemas/package.schema.json
+      
+  - id: all-files
+    glob: "**/*"
+    forbidContentPatterns:
+      - "API_KEY\\s*="
+      - "password\\s*[:=]"
+
+plugins:
+  - id: eslint
+    enabled: true
+    validate:
+      cmd: "pnpm exec eslint ."
+    fix:
+      cmd: "pnpm exec eslint --fix ."
+    severityOnFailure: error
+
+operations:
+  hooks:
+    enabled: true
+    hook: pre-commit
+    
+  watcher:
+    enabled: false
+    schedule: "*/15 * * * *"
+    queueDir: sort_queue
+    minErrors: 3
+```
+
+---
+
+<Aside>
+This reference is auto-generated from the configuration schema.
+Run `pnpm run docs:generate` to update.
+</Aside>

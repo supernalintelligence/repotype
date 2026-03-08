@@ -1,0 +1,100 @@
+---
+title: Quick Start
+description: Validate your first repository in 60 seconds
+---
+
+import { Steps, Aside } from '@astrojs/starlight/components';
+
+## 60-Second Quickstart
+
+<Steps>
+1. **Initialize configuration**
+   
+   ```bash
+   npx repotype init .
+   ```
+   
+   This creates a `repotype.yaml` with sensible defaults.
+
+2. **Validate your repository**
+   
+   ```bash
+   npx repotype validate .
+   ```
+   
+   See what violations exist in your current structure.
+
+3. **Fix auto-fixable issues**
+   
+   ```bash
+   npx repotype fix .
+   ```
+   
+   Automatically fix naming, add missing files, etc.
+
+4. **Generate a report**
+   
+   ```bash
+   npx repotype report . --output report.md
+   ```
+   
+   Get a compliance report for documentation or audits.
+</Steps>
+
+## What Just Happened?
+
+The `init` command creates a starter `repotype.yaml`:
+
+```yaml title="repotype.yaml"
+version: "1"
+
+defaults:
+  unmatchedFiles: deny  # Deny-by-default
+
+files:
+  - id: source-files
+    glob: "src/**/*.{ts,tsx,js,jsx}"
+    
+  - id: config-files
+    glob: "*.{json,yaml,yml}"
+    
+  - id: documentation
+    glob: "**/*.md"
+```
+
+<Aside type="tip">
+  The `unmatchedFiles: deny` setting means any file not matching a rule is an error.
+  This prevents random files from appearing in your repo.
+</Aside>
+
+## Common First Commands
+
+```bash
+# See what's wrong
+npx repotype validate . --json
+
+# Explain a specific file's rules
+npx repotype explain src/utils/helper.ts
+
+# Preview fixes without applying
+npx repotype fix . --dry-run
+
+# Install git hooks for automatic validation
+npx repotype install-checks --hook both
+```
+
+## Strict Mode
+
+For maximum enforcement, initialize with strict mode:
+
+```bash
+npx repotype init . --type strict
+```
+
+This creates a config that explicitly allowlists every path.
+
+## Next Steps
+
+- [Configuration Guide](/repotype/guides/configuration) — Customize your rules
+- [Folder Rules](/repotype/guides/folder-rules) — Control directory structure
+- [CI Integration](/repotype/guides/ci-integration) — Add to your pipeline

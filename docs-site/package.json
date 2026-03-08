@@ -1,0 +1,20 @@
+{
+  "name": "repotype-docs",
+  "type": "module",
+  "version": "0.0.1",
+  "scripts": {
+    "dev": "astro dev",
+    "start": "astro dev",
+    "build": "npm run generate && astro build",
+    "preview": "astro preview",
+    "astro": "astro",
+    "generate": "npm run generate:cli && npm run generate:config",
+    "generate:cli": "node scripts/generate-cli-reference.mjs",
+    "generate:config": "node scripts/generate-config-reference.mjs"
+  },
+  "dependencies": {
+    "@astrojs/starlight": "^0.37.7",
+    "astro": "^5.6.1",
+    "sharp": "^0.34.2"
+  }
+}

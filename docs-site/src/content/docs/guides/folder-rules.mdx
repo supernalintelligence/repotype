@@ -1,0 +1,194 @@
+---
+title: Folder Rules
+description: Control directory structure with folder rules
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Folder rules enforce repository layout: required directories, allowed subdirectories, and required files within folders.
+
+## Basic Folder Rule
+
+```yaml
+folders:
+  - id: docs-root
+    path: docs
+    requiredFolders:
+      - guides
+      - reference
+    requiredFiles:
+      - README.md
+```
+
+This ensures:
+- `docs/guides/` exists
+- `docs/reference/` exists
+- `docs/README.md` exists
+
+## Required vs Allowed Folders
+
+```yaml
+folders:
+  - id: src-structure
+    path: src
+    requiredFolders:
+      - components   # Must exist
+      - utils        # Must exist
+    allowedFolders:
+      - components
+      - utils
+      - hooks        # Can exist, but not required
+      - types        # Can exist, but not required
+```
+
+<Aside type="tip">
+  When `allowedFolders` is set, any subdirectory NOT in the list is an error.
+  This prevents unexpected directories from appearing.
+</Aside>
+
+## Path Case Enforcement
+
+Enforce naming conventions on folder paths:
+
+```yaml
+folders:
+  - id: kebab-case-src
+    path: src
+    pathCase: kebab  # kebab | camel | pascal | snake
+```
+
+| Style | Example |
+|-------|---------|
+| `kebab` | `my-component` |
+| `camel` | `myComponent` |
+| `pascal` | `MyComponent` |
+| `snake` | `my_component` |
+
+## Required Files in Folders
+
+Ensure specific files exist in a folder:
+
+```yaml
+folders:
+  - id: components-structure
+    path: src/components
+    requiredFiles:
+      - index.ts      # Export barrel
+      - README.md     # Component docs
+```
+
+## Allowed Files
+
+Restrict what files can exist in a folder:
+
+```yaml
+folders:
+  - id: config-folder
+    path: config
+    allowedFiles:
+      - "*.json"
+      - "*.yaml"
+      - README.md
+```
+
+Any file not matching the patterns is an error.
+
+## Nested Folder Rules
+
+Rules apply to specific paths. Create multiple rules for nested structure:
+
+```yaml
+folders:
+  - id: src-root
+    path: src
+    requiredFolders: [components, hooks]
+    
+  - id: components
+    path: src/components
+    requiredFiles: [index.ts]
+    
+  - id: hooks
+    path: src/hooks
+    requiredFiles: [index.ts]
+```
+
+## Glob Patterns in Folder Rules
+
+Use globs for dynamic folder matching:
+
+```yaml
+folders:
+  - id: feature-folders
+    path: src/features/*
+    requiredFiles:
+      - index.ts
+      - types.ts
+```
+
+This applies to every subfolder of `src/features/`.
+
+## Common Patterns
+
+### Monorepo Package Structure
+
+```yaml
+folders:
+  - id: packages-root
+    path: packages
+    allowedFolders: ["*"]  # Any package name allowed
+    
+  - id: package-structure
+    path: packages/*
+    requiredFiles:
+      - package.json
+      - README.md
+      - tsconfig.json
+    requiredFolders:
+      - src
+```
+
+### Feature-Based Structure
+
+```yaml
+folders:
+  - id: features
+    path: src/features/*
+    requiredFiles:
+      - index.ts
+      - types.ts
+    requiredFolders:
+      - components
+      - hooks
+```
+
+### Documentation Structure
+
+```yaml
+folders:
+  - id: docs-root
+    path: docs
+    requiredFolders:
+      - getting-started
+      - guides
+      - reference
+    allowedFolders:
+      - getting-started
+      - guides  
+      - reference
+      - examples
+      - api
+    requiredFiles:
+      - README.md
+```
+
+## Diagnostics
+
+Folder rule violations produce these diagnostic codes:
+
+| Code | Meaning |
+|------|---------|
+| `missing_required_folder` | Required folder doesn't exist |
+| `disallowed_folder` | Folder exists but isn't in allowlist |
+| `missing_required_file` | Required file in folder doesn't exist |
+| `disallowed_file_in_folder` | File in folder not in allowlist |
+| `folder_path_case_violation` | Folder name doesn't match pathCase |
