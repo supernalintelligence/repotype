@@ -6,8 +6,6 @@ on:
     paths:
       - 'site/**'
       - 'docs-site/**'
-      - 'src/**'
-      - 'bin/**'
       - '.github/workflows/pages.yml'
   workflow_dispatch:
 
@@ -29,25 +27,22 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          
-      - name: Install root dependencies
-        run: npm install
-        
-      - name: Build repotype CLI
-        run: npm run build
         
       - name: Build docs site
         working-directory: docs-site
         run: |
           npm install
-          npm run build
+          # Generate docs (skip CLI generation that needs repotype built)
+          npm run generate:config
+          # Build Astro/Starlight
+          npx astro build
           
       - name: Prepare deployment
         run: |
           mkdir -p _site
           # Copy landing page to root
           cp -r site/* _site/
-          # Copy docs (Starlight builds to dist/)
+          # Copy docs
           cp -r docs-site/dist/* _site/
           
       - uses: actions/upload-pages-artifact@v3
