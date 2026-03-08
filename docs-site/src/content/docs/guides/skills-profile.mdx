@@ -1,0 +1,160 @@
+---
+title: Skills Profile
+description: Validate AgentSkills SKILL.md frontmatter
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+Repotype includes a built-in profile for validating [AgentSkills](https://agentskills.io/specification) — the standard for AI agent skill packages.
+
+## Quick Start
+
+Initialize your skills repository with the skills profile:
+
+```bash
+npx repotype init . --from profiles/skills/repotype.yaml
+```
+
+Or extend it in your existing `repotype.yaml`:
+
+```yaml title="repotype.yaml"
+version: "1"
+extends: "repotype/profiles/skills/repotype.yaml"
+```
+
+## AgentSkills Spec
+
+Per the [AgentSkills specification](https://agentskills.io/specification), each skill must have a `SKILL.md` file with YAML frontmatter:
+
+```yaml title="skills/my-skill/SKILL.md"
+---
+name: my-skill
+description: Brief description of what this skill does
+license: MIT
+metadata:
+  author: your-org
+  version: "1.0"
+  source: your-org/your-repo
+---
+
+# My Skill
+
+Documentation content here...
+```
+
+## Required Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `name` | string | Skill name (lowercase, hyphens only). Must match directory name. |
+| `description` | string | What the skill does (max 1024 chars) |
+
+## Optional Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `license` | string | License identifier (MIT, Proprietary, Apache-2.0, etc.) |
+| `metadata.author` | string | Author or organization |
+| `metadata.version` | string | Semantic version (1.0, 1.0.0) |
+| `metadata.source` | string | Source repository (org/repo) |
+| `metadata.homepage` | string | URL to skill documentation |
+| `metadata.tags` | string[] | Categorization tags |
+| `dependencies` | string[] | Other skills this depends on |
+| `capabilities` | string[] | Capabilities this skill provides |
+| `triggers` | string[] | Keywords that trigger this skill |
+
+## JSON Schema
+
+The full schema is available at `examples/schemas/skill.frontmatter.schema.json`:
+
+```json
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentskills.io/schemas/skill.frontmatter.schema.json",
+  "title": "AgentSkills SKILL.md Frontmatter",
+  "type": "object",
+  "required": ["name", "description"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^[a-z0-9-]+$"
+    },
+    "description": {
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 1024
+    },
+    "license": { "type": "string" },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "author": { "type": "string" },
+        "version": {
+          "type": "string",
+          "pattern": "^[0-9]+\\.[0-9]+(\\.[0-9]+)?$"
+        },
+        "source": { "type": "string" }
+      }
+    }
+  }
+}
+```
+
+## Validation
+
+Validate all skills in a repository:
+
+```bash
+npx repotype validate skills/ --config profiles/skills/repotype.yaml
+```
+
+<Aside type="tip">
+  Run validation in CI to ensure all skill contributions have proper frontmatter.
+</Aside>
+
+## Example: Skills Manifest Repository
+
+For a repository that serves as a skills collection (like `~/.openclaw/skills/`):
+
+```yaml title="repotype.yaml"
+version: "1"
+extends: "repotype/profiles/skills/repotype.yaml"
+
+defaults:
+  unmatchedFiles: deny  # Strict: only allow defined file types
+
+files:
+  # Override to add manifest
+  - id: skills-manifest
+    glob: "manifest.json"
+    schema:
+      kind: json
+      schema: schemas/skills-manifest.schema.json
+
+  # Add installer script
+  - id: install-script
+    glob: "install.sh"
+```
+
+## Diagnostics
+
+| Code | Meaning |
+|------|---------|
+| `missing_frontmatter` | SKILL.md has no frontmatter block |
+| `missing_required_frontmatter_field` | Missing `name` or `description` |
+| `frontmatter_schema_violation` | Frontmatter doesn't match schema |
+| `invalid_skill_name` | Name doesn't match directory |
+
+## Migration from skill.json
+
+If migrating from a legacy `skill.json` pattern to AgentSkills spec frontmatter:
+
+1. Extract metadata from `skill.json`
+2. Add YAML frontmatter to `SKILL.md`
+3. Delete `skill.json`
+4. Run `npx repotype validate` to verify
+
+```bash
+# Verify migration
+npx repotype validate skills/ --config profiles/skills/repotype.yaml
+```

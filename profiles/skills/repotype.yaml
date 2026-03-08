@@ -1,0 +1,57 @@
+# repotype.yaml - Skills Collection Profile
+# For repositories containing AgentSkills (https://agentskills.io/specification)
+#
+# Usage:
+#   repotype init . --from profiles/skills/repotype.yaml
+#   repotype validate . --config profiles/skills/repotype.yaml
+
+version: "1"
+
+defaults:
+  inheritance: merge
+  strictness: balanced
+  # Start permissive - tighten to 'deny' once all skills conform
+  unmatchedFiles: allow
+
+files:
+  # Every skill directory must have SKILL.md with proper frontmatter
+  - id: skill-readme
+    glob: "skills/*/SKILL.md"
+    schema:
+      kind: frontmatter
+      schema: examples/schemas/skill.frontmatter.schema.json
+    requiredSections:
+      - "#"  # Must have at least one heading
+
+  # Skills can have supporting scripts
+  - id: skill-scripts
+    glob: "skills/*/scripts/**/*.{sh,mjs,js,ts,py}"
+
+  # Skills can have templates
+  - id: skill-templates
+    glob: "skills/*/templates/**/*"
+
+  # Skills can have reference docs
+  - id: skill-docs
+    glob: "skills/*/*.md"
+
+  # Skills manifest (optional, for installer)
+  - id: skills-manifest
+    glob: "skills/manifest.json"
+
+  # Skills installer (optional)
+  - id: skills-installer
+    glob: "skills/install.sh"
+
+folders:
+  - id: skills-root
+    path: skills
+    description: "Root directory containing all skills"
+
+# Validation rules
+rules:
+  # Skill directory name must match frontmatter name field
+  - id: skill-name-match
+    kind: custom
+    description: "Skill directory name must match SKILL.md frontmatter name field"
+    # Note: This requires custom validation logic in repotype
