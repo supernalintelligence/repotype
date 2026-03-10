@@ -1,6 +1,7 @@
 # Repotype
 
 [![CI](https://github.com/supernalintelligence/repotype/actions/workflows/ci.yml/badge.svg)](https://github.com/supernalintelligence/repotype/actions/workflows/ci.yml)
+[![repotype validation](https://img.shields.io/endpoint?url=https://supernalintelligence.github.io/repotype/badges/validation.json)](https://supernalintelligence.github.io/repotype/)
 [![npm](https://img.shields.io/npm/v/repotype.svg)](https://www.npmjs.com/package/repotype)
 [![License: MIT](https://img.shields.io/badge/license-MIT-22c55e.svg)](LICENSE)
 [![docs](https://img.shields.io/badge/docs-supernalintelligence.github.io-0ea5e9)](https://supernalintelligence.github.io/repotype/)

@@ -23,9 +23,25 @@ function scanFiles(targetPath: string, repoRoot: string): string[] {
   return files.filter((filePath) => !ignoreMatcher.isIgnored(filePath));
 }
 
-function hasOverbroadGlob(glob: string): boolean {
+function classifyOverbroadGlob(glob: string): { level: 'high' | 'medium' | 'low'; depth: number } | null {
   const normalized = glob.replace(/\\+/g, '/');
-  return normalized === '**/*' || normalized.includes('/**/*') || normalized.endsWith('/**');
+
+  // High: unconstrained catch-alls (repo-wide or directory-wide with any extension)
+  if (normalized === '**/*' || normalized.endsWith('/**') || normalized.endsWith('/**/*')) {
+    return { level: 'high', depth: 3 };
+  }
+
+  // Medium: recursive with wildcard filename + extension set (e.g. dist/**/*.{js,ts,map})
+  if (normalized.includes('/**/*.{')) {
+    return { level: 'medium', depth: 2 };
+  }
+
+  // Low: recursive with single extension (e.g. src/**/*.ts)
+  if (normalized.includes('/**/*.')) {
+    return { level: 'low', depth: 1 };
+  }
+
+  return null;
 }
 
 function lintConfigGlobs(config: RepoSchemaConfig, configPath: string): Diagnostic[] {
@@ -33,16 +49,20 @@ function lintConfigGlobs(config: RepoSchemaConfig, configPath: string): Diagnost
 
   for (const rule of config.files || []) {
     if (!rule.glob) continue;
-    if (hasOverbroadGlob(rule.glob)) {
+    if (rule.lint?.allowOverbroad) continue;
+    const classification = classifyOverbroadGlob(rule.glob);
+    if (classification) {
       diagnostics.push({
         code: 'overbroad_glob_pattern',
-        message: `Overbroad file glob '${rule.glob}' in rule '${rule.id || 'unnamed'}'. Avoid '**/*' style catch-alls; use explicit allowlist paths.`,
+        message: `Overbroad file glob '${rule.glob}' in rule '${rule.id || 'unnamed'}' (level: ${classification.level}, depth: ${classification.depth}). Prefer explicit allowlist paths.`,
         severity: 'warning',
         file: configPath,
         ruleId: rule.id,
         details: {
           glob: rule.glob,
-          recommendation: 'Replace broad glob with explicit folder/file rules.',
+          level: classification.level,
+          depth: classification.depth,
+          recommendation: 'Replace broad globs with explicit folder/file rules where possible.',
         },
       });
     }
@@ -50,15 +70,18 @@ function lintConfigGlobs(config: RepoSchemaConfig, configPath: string): Diagnost
 
   for (const rule of config.folders || []) {
     if (!rule.glob) continue;
-    if (hasOverbroadGlob(rule.glob)) {
+    const classification = classifyOverbroadGlob(rule.glob);
+    if (classification) {
       diagnostics.push({
         code: 'overbroad_glob_pattern',
-        message: `Overbroad folder glob '${rule.glob}' in rule '${rule.id || 'unnamed'}'. Avoid catch-all patterns in allow-only schemas.`,
+        message: `Overbroad folder glob '${rule.glob}' in rule '${rule.id || 'unnamed'}' (level: ${classification.level}, depth: ${classification.depth}).`,
         severity: 'warning',
         file: configPath,
         ruleId: rule.id,
         details: {
           glob: rule.glob,
+          level: classification.level,
+          depth: classification.depth,
           recommendation: 'Use explicit folder paths in allowedFolders/requiredFolders.',
         },
       });

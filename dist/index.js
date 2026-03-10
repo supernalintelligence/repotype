@@ -667,39 +667,55 @@ function scanFiles(targetPath, repoRoot) {
   });
   return files.filter((filePath) => !ignoreMatcher.isIgnored(filePath));
 }
-function hasOverbroadGlob(glob) {
+function classifyOverbroadGlob(glob) {
   const normalized = glob.replace(/\\+/g, "/");
-  return normalized === "**/*" || normalized.includes("/**/*") || normalized.endsWith("/**");
+  if (normalized === "**/*" || normalized.endsWith("/**") || normalized.endsWith("/**/*")) {
+    return { level: "high", depth: 3 };
+  }
+  if (normalized.includes("/**/*.{")) {
+    return { level: "medium", depth: 2 };
+  }
+  if (normalized.includes("/**/*.")) {
+    return { level: "low", depth: 1 };
+  }
+  return null;
 }
 function lintConfigGlobs(config, configPath) {
   const diagnostics = [];
   for (const rule of config.files || []) {
     if (!rule.glob) continue;
-    if (hasOverbroadGlob(rule.glob)) {
+    if (rule.lint?.allowOverbroad) continue;
+    const classification = classifyOverbroadGlob(rule.glob);
+    if (classification) {
       diagnostics.push({
         code: "overbroad_glob_pattern",
-        message: `Overbroad file glob '${rule.glob}' in rule '${rule.id || "unnamed"}'. Avoid '**/*' style catch-alls; use explicit allowlist paths.`,
+        message: `Overbroad file glob '${rule.glob}' in rule '${rule.id || "unnamed"}' (level: ${classification.level}, depth: ${classification.depth}). Prefer explicit allowlist paths.`,
         severity: "warning",
         file: configPath,
         ruleId: rule.id,
         details: {
           glob: rule.glob,
-          recommendation: "Replace broad glob with explicit folder/file rules."
+          level: classification.level,
+          depth: classification.depth,
+          recommendation: "Replace broad globs with explicit folder/file rules where possible."
         }
       });
     }
   }
   for (const rule of config.folders || []) {
     if (!rule.glob) continue;
-    if (hasOverbroadGlob(rule.glob)) {
+    const classification = classifyOverbroadGlob(rule.glob);
+    if (classification) {
       diagnostics.push({
         code: "overbroad_glob_pattern",
-        message: `Overbroad folder glob '${rule.glob}' in rule '${rule.id || "unnamed"}'. Avoid catch-all patterns in allow-only schemas.`,
+        message: `Overbroad folder glob '${rule.glob}' in rule '${rule.id || "unnamed"}' (level: ${classification.level}, depth: ${classification.depth}).`,
         severity: "warning",
         file: configPath,
         ruleId: rule.id,
         details: {
           glob: rule.glob,
+          level: classification.level,
+          depth: classification.depth,
           recommendation: "Use explicit folder paths in allowedFolders/requiredFolders."
         }
       });

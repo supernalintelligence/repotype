@@ -62,6 +62,11 @@ export interface FileRule {
   requiredSections?: string[];
   companionFiles?: string[];
   template?: TemplateBinding;
+  // Lint controls for config quality checks (e.g., overbroad glob warnings)
+  lint?: {
+    allowOverbroad?: boolean;
+    reason?: string;
+  };
   crossReferences?: {
     fields: string[];
     allowAbsolute?: boolean;

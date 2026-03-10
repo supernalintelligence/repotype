@@ -56,6 +56,10 @@ interface FileRule {
     requiredSections?: string[];
     companionFiles?: string[];
     template?: TemplateBinding;
+    lint?: {
+        allowOverbroad?: boolean;
+        reason?: string;
+    };
     crossReferences?: {
         fields: string[];
         allowAbsolute?: boolean;

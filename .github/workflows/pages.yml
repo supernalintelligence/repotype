@@ -27,6 +27,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
+
+      - name: Install repotype dependencies
+        run: npm install
+
+      - name: Generate repotype supernal validation badge
+        run: npm run badge:validation
         
       - name: Build docs site
         working-directory: docs-site

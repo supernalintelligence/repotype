@@ -37,8 +37,28 @@ folders:
 
 # Source files
 files:
-  - id: typescript-source
-    glob: "src/**/*.ts"
+  - id: typescript-source-root
+    glob: "src/*.ts"
+    pathCase: kebab
+
+  - id: typescript-source-core
+    glob: "src/core/*.ts"
+    pathCase: kebab
+
+  - id: typescript-source-cli
+    glob: "src/cli/*.ts"
+    pathCase: kebab
+
+  - id: typescript-source-adapters
+    glob: "src/adapters/*.ts"
+    pathCase: kebab
+
+  - id: typescript-source-sdk
+    glob: "src/sdk/*.ts"
+    pathCase: kebab
+
+  - id: typescript-source-service
+    glob: "src/service/*.ts"
     pathCase: kebab
 
   - id: cli-entry
@@ -46,6 +66,9 @@ files:
 
   - id: dist-files
     glob: "dist/**/*.{js,ts,map}"
+    lint:
+      allowOverbroad: true
+      reason: "Build output artifacts are intentionally recursive and not contract-managed inputs."
 
   # Config files
   - id: root-configs
@@ -63,73 +86,189 @@ files:
   # Documentation
   - id: package-readme
     glob: "README.md"
+    requiredSections:
+      - "Install"
+      - "Quick Start"
+      - "What It Validates"
+      - "CLI Commands"
+      - "License"
 
-  - id: package-docs
-    glob: "{AGENTS,CONTRIBUTING,CHANGELOG,ROADMAP,LICENSE}.md"
+  - id: package-agents
+    glob: "AGENTS.md"
+    requiredSections:
+      - "Purpose"
+      - "Use This Package For"
+      - "Recommended Agent Workflow"
+
+  - id: package-contributing
+    glob: "CONTRIBUTING.md"
+    requiredSections:
+      - "Scope"
+      - "Local Development"
+      - "Pull Request Checklist"
+
+  - id: package-changelog
+    glob: "CHANGELOG.md"
+    requiredSections:
+      - "Added"
+
+  - id: package-roadmap
+    glob: "ROADMAP.md"
+    requiredSections:
+      - "Near Term"
+      - "Runtime Portability"
 
   - id: docs-migration
-    glob: "docs/**/*.md"
+    glob: "docs/*.md"
+    requiredSections:
+      - "What changed"
+      - "Required action"
 
   # Site (landing page)
   - id: site-readme
     glob: "site/README.md"
+    requiredSections:
+      - "Local Preview"
+      - "GitHub Pages"
 
-  - id: site-files
-    glob: "site/**/*.{html,css,js,json,ico,png,svg,webp}"
+  - id: site-files-root
+    glob: "site/*.{html,css,js,json,ico,png,svg,webp}"
+
+  - id: site-files-assets
+    glob: "site/assets/*.{png,svg,webp}"
+
+  - id: site-badges
+    glob: "site/badges/*.json"
 
   - id: site-assets
-    glob: "site/assets/**/*"
+    glob: "site/assets/*"
 
   # Docs site (Starlight)
   - id: docs-site-config
     glob: "docs-site/*.{json,mjs,ts}"
 
-  - id: docs-site-content
-    glob: "docs-site/src/**/*.{mdx,md,ts,css,png,webp,svg}"
+  - id: docs-site-content-root
+    glob: "docs-site/src/*.{mdx,md,ts,css,png,webp,svg}"
+
+  - id: docs-site-content-config
+    glob: "docs-site/src/content.config.ts"
+
+  - id: docs-site-content-docs-index
+    glob: "docs-site/src/content/docs/index.mdx"
+
+  - id: docs-site-content-docs-getting-started
+    glob: "docs-site/src/content/docs/getting-started/*.mdx"
+
+  - id: docs-site-content-docs-guides
+    glob: "docs-site/src/content/docs/guides/*.mdx"
+
+  - id: docs-site-content-docs-examples
+    glob: "docs-site/src/content/docs/examples/*.mdx"
+
+  - id: docs-site-content-docs-reference
+    glob: "docs-site/src/content/docs/reference/*.mdx"
+
+  - id: docs-site-content-styles
+    glob: "docs-site/src/styles/*.css"
+
+  - id: docs-site-content-assets
+    glob: "docs-site/src/assets/*.{png,webp,svg}"
 
   - id: docs-site-scripts
     glob: "docs-site/scripts/*.mjs"
 
   - id: docs-site-public
-    glob: "docs-site/public/**/*"
+    glob: "docs-site/public/*"
 
   - id: docs-site-dist
     glob: "docs-site/dist/**/*"
+    lint:
+      allowOverbroad: true
+      reason: "Built docs artifacts are generated output and intentionally recursive."
 
   - id: docs-site-misc
-    glob: "docs-site/{.gitignore,README.md}"
+    glob: "docs-site/.gitignore"
+
+  - id: docs-site-readme
+    glob: "docs-site/README.md"
+    requiredSections:
+      - "🚀 Project Structure"
+      - "🧞 Commands"
+      - "👀 Want to learn more?"
 
   - id: docs-site-vscode
     glob: "docs-site/.vscode/*.json"
 
   # Examples
-  - id: example-configs
-    glob: "examples/**/*.{yaml,yml,md}"
+  - id: example-configs-root
+    glob: "examples/*.{yaml,yml,md}"
+
+  - id: example-configs-openclaw
+    glob: "examples/openclaw-repo/*.{yaml,yml,md}"
+
+  - id: example-pr-description
+    glob: "examples/openclaw-repo/PR_DESCRIPTION.md"
+    requiredSections:
+      - "What is Repotype?"
+      - "What this PR adds"
+      - "Usage"
+
+  - id: example-configs-templates
+    glob: "examples/templates/*.md"
+
+  - id: example-template-requirement
+    glob: "examples/templates/requirement.md"
+    requiredSections:
+      - "Description"
+      - "Acceptance Criteria"
+      - "Test Strategy"
 
   - id: example-schemas
-    glob: "examples/**/*.json"
+    glob: "examples/schemas/*.json"
 
   - id: example-templates
     glob: "examples/templates/*.md"
 
   # Profiles
   - id: profile-configs
-    glob: "profiles/**/*.yaml"
+    glob: "profiles/*/*.yaml"
 
   # Scripts
   - id: build-scripts
     glob: "scripts/*.{mjs,js,sh}"
 
   # Skills
-  - id: skill-files
-    glob: "skills/**/*.{md,sh}"
+  - id: skill-files-skillmd
+    glob: "skills/*/SKILL.md"
+    schema:
+      kind: frontmatter
+      schema: "examples/schemas/skill.frontmatter.schema.json"
+    requiredSections:
+      - "Prerequisites"
+      - "Primary Workflow"
+      - "Safety Rules"
+
+  - id: skill-files-root
+    glob: "skills/*/*.md"
+
+  - id: skill-files-references
+    glob: "skills/*/references/*.md"
+    requiredSections:
+      - "Validation"
+      - "Operations"
+
+  - id: skill-files-scripts
+    glob: "skills/*/scripts/*.sh"
 
   # Tests
-  - id: test-files
-    glob: "tests/**/*.{ts,mjs}"
+  - id: test-files-root
+    glob: "tests/*.{ts,mjs}"
 
   - id: generated-tests
-    glob: "tests/generated/**/*.ts"
+    glob: "tests/generated/*.{ts,json}"
+
+  - id: generated-story-tests
+    glob: "tests/generated/stories/*.ts"
 
   # GitHub
   - id: github-workflows
@@ -158,7 +297,7 @@ files:
     glob: ".gitignore"
 
   - id: vscode-config
-    glob: ".vscode/**/*.json"
+    glob: ".vscode/*.json"
 
   # Lockfiles
   - id: lockfiles
@@ -170,7 +309,13 @@ files:
   # Node modules (always allow)
   - id: node-modules
     glob: "node_modules/**/*"
+    lint:
+      allowOverbroad: true
+      reason: "Dependency tree is external/vendor content and not contract-managed."
 
   # Sort queue (quarantine)
   - id: sort-queue
     glob: "sort_queue/**/*"
+    lint:
+      allowOverbroad: true
+      reason: "Quarantine queue intentionally accepts arbitrary nested files."

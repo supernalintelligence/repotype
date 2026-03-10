@@ -42,7 +42,8 @@
     "self:report": "node bin/repotype.js report . --json --output .supernal/traceability/repotype-self-report.json",
     "self:report:repotype": "node bin/repotype.js report . --json --output .supernal/traceability/repotype-self-report.json",
     "self:report:supernal": "node bin/repotype.js report . --json --config profiles/supernal/repotype.yaml --output .supernal/traceability/repotype-supernal-self-report.json",
-    "self:report:all": "pnpm run self:report:repotype && pnpm run self:report:supernal"
+    "self:report:all": "pnpm run self:report:repotype && pnpm run self:report:supernal",
+    "badge:validation": "node scripts/generate-validation-badge.mjs"
   },
   "dependencies": {
     "@supernal/universal-command": "^0.1.0",
