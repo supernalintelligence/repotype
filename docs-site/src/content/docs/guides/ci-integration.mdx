@@ -1,0 +1,185 @@
+---
+title: CI Integration
+description: Add Repotype validation to your CI/CD pipeline
+---
+
+import { Tabs, TabItem, Aside } from '@astrojs/starlight/components';
+
+## GitHub Actions
+
+<Tabs>
+  <TabItem label="Basic">
+```yaml title=".github/workflows/repotype.yml"
+name: Repotype
+on: [push, pull_request]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - run: npx repotype validate . --json
+```
+  </TabItem>
+  <TabItem label="With Reports">
+```yaml title=".github/workflows/repotype.yml"
+name: Repotype
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10
+          
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          
+      - run: pnpm install --frozen-lockfile
+      
+      - name: Validate repository
+        run: npx repotype validate . --json
+        
+      - name: Generate compliance report
+        run: |
+          npx repotype report . --json --output .repotype/compliance.json
+          npx repotype report . --format html --output .repotype/compliance.html
+          npx repotype report . --output .repotype/compliance.md
+          
+      - name: Upload reports
+        uses: actions/upload-artifact@v4
+        with:
+          name: repotype-reports
+          path: .repotype/
+```
+  </TabItem>
+  <TabItem label="With Fix">
+```yaml title=".github/workflows/repotype-fix.yml"
+name: Repotype Auto-Fix
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref }}
+          
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          
+      - run: npm install
+      
+      - name: Run repotype fix
+        run: npx repotype fix .
+        
+      - name: Commit fixes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "fix: auto-fix repotype violations"
+```
+  </TabItem>
+</Tabs>
+
+## GitLab CI
+
+```yaml title=".gitlab-ci.yml"
+repotype:
+  image: node:20
+  stage: test
+  script:
+    - npm install
+    - npx repotype validate . --json
+  artifacts:
+    when: always
+    paths:
+      - .repotype/
+    reports:
+      codequality: .repotype/compliance.json
+```
+
+## CircleCI
+
+```yaml title=".circleci/config.yml"
+version: 2.1
+
+jobs:
+  repotype:
+    docker:
+      - image: cimg/node:20.0
+    steps:
+      - checkout
+      - run: npm install
+      - run: npx repotype validate . --json
+      - store_artifacts:
+          path: .repotype/
+
+workflows:
+  validate:
+    jobs:
+      - repotype
+```
+
+## Exit Codes
+
+| Code | Meaning |
+|------|---------|
+| `0` | All validations passed |
+| `1` | One or more errors found |
+| `2` | Configuration error |
+
+<Aside type="tip">
+  Use `--json` output for machine-readable results that integrate with other tools.
+</Aside>
+
+## PR Comments
+
+For automated PR comments with validation results, use the JSON output:
+
+```yaml
+- name: Validate and comment
+  run: |
+    npx repotype validate . --json > validation.json
+    # Use gh cli or another tool to post results as PR comment
+```
+
+## Caching
+
+Speed up CI by caching node_modules:
+
+```yaml
+- uses: actions/cache@v4
+  with:
+    path: node_modules
+    key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+```
+
+## Branch Protection
+
+Require Repotype validation to pass before merging:
+
+1. Go to Settings → Branches → Branch protection rules
+2. Add rule for `main`
+3. Enable "Require status checks to pass"
+4. Select the repotype job
+
+Now PRs must pass validation before merge.

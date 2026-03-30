@@ -1,0 +1,68 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'site/**'
+      - 'docs-site/**'
+      - '.github/workflows/pages.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+          
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install repotype dependencies
+        run: npm install
+
+      - name: Generate repotype supernal validation badge
+        run: npm run badge:validation
+        
+      - name: Build docs site
+        working-directory: docs-site
+        run: |
+          npm install
+          # Generate config reference
+          npm run generate:config
+          # Build Astro/Starlight
+          npx astro build
+          
+      - name: Prepare deployment
+        run: |
+          mkdir -p _site
+          # Copy docs FIRST (they go in subdirs)
+          cp -r docs-site/dist/* _site/
+          # Copy landing page LAST (overwrites root index.html)
+          cp -r site/* _site/
+          # Verify landing page is the root
+          head -3 _site/index.html
+          
+      - uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v4

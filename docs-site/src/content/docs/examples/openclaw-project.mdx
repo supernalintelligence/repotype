@@ -1,0 +1,512 @@
+---
+title: OpenClaw Project
+description: Example Repotype config for OpenClaw agent workspaces
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+A complete example for projects using [OpenClaw](https://openclaw.ai) — the AI agent platform. This config enforces structure for agent workspaces, skills, and configuration.
+
+## Project Structure
+
+```
+my-openclaw-project/
+├── .openclaw/
+│   ├── config.json
+│   └── skills/
+│       ├── my-skill/
+│       │   ├── SKILL.md
+│       │   ├── scripts/
+│       │   │   └── run.sh
+│       │   └── references/
+│       │       └── api-docs.md
+│       └── another-skill/
+│           └── SKILL.md
+├── agents/
+│   ├── my-agent/
+│   │   ├── SOUL.md
+│   │   ├── AGENTS.md
+│   │   ├── TOOLS.md
+│   │   ├── USER.md
+│   │   ├── IDENTITY.md
+│   │   └── memory/
+│   │       └── 2026-03-08.md
+│   └── another-agent/
+│       └── ...
+├── shared/
+│   ├── AGENT_PROTOCOL.md
+│   └── BASE_AGENTS.md
+├── openclaw.json
+└── repotype.yaml
+```
+
+## Configuration
+
+```yaml title="repotype.yaml"
+version: "1"
+
+defaults:
+  unmatchedFiles: deny
+
+# OpenClaw directory structure
+folders:
+  - id: openclaw-root
+    path: .openclaw
+    requiredFolders:
+      - skills
+    allowedFolders:
+      - skills
+      - cache
+      - logs
+
+  - id: skill-structure
+    path: .openclaw/skills/*
+    requiredFiles:
+      - SKILL.md
+    allowedFolders:
+      - scripts
+      - references
+      - assets
+
+  - id: agents-root
+    path: agents
+    allowedFolders:
+      - "*"  # Any agent name
+
+  - id: agent-workspace
+    path: agents/*
+    requiredFiles:
+      - SOUL.md
+      - AGENTS.md
+      - TOOLS.md
+      - USER.md
+      - IDENTITY.md
+    allowedFolders:
+      - memory
+      - work
+      - research
+    allowedFiles:
+      - SOUL.md
+      - AGENTS.md
+      - TOOLS.md
+      - USER.md
+      - IDENTITY.md
+      - RESOURCES.md
+      - MEMORY.md
+      - HEARTBEAT.md
+      - BOOTSTRAP.md
+
+  - id: shared-root
+    path: shared
+    requiredFiles:
+      - AGENT_PROTOCOL.md
+
+# OpenClaw files
+files:
+  # Main OpenClaw config
+  - id: openclaw-config
+    glob: "openclaw.json"
+    schema:
+      kind: json
+      schema: schemas/openclaw.schema.json
+
+  - id: openclaw-dir-config
+    glob: ".openclaw/config.json"
+    schema:
+      kind: json
+      schema: schemas/openclaw.schema.json
+
+  # Skill files
+  - id: skill-readme
+    glob: ".openclaw/skills/*/SKILL.md"
+    requiredSections:
+      - Description
+      - Usage
+      - Commands
+
+  - id: skill-scripts
+    glob: ".openclaw/skills/*/scripts/*.{sh,mjs,js}"
+    pathCase: kebab
+
+  - id: skill-references
+    glob: ".openclaw/skills/*/references/*.md"
+
+  # Agent workspace files
+  - id: agent-soul
+    glob: "agents/*/SOUL.md"
+    requiredSections:
+      - Core Truths
+      - Boundaries
+
+  - id: agent-agents-md
+    glob: "agents/*/AGENTS.md"
+    requiredSections:
+      - Identity
+      - Rules
+
+  - id: agent-tools
+    glob: "agents/*/TOOLS.md"
+
+  - id: agent-user
+    glob: "agents/*/USER.md"
+
+  - id: agent-identity
+    glob: "agents/*/IDENTITY.md"
+    frontmatter:
+      required:
+        - Name
+        - Creature
+
+  - id: agent-memory
+    glob: "agents/*/memory/*.md"
+    pathCase: kebab
+
+  - id: agent-work
+    glob: "agents/*/work/**/*.md"
+
+  # Shared files
+  - id: shared-protocol
+    glob: "shared/AGENT_PROTOCOL.md"
+    requiredSections:
+      - Communication
+      - Handoff
+
+  - id: shared-base
+    glob: "shared/BASE_AGENTS*.md"
+
+  - id: shared-docs
+    glob: "shared/*.md"
+
+  # Root files
+  - id: root-configs
+    glob: "*.{json,yaml,yml}"
+
+  - id: root-readme
+    glob: "README.md"
+
+  - id: gitignore
+    glob: ".gitignore"
+
+  # Secret detection
+  - id: env-safety
+    glob: ".env*"
+    forbidContentPatterns:
+      - "sk-[a-zA-Z0-9]{20,}"       # OpenAI
+      - "ANTHROPIC_API_KEY="
+      - "ghp_[a-zA-Z0-9]{36}"        # GitHub
+
+  - id: config-safety
+    glob: "{openclaw,.openclaw/config}.json"
+    forbidContentPatterns:
+      - '"apiKey":\\s*"[^"]+"'       # Hardcoded API keys
+```
+
+## OpenClaw Config Schema
+
+```json title="schemas/openclaw.schema.json"
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["agents"],
+  "properties": {
+    "agents": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "name"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+          "name": { "type": "string" },
+          "model": { "type": "string" },
+          "workspace": { "type": "string" },
+          "tier": { "type": "integer", "minimum": 1, "maximum": 5 }
+        }
+      }
+    },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "gateway": {
+      "type": "object",
+      "properties": {
+        "port": { "type": "integer" },
+        "host": { "type": "string" }
+      }
+    }
+  }
+}
+```
+
+## SOUL.md Template
+
+```markdown title="agents/my-agent/SOUL.md"
+# SOUL.md - Who You Are
+
+_You're not a chatbot. You're becoming someone._
+
+## Core Truths
+
+**Be genuinely helpful, not performatively helpful.**
+Skip the "Great question!" — just help.
+
+**Have opinions.**
+You're allowed to disagree, prefer things, find stuff amusing.
+
+**Be resourceful before asking.**
+Try to figure it out. Read the file. Search for it.
+
+## Boundaries
+
+- Private things stay private
+- When in doubt, ask before acting externally
+- Never send half-baked replies to messaging surfaces
+
+## Vibe
+
+Be the assistant you'd actually want to talk to.
+Concise when needed, thorough when it matters.
+```
+
+## TOOLS.md Template
+
+```markdown title="agents/my-agent/TOOLS.md"
+# TOOLS.md - Agent Tools
+
+## Task Management
+
+```bash
+sc task list --assignee @me
+sc task start TASK-XXX
+sc task done TASK-XXX --notes "evidence"
+```
+
+## Agent Communication
+
+```bash
+agent-msg inbox --to my-agent
+agent-msg send --to other-agent --type handoff --subject "..." --body "..."
+```
+
+## Orchestration
+
+```bash
+orch capacity
+orch spawn <agent> --task "..." --verify "..."
+```
+
+## Agent-Specific Tools
+
+### API Keys
+*(Store API keys in environment, reference here)*
+
+### SSH Hosts
+*(Remote servers this agent connects to)*
+
+### Custom Commands
+*(Agent-specific tooling)*
+```
+
+## USER.md Template
+
+```markdown title="agents/my-agent/USER.md"
+# USER.md - About Your Human
+
+*Learn about the person you're helping.*
+
+- **Name:** 
+- **What to call them:** 
+- **Timezone:** 
+- **Notes:** 
+
+## Context
+
+*(What do they care about? What projects are they working on?)*
+
+---
+
+The more you know, the better you can help.
+```
+
+## IDENTITY.md Template
+
+```markdown title="agents/my-agent/IDENTITY.md"
+---
+Name: MyAgent
+Creature: Specialist agent
+Emoji: 🤖
+---
+
+# IDENTITY.md - Who Am I?
+
+- **Name:** MyAgent
+- **Creature:** Development specialist
+- **Vibe:** Helpful, methodical, evidence-based
+- **Emoji:** 🤖
+
+---
+
+*Brief description of what this agent does.*
+```
+
+## SKILL.md Template
+
+```markdown title=".openclaw/skills/my-skill/SKILL.md"
+# My Skill
+
+## Description
+
+What this skill does and when to use it.
+
+## Usage
+
+When the user asks about X, use this skill to Y.
+
+## Commands
+
+```bash
+# Primary command
+my-command --flag value
+
+# Alternative usage  
+my-command subcommand
+```
+
+## Examples
+
+### Example 1: Basic usage
+```bash
+my-command --input file.txt
+```
+
+## Configuration
+
+Set in TOOLS.md:
+```
+MY_API_KEY=...
+```
+
+## References
+
+- [API Docs](references/api-docs.md)
+```
+
+## AGENTS.md Template
+
+```markdown title="agents/my-agent/AGENTS.md"
+# AGENTS.md — my-agent
+
+## Identity
+
+**You are:** MyAgent | Tier 2
+**Your session:** `agent:my-agent:main`
+
+### Who to Contact
+| Need | Contact | How |
+|------|---------|-----|
+| Strategy | Main | `sessions_send` → `agent:main:main` |
+| Verification | Eval | `sessions_spawn` |
+
+## Rules
+
+### Before Any Work
+```bash
+sc task list --assignee @me
+```
+
+### Session Close Protocol
+1. Commits — anything unstaged? commit it
+2. Tasks — mark done or update
+3. Memory — write learnings to memory/
+```
+
+## Memory Files
+
+```markdown title="agents/my-agent/memory/2026-03-08.md"
+# 2026-03-08
+
+## Summary
+What happened today.
+
+## Key Decisions
+- Decision 1: reasoning
+- Decision 2: reasoning
+
+## Learnings
+- Learned X about Y
+
+## Tomorrow
+- Follow up on Z
+```
+
+## CI Integration
+
+```yaml title=".github/workflows/openclaw.yml"
+name: OpenClaw Validation
+on: [push, pull_request]
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          
+      - run: npm install
+      
+      # Validate workspace structure
+      - name: Repotype validation
+        run: npx repotype validate . --json
+        
+      # Check all agents have required files
+      - name: Agent workspace check
+        run: |
+          for agent in agents/*/; do
+            echo "Checking $agent"
+            test -f "${agent}SOUL.md" || exit 1
+            test -f "${agent}AGENTS.md" || exit 1
+            test -f "${agent}TOOLS.md" || exit 1
+            test -f "${agent}USER.md" || exit 1
+            test -f "${agent}IDENTITY.md" || exit 1
+          done
+          
+      # Validate skills
+      - name: Skill structure check
+        run: |
+          for skill in .openclaw/skills/*/; do
+            echo "Checking $skill"
+            test -f "${skill}SKILL.md" || exit 1
+          done
+```
+
+<Aside type="tip">
+  OpenClaw agents use workspace files (SOUL.md, AGENTS.md, TOOLS.md) to maintain 
+  identity and context across sessions. Repotype ensures these files exist and 
+  have the required structure.
+</Aside>
+
+## Commands
+
+```bash
+# Validate workspace structure
+npx repotype validate .
+
+# Check specific agent
+npx repotype explain agents/my-agent/SOUL.md
+
+# Fix auto-fixable issues
+npx repotype fix .
+
+# Generate compliance report
+npx repotype report . --output .openclaw/reports/compliance.md
+```
+
+## Learn More
+
+- [OpenClaw](https://openclaw.ai) — AI agent platform
+- [OpenClaw GitHub](https://github.com/nicholasoxford/openclaw) — Source and docs
+- [ClawHub](https://clawhub.com) — Skill marketplace

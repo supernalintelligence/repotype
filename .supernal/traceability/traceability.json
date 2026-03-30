@@ -1,0 +1,47 @@
+{
+  "generatedAt": "2026-03-06T08:09:24.315Z",
+  "packageRoot": "/Users/ianderrington/git/supernal-nova/families/supernal-coding/packages/repotype",
+  "summary": {
+    "requirements": 1,
+    "testsLinked": 1,
+    "testsMissing": 0,
+    "storiesLinked": 1,
+    "storiesMissing": 0,
+    "evidenceLinked": 3
+  },
+  "requirements": [
+    {
+      "id": "REQ-REPOTYPE-001",
+      "title": "Repotype compliance evidence report generation",
+      "status": "active",
+      "owner": "repotype",
+      "feature": ".supernal/features/FEAT-REPOTYPE-001-evidence-reporting.md",
+      "file": ".supernal/requirements/REQ-REPOTYPE-001-report-evidence.md",
+      "tests": [
+        "tests/generated/stories/repotype-evidence-reporting.spec.ts"
+      ],
+      "stories": [
+        "stories/repotype-report-evidence.feature"
+      ],
+      "evidence": [
+        ".repotype/reports/repotype-package.compliance.json",
+        ".repotype/reports/repotype-package.compliance.html",
+        ".repotype/reports/repotype-package.compliance.md"
+      ],
+      "checks": {
+        "tests": [
+          {
+            "path": "tests/generated/stories/repotype-evidence-reporting.spec.ts",
+            "exists": true
+          }
+        ],
+        "stories": [
+          {
+            "path": "stories/repotype-report-evidence.feature",
+            "exists": true
+          }
+        ]
+      }
+    }
+  ]
+}

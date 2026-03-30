@@ -1,0 +1,196 @@
+# repotype.yaml - Agent Workspace Profile
+# For AI agent working directories managed by SoulShare (ss)
+#
+# Usage:
+#   repotype init . --from profiles/agent-workspace/repotype.yaml
+#   repotype validate . --config profiles/agent-workspace/repotype.yaml
+#
+# Integrates with: ss workspace lint, ss agent init
+
+version: "1"
+
+defaults:
+  inheritance: merge
+  strictness: balanced
+  unmatchedFiles: deny
+
+ignore:
+  - ".git/**"
+  - ".supernal-local/**"
+  - ".soul/**"
+  - ".pi/**"
+  - ".openclaw/**"
+  - "node_modules/**"
+  - "messages/**"
+
+folders:
+  - id: agent-root-allowlist
+    path: .
+    allowedFolders:
+      - .git
+      - .openclaw
+      - .pi
+      - .soul
+      - .supernal
+      - .supernal-local
+      - memory
+      - messages
+      - work
+      - scripts
+      - skills
+      - repos
+      - docs
+      - tests
+      - research
+      - planning
+    allowedFiles:
+      - "*.md"
+      - ".env"
+      - ".gitignore"
+      - ".rate-limits.json"
+      - "repotype.yaml"
+
+  - id: memory-folder
+    path: memory
+    description: "Daily memory logs"
+
+  - id: work-folder
+    path: work
+    description: "Active work, specs, drafts"
+
+files:
+  # === REQUIRED: Core agent identity files ===
+  - id: soul-md
+    glob: "SOUL.md"
+    required: true
+    description: "Agent identity and persona"
+    requiredSections:
+      - "#"
+
+  - id: agents-md
+    glob: "AGENTS.md"
+    required: true
+    description: "Operating rules and protocols"
+    requiredSections:
+      - "#"
+
+  - id: tools-md
+    glob: "TOOLS.md"
+    required: true
+    description: "Tool configurations and CLI references"
+
+  - id: identity-md
+    glob: "IDENTITY.md"
+    required: true
+    description: "Quick identity summary"
+
+  - id: user-md
+    glob: "USER.md"
+    required: true
+    description: "Human context and preferences"
+
+  # === OPTIONAL: Additional identity files ===
+  - id: heartbeat-md
+    glob: "HEARTBEAT.md"
+    description: "Heartbeat/cron configuration"
+
+  - id: memory-long-term
+    glob: "MEMORY.md"
+    description: "Long-term curated memory"
+
+  - id: agents-bespoke
+    glob: "AGENTS.bespoke.md"
+    description: "Agent-specific AGENTS.md overrides"
+
+  - id: principles-md
+    glob: "PRINCIPLES.md"
+    description: "Agent principles and values"
+
+  - id: resources-md
+    glob: "RESOURCES.md"
+    description: "External resources and links"
+
+  - id: bootstrap-md
+    glob: "BOOTSTRAP.md"
+    description: "First-run bootstrap instructions"
+
+  - id: readme-md
+    glob: "README.md"
+    description: "Optional readme"
+
+  # === Memory logs ===
+  - id: memory-daily
+    glob: "memory/*.md"
+    filenamePattern: "^[0-9]{4}-[0-9]{2}-[0-9]{2}\\.md$"
+    description: "Daily memory logs (YYYY-MM-DD.md)"
+
+  - id: memory-json
+    glob: "memory/*.json"
+    description: "Memory data files"
+
+  # === Work files ===
+  - id: work-files
+    glob: "work/**/*.{md,sql,txt,json,yaml,yml,html,py,js,mjs,ts}"
+    description: "Active work documents"
+
+  - id: work-archive
+    glob: "work/archive/**/*"
+    description: "Archived work"
+
+  # === Scripts ===
+  - id: scripts
+    glob: "scripts/**/*.{sh,mjs,js,ts,py}"
+    description: "Utility scripts"
+
+  # === Supernal task system ===
+  - id: supernal-tasks
+    glob: ".supernal/tasks/**/*.md"
+    description: "Task files"
+
+  - id: supernal-config
+    glob: ".supernal/**/*.{json,yaml,yml}"
+    description: "Supernal config files"
+
+  # === Docs and research ===
+  - id: docs-files
+    glob: "docs/**/*.md"
+    description: "Documentation"
+
+  - id: research-files
+    glob: "research/**/*.{md,json,yaml}"
+    description: "Research notes"
+
+  - id: planning-files
+    glob: "planning/**/*.md"
+    description: "Planning documents"
+
+  # === Tests ===
+  - id: test-files
+    glob: "tests/**/*.{ts,js,md}"
+    description: "Test files"
+
+  # === Skills (agent-local) ===
+  - id: skills-local
+    glob: "skills/**/*"
+    description: "Agent-local skills"
+
+  # === Repos references ===
+  - id: repos-ref
+    glob: "repos/**"
+    description: "Symlinks to repos"
+
+  # === Config files ===
+  - id: env-files
+    glob: ".env*"
+    description: "Environment files"
+
+  - id: gitignore
+    glob: ".gitignore"
+
+  - id: rate-limits
+    glob: ".rate-limits.json"
+    description: "Rate limit configuration"
+
+  - id: repotype-config
+    glob: "repotype.yaml"
+    description: "This file"

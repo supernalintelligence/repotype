@@ -1,0 +1,236 @@
+---
+title: File Rules
+description: Define validation rules for files by glob pattern
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+File rules validate individual files based on glob patterns. They can enforce naming, schemas, frontmatter, and more.
+
+## Basic File Rule
+
+```yaml
+files:
+  - id: typescript-source
+    glob: "src/**/*.ts"
+```
+
+This matches all `.ts` files under `src/` and marks them as valid (not triggering `no_matching_file_rule`).
+
+## Path Case Enforcement
+
+Enforce naming conventions on file paths:
+
+```yaml
+files:
+  - id: source-files
+    glob: "src/**/*.ts"
+    pathCase: kebab
+```
+
+| Style | Valid Example | Invalid Example |
+|-------|---------------|-----------------|
+| `kebab` | `my-component.ts` | `myComponent.ts` |
+| `camel` | `myComponent.ts` | `my-component.ts` |
+| `pascal` | `MyComponent.ts` | `myComponent.ts` |
+| `snake` | `my_component.ts` | `my-component.ts` |
+
+## Path Pattern (Regex)
+
+For advanced path validation:
+
+```yaml
+files:
+  - id: strict-source
+    glob: "src/**/*.ts"
+    pathPattern: '^src/[a-z][a-z0-9-/]*\.ts$'
+```
+
+## JSON/YAML Schema Validation
+
+Validate file contents against JSON Schema:
+
+```yaml
+files:
+  - id: package-json
+    glob: "package.json"
+    schema:
+      kind: json
+      schema: schemas/package.schema.json
+      
+  - id: config-yaml
+    glob: "config/**/*.yaml"
+    schema:
+      kind: yaml
+      schema: schemas/config.schema.json
+```
+
+<Aside type="tip">
+  Use `repotype generate schema` to bootstrap a schema from existing files.
+</Aside>
+
+## Frontmatter Validation
+
+For markdown files, validate YAML frontmatter:
+
+```yaml
+files:
+  - id: docs
+    glob: "docs/**/*.md"
+    frontmatter:
+      required:
+        - title
+        - description
+      schema: schemas/doc-frontmatter.schema.json
+```
+
+See [Frontmatter Schemas](/repotype/guides/frontmatter-schemas) for details.
+
+## Required Companion Files
+
+Enforce that certain files have companions:
+
+```yaml
+files:
+  - id: components
+    glob: "src/components/**/*.tsx"
+    requiredCompanion:
+      - pattern: "*.test.tsx"   # Every component needs a test
+      - pattern: "*.css"        # Every component needs styles
+```
+
+## Forbidden Content Patterns
+
+Block files containing sensitive patterns:
+
+```yaml
+files:
+  - id: source-secrets
+    glob: "src/**/*.{ts,js}"
+    forbidContentPatterns:
+      - "API_KEY\\s*="
+      - "password\\s*[:=]"
+      - "BEGIN.*PRIVATE.*KEY"
+      - "sk-[a-zA-Z0-9]{20,}"      # OpenAI keys
+      - "ghp_[a-zA-Z0-9]{36}"       # GitHub PATs
+      - "npm_[a-zA-Z0-9]{36}"       # npm tokens
+      - "xox[baprs]-[a-zA-Z0-9-]+"  # Slack tokens
+
+  - id: env-files
+    glob: ".env*"
+    forbidContentPatterns:
+      - "sk-[a-zA-Z0-9]{20,}"      # Real OpenAI keys
+      - "ghp_[a-zA-Z0-9]{36}"       # Real GitHub tokens
+
+  - id: npmrc-safety
+    glob: ".npmrc"
+    forbidContentPatterns:
+      - "//registry.npmjs.org/:_authToken="  # Hardcoded npm tokens
+```
+
+<Aside type="caution">
+  This catches common patterns but is not a full secret scanner.
+  For production, combine with tools like `gitleaks` or `trufflehog`.
+</Aside>
+
+<Aside type="tip">
+  Use `.env.example` with placeholder values instead of real `.env` files in repos.
+</Aside>
+
+## Template Hints
+
+Detect unfilled template placeholders:
+
+```yaml
+files:
+  - id: docs
+    glob: "docs/**/*.md"
+    templateHints:
+      - "[Description]"
+      - "TODO:"
+      - "FIXME:"
+      - "XXX:"
+```
+
+These emit warnings, not errors.
+
+## Multiple Rules Per File
+
+A file can match multiple rules. All matching rules are applied:
+
+```yaml
+files:
+  # Source TypeScript files
+  - id: typescript-source
+    glob: "src/**/*.ts"
+    pathCase: kebab
+    
+  # Test files get additional rules
+  - id: test-files
+    glob: "src/**/*.test.ts"
+    requiredCompanion:
+      - pattern: "../*.ts"  # Source file must exist
+```
+
+<Aside type="caution">
+  Avoid overly broad globs like `**/*.ts` — they match everything and provide no structure.
+  Prefer scoped patterns like `src/**/*.ts` or `lib/**/*.ts`.
+</Aside>
+
+## Common Patterns
+
+### React Component Files
+
+```yaml
+files:
+  - id: react-components
+    glob: "src/components/**/*.tsx"
+    pathCase: pascal
+    requiredCompanion:
+      - pattern: "*.test.tsx"
+      - pattern: "*.module.css"
+```
+
+### API Route Files
+
+```yaml
+files:
+  - id: api-routes
+    glob: "src/app/api/**/route.ts"
+    schema:
+      kind: json
+      schema: schemas/api-route.schema.json
+```
+
+### Config Files
+
+```yaml
+files:
+  - id: json-configs
+    glob: "*.json"
+    schema:
+      kind: json
+      
+  - id: env-files
+    glob: ".env*"
+    forbidContentPatterns:
+      - "sk-[a-zA-Z0-9]+"  # OpenAI keys
+      - "ghp_[a-zA-Z0-9]+"  # GitHub tokens
+```
+
+## Diagnostics
+
+File rule violations produce these diagnostic codes:
+
+| Code | Meaning |
+|------|---------|
+| `no_matching_file_rule` | File doesn't match any rule (deny mode) |
+| `path_case_violation` | Filename doesn't match pathCase |
+| `path_pattern_violation` | Path doesn't match pathPattern |
+| `json_schema_violation` | JSON content doesn't match schema |
+| `yaml_schema_violation` | YAML content doesn't match schema |
+| `missing_frontmatter` | Markdown missing required frontmatter |
+| `frontmatter_schema_violation` | Frontmatter doesn't match schema |
+| `missing_companion_file` | Required companion file doesn't exist |
+| `forbidden_content_pattern` | File contains blocked pattern |
+| `template_hint_present` | File contains template placeholder |

@@ -1,0 +1,74 @@
+version: "1"
+
+defaults:
+  inheritance: merge
+  strictness: balanced
+
+operations:
+  hooks:
+    enabled: true
+    hook: both
+  watcher:
+    enabled: false
+    schedule: "*/15 * * * *"
+    queueDir: "sort_queue"
+    minErrors: 3
+    logFile: ".repotype/logs/watcher.log"
+
+templates:
+  - id: requirement
+    path: examples/templates/requirement.md
+    description: Canonical requirement markdown template
+
+folders:
+  - id: docs-root
+    path: docs
+    requiredFolders:
+      - requirements
+
+files:
+  - id: requirement-md
+    glob: "docs/requirements/**/*.md"
+    filenamePattern: "^req-[a-z0-9-]+\\.md$"
+    schema:
+      kind: frontmatter
+      schema: examples/schemas/requirement.frontmatter.schema.json
+    requiredSections:
+      - Description
+      - Acceptance Criteria
+      - Test Strategy
+    template:
+      id: requirement
+      enforce: true
+    crossReferences:
+      fields:
+        - requirements
+        - related_docs
+      allowAbsolute: false
+      allowedExtensions:
+        - .md
+
+rules:
+  - id: companion-tests
+    kind: companion
+    sourceGlob: "docs/requirements/**/*.md"
+    target: "tests/requirements"
+
+plugins:
+  - id: markdownlint
+    enabled: false
+    install:
+      - cmd: "pnpm add -D markdownlint-cli2"
+    validate:
+      cmd: "pnpm exec markdownlint-cli2 \"**/*.md\""
+    severityOnFailure: error
+
+  - id: biome
+    enabled: false
+    install:
+      - cmd: "pnpm add -D @biomejs/biome"
+    validate:
+      cmd: "pnpm exec biome check ."
+    fix:
+      cmd: "pnpm exec biome check --write ."
+    severityOnFailure: warning

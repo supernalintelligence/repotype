@@ -1,0 +1,206 @@
+---
+title: TypeScript Project
+description: Example Repotype config for a TypeScript/React project
+---
+
+import { Aside } from '@astrojs/starlight/components';
+
+A complete example for a typical TypeScript React project.
+
+## Project Structure
+
+```
+my-app/
+├── src/
+│   ├── components/
+│   │   ├── Button/
+│   │   │   ├── Button.tsx
+│   │   │   ├── Button.test.tsx
+│   │   │   └── Button.module.css
+│   │   └── index.ts
+│   ├── hooks/
+│   │   └── index.ts
+│   ├── utils/
+│   │   └── index.ts
+│   └── index.ts
+├── docs/
+│   ├── README.md
+│   └── guides/
+├── tests/
+├── package.json
+├── tsconfig.json
+└── repotype.yaml
+```
+
+## Configuration
+
+```yaml title="repotype.yaml"
+version: "1"
+
+defaults:
+  unmatchedFiles: deny
+
+# Folder structure
+folders:
+  - id: src-root
+    path: src
+    requiredFolders:
+      - components
+      - hooks
+      - utils
+    allowedFolders:
+      - components
+      - hooks
+      - utils
+      - types
+      - lib
+      - styles
+    requiredFiles:
+      - index.ts
+    pathCase: kebab
+
+  - id: components
+    path: src/components
+    requiredFiles:
+      - index.ts
+
+  - id: component-folders
+    path: src/components/*
+    requiredFiles:
+      - "*.tsx"       # Main component
+      - "*.test.tsx"  # Tests
+    allowedFiles:
+      - "*.tsx"
+      - "*.test.tsx"
+      - "*.module.css"
+      - "*.stories.tsx"
+      - index.ts
+
+  - id: docs
+    path: docs
+    requiredFiles:
+      - README.md
+
+# File rules
+files:
+  # TypeScript source
+  - id: typescript-source
+    glob: "src/**/*.{ts,tsx}"
+    pathCase: kebab
+    forbidContentPatterns:
+      - "console\\.log"
+      - "debugger"
+      
+  # Test files
+  - id: test-files
+    glob: "src/**/*.test.{ts,tsx}"
+    pathCase: kebab
+
+  # React components - must have tests
+  - id: react-components
+    glob: "src/components/**/*.tsx"
+    requiredCompanion:
+      - pattern: "*.test.tsx"
+
+  # CSS modules
+  - id: css-modules
+    glob: "src/**/*.module.css"
+    pathCase: kebab
+
+  # Documentation
+  - id: markdown-docs
+    glob: "docs/**/*.md"
+    frontmatter:
+      required:
+        - title
+
+  # Config files
+  - id: root-configs
+    glob: "*.{json,yaml,yml,js,mjs,cjs}"
+
+  - id: package-json
+    glob: "package.json"
+    schema:
+      kind: json
+      schema: schemas/package.schema.json
+
+  # Catch-all for common files
+  - id: misc-allowed
+    glob: "{.gitignore,.env.example,LICENSE,README.md}"
+
+# Plugins
+plugins:
+  - id: eslint
+    enabled: true
+    validate:
+      cmd: "pnpm exec eslint src/"
+    fix:
+      cmd: "pnpm exec eslint --fix src/"
+    severityOnFailure: error
+
+  - id: tsc
+    enabled: true
+    validate:
+      cmd: "pnpm exec tsc --noEmit"
+    severityOnFailure: error
+
+# Operations
+operations:
+  hooks:
+    enabled: true
+    hook: pre-commit
+```
+
+## Schemas
+
+### package.json Schema
+
+```json title="schemas/package.schema.json"
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["name", "version"],
+  "properties": {
+    "name": {
+      "type": "string",
+      "pattern": "^@?[a-z0-9-]+(/[a-z0-9-]+)?$"
+    },
+    "version": {
+      "type": "string",
+      "pattern": "^\\d+\\.\\d+\\.\\d+(-[a-z0-9.]+)?$"
+    },
+    "private": {
+      "type": "boolean"
+    },
+    "scripts": {
+      "type": "object",
+      "required": ["build", "test"],
+      "properties": {
+        "build": { "type": "string" },
+        "test": { "type": "string" },
+        "lint": { "type": "string" }
+      }
+    }
+  }
+}
+```
+
+## Usage
+
+```bash
+# Initialize hooks
+npx repotype apply .
+
+# Validate
+npx repotype validate .
+
+# Fix auto-fixable issues
+npx repotype fix .
+
+# Generate report
+npx repotype report . --output .repotype/compliance.md
+```
+
+<Aside type="tip">
+  Add `npx repotype validate .` to your CI pipeline to enforce these rules on every PR.
+</Aside>
