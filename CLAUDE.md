@@ -96,3 +96,18 @@ bin/repotype.js   # CLI entry point
 - Config inheritance merges arrays (folders, files, templates, rules, plugins) by concatenation
 - The `pathCase` rule on FileRule applies to the full relative path, not just the filename
 - When `defaults.unmatchedFiles` is `deny`, any file not matching a configured glob is an error
+
+---
+
+## Meta-Repo Context
+
+This package is a **git submodule** within the [supernal-coding](https://github.com/supernalintelligence/supernal-coding) monorepo. When working here, the parent repo's CLAUDE.md is NOT auto-loaded — you are in an isolated git root.
+
+**Cross-cutting tools available from the parent repo:**
+- `sc task create/list/done` — task management (tracks work across all packages)
+- `sc test` — test runner with requirement evidence logging
+- `si test` — interface testing, contract scanning
+- `@supernal/universal-command` — all new commands must use this pattern
+- `repotype validate` — repo structure validation
+
+**Parent docs:** See the root [CLAUDE.md](../../CLAUDE.md) and [/supernal/CLAUDE.md](../../../CLAUDE.md) for monorepo-wide conventions and the full sub-repo map.
