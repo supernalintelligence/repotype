@@ -86,7 +86,19 @@ export async function runCleanup(options: CleanupRunOptions): Promise<{
   const queueDir = path.resolve(options.queueDir);
   ensureDir(queueDir);
 
-  const validation = await validatePath(targetRoot);
+  const validateResult = await validatePath(targetRoot);
+  // Flatten diagnostics across all workspaces for cleanup purposes
+  const allDiagnostics =
+    validateResult.mode === 'workspace'
+      ? [
+          ...validateResult.result.rootResult.diagnostics,
+          ...validateResult.result.workspaces.flatMap((ws) => ws.result.diagnostics),
+        ]
+      : validateResult.result.diagnostics;
+  const validation = {
+    diagnostics: allDiagnostics,
+    filesScanned: validateResult.result.filesScanned,
+  };
   const errorDiagnostics = validation.diagnostics.filter((d) => d.severity === 'error');
 
   const files = dedupe(errorDiagnostics.map((d) => d.file));

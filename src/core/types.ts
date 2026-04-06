@@ -15,6 +15,8 @@ export interface Diagnostic {
   ruleId?: string;
   details?: Record<string, unknown>;
   autofix?: AutofixAction;
+  /** configPath of the workspace that produced this diagnostic (workspace mode only) */
+  workspace?: string;
 }
 
 export interface ValidationResult {
@@ -132,6 +134,8 @@ export interface ValidatorContext {
   configPath: string;
   config: RepoSchemaConfig;
   ruleSet: EffectiveRuleSet;
+  /** Global file index for cross-workspace reference checks (workspace mode only) */
+  globalFileIndex?: Set<string>;
 }
 
 export interface ValidatorAdapter {
@@ -164,3 +168,46 @@ export interface PluginRequirement {
   fix?: PluginCommand;
   severityOnFailure?: DiagnosticSeverity;
 }
+
+// ── Workspace mode types ────────────────────────────────────────────────────
+
+export interface WorkspaceEntry {
+  configPath: string;   // absolute path to repotype.yaml / repo-schema.yaml
+  subtreeRoot: string;  // dirname(configPath) — never ends with trailing slash
+  depth: number;        // path segments in subtreeRoot
+}
+
+export interface WorkspaceConflict {
+  code: string;
+  severity: 'error' | 'warning';
+  message: string;
+  parentConfigPath: string;
+  childConfigPath: string;
+  details?: Record<string, unknown>;
+}
+
+export interface WorkspaceValidationResult {
+  ok: boolean;
+  mode: 'workspace';
+  filesScanned: number;
+  workspaces: Array<{
+    configPath: string;
+    subtreeRoot: string;
+    result: ValidationResult;
+  }>;
+  conflicts: WorkspaceConflict[];
+  rootResult: ValidationResult;
+}
+
+export interface WorkspaceCache {
+  version: 2;
+  hash: string;
+  generatedAt: string;
+  repoRoot: string;
+  workspaces: WorkspaceEntry[];
+  resolvedConfigs: Record<string, RepoSchemaConfig>;
+}
+
+export type ValidateResult =
+  | { mode: 'flat'; result: ValidationResult }
+  | { mode: 'workspace'; result: WorkspaceValidationResult };

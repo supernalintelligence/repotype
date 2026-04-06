@@ -59,11 +59,26 @@ export const repotypeValidateCommand = new UniversalCommand<
     type: 'json',
   },
   async handler({ target = '.', config }) {
-    const result = await validatePath(target, config);
+    const validateResult = await validatePath(target, config);
+    if (validateResult.mode === 'workspace') {
+      const wsResult = validateResult.result;
+      const allDiagnostics = [
+        ...wsResult.rootResult.diagnostics,
+        ...wsResult.workspaces.flatMap((ws) => ws.result.diagnostics),
+      ];
+      return {
+        ok: wsResult.ok,
+        filesScanned: wsResult.filesScanned,
+        diagnostics: allDiagnostics,
+        mode: 'workspace',
+        workspaces: wsResult.workspaces.map((ws) => ws.subtreeRoot),
+      };
+    }
     return {
-      ok: result.ok,
-      filesScanned: result.filesScanned,
-      diagnostics: result.diagnostics,
+      ok: validateResult.result.ok,
+      filesScanned: validateResult.result.filesScanned,
+      diagnostics: validateResult.result.diagnostics,
+      mode: 'flat',
     };
   },
 });

@@ -59,7 +59,12 @@ export class CrossReferenceAdapter implements ValidatorAdapter {
         }
 
         const resolved = path.resolve(base, ref);
-        if (!fs.existsSync(resolved)) {
+        // In workspace mode use the global file index to avoid false positives
+        // for cross-workspace references; fall back to fs.existsSync otherwise.
+        const exists = context.globalFileIndex
+          ? context.globalFileIndex.has(resolved)
+          : fs.existsSync(resolved);
+        if (!exists) {
           diagnostics.push({
             code: 'broken_reference',
             message: `Broken reference in ${field}: ${ref}`,

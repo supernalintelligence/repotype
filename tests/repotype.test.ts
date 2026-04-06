@@ -12,10 +12,35 @@ import {
   scaffoldFromTemplate,
   validatePath,
 } from '../src/cli/use-cases.js';
+import type { ValidateResult } from '../src/core/types.js';
 import {
   parseComplianceReportJson,
   renderComplianceReportFromJson,
 } from '../src/sdk/report-sdk.js';
+
+/** Flatten a ValidateResult to a single {ok, diagnostics, filesScanned} for tests that don't care about workspace grouping. */
+function flattenResult(r: ValidateResult) {
+  if (r.mode === 'workspace') {
+    const allDiagnostics = [
+      ...r.result.rootResult.diagnostics,
+      ...r.result.workspaces.flatMap((ws) => ws.result.diagnostics),
+    ];
+    return { ok: r.result.ok, diagnostics: allDiagnostics, filesScanned: r.result.filesScanned };
+  }
+  return { ok: r.result.ok, diagnostics: r.result.diagnostics, filesScanned: r.result.filesScanned };
+}
+
+/** Flatten a fixPath result's validation to a single diagnostics array. */
+function flattenFixValidation(r: Awaited<ReturnType<typeof fixPath>>) {
+  if (r.validation.mode === 'workspace') {
+    const allDiagnostics = [
+      ...r.validation.result.rootResult.diagnostics,
+      ...r.validation.result.workspaces.flatMap((ws) => ws.result.diagnostics),
+    ];
+    return { ok: r.validation.result.ok, diagnostics: allDiagnostics };
+  }
+  return { ok: r.validation.result.ok, diagnostics: r.validation.result.diagnostics };
+}
 
 function makeFixtureRepo(): string {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-test-'));
@@ -314,7 +339,7 @@ TODO:
 `,
     );
 
-    const result = await validatePath(root);
+    const result = flattenResult(await validatePath(root));
     expect(result.ok).toBe(false);
     expect(result.diagnostics.length).toBeGreaterThan(0);
   });
@@ -386,13 +411,13 @@ Do not include API_KEY=abcd in docs.
 `,
     );
 
-    const result = await validatePath(root);
+    const result = flattenResult(await validatePath(root));
     expect(result.diagnostics.some((d) => d.code === 'forbidden_content_pattern')).toBe(true);
   });
 
   it('loads and applies extended config profiles', async () => {
     const root = makeExtendedConfigFixtureRepo();
-    const result = await validatePath(root);
+    const result = flattenResult(await validatePath(root));
     expect(result.ok).toBe(false);
     expect(result.diagnostics.some((d) => d.code === 'missing_section')).toBe(true);
   });
@@ -476,14 +501,14 @@ description: something: else
 `,
     );
 
-    const result = await validatePath(root);
+    const result = flattenResult(await validatePath(root));
     expect(result.ok).toBe(false);
     expect(result.diagnostics.some((d) => d.code === 'invalid_frontmatter_yaml')).toBe(true);
   });
 
   it('enforces folder structure rules from folders config', async () => {
     const root = makeFolderRuleFixtureRepo();
-    const result = await validatePath(root);
+    const result = flattenResult(await validatePath(root));
 
     expect(result.ok).toBe(false);
     expect(result.diagnostics.some((d) => d.code === 'disallowed_child_folder')).toBe(true);
@@ -496,7 +521,7 @@ description: something: else
     fs.writeFileSync(path.join(root, 'config', 'app.json'), JSON.stringify({ name: 'app' }));
     fs.writeFileSync(path.join(root, 'config', 'service.yaml'), 'service: api\nport: "3000"\n');
 
-    const result = await validatePath(root);
+    const result = flattenResult(await validatePath(root));
     expect(result.ok).toBe(false);
     expect(result.diagnostics.some((d) => d.code === 'file_schema_violation')).toBe(true);
   });
@@ -507,7 +532,7 @@ description: something: else
     fs.writeFileSync(path.join(root, 'config', 'service.yaml'), 'service: api\nport: 3000\n');
     fs.writeFileSync(path.join(root, 'src', 'Bad_Path', 'BadFile.ts'), 'export const x = 1;\n');
 
-    const result = await validatePath(root);
+    const result = flattenResult(await validatePath(root));
     expect(result.ok).toBe(false);
     expect(result.diagnostics.some((d) => d.code === 'path_case_mismatch')).toBe(true);
     expect(result.diagnostics.some((d) => d.code === 'path_pattern_mismatch')).toBe(true);
@@ -515,7 +540,7 @@ description: something: else
 
   it('runs plugin validation commands and reports failures as diagnostics', async () => {
     const root = makePluginFixtureRepo();
-    const result = await validatePath(root);
+    const result = flattenResult(await validatePath(root));
     expect(result.diagnostics.some((d) => d.code === 'plugin_validate_failed')).toBe(true);
     const pluginFailure = result.diagnostics.find((d) => d.code === 'plugin_validate_failed');
     expect(pluginFailure?.severity).toBe('warning');
@@ -535,7 +560,7 @@ description: something: else
 
   it('fails unmatched root files by default (deny-by-default)', async () => {
     const root = makeUnmatchedRootFixture('deny');
-    const result = await validatePath(root);
+    const result = flattenResult(await validatePath(root));
 
     expect(result.ok).toBe(false);
     const unmatched = result.diagnostics.find((d) => d.code === 'no_matching_file_rule' && d.file.endsWith('README.md'));
@@ -544,7 +569,7 @@ description: something: else
 
   it('supports legacy permissive mode via defaults.unmatchedFiles=allow', async () => {
     const root = makeUnmatchedRootFixture('allow');
-    const result = await validatePath(root);
+    const result = flattenResult(await validatePath(root));
 
     expect(result.ok).toBe(true);
     const unmatched = result.diagnostics.find((d) => d.code === 'no_matching_file_rule' && d.file.endsWith('README.md'));
@@ -553,7 +578,7 @@ description: something: else
 
   it('ignores paths from .gitignore and .*ignore* files during validation', async () => {
     const root = makeIgnoreFixtureRepo();
-    const result = await validatePath(root);
+    const result = flattenResult(await validatePath(root));
 
     expect(result.ok).toBe(true);
     expect(result.diagnostics.some((d) => d.code === 'no_matching_file_rule' && d.file.endsWith('rogue.tmp'))).toBe(
@@ -579,7 +604,7 @@ description: something: else
 
   it('warns on overbroad glob patterns like **/* during validation', async () => {
     const root = makeOverbroadGlobFixtureRepo();
-    const result = await validatePath(root);
+    const result = flattenResult(await validatePath(root));
 
     const warnings = result.diagnostics.filter((d) => d.code === 'overbroad_glob_pattern');
     expect(warnings.length).toBeGreaterThanOrEqual(2);
@@ -588,7 +613,8 @@ description: something: else
 
   it('runs plugin fix commands through repotype fix', async () => {
     const root = makePluginFixtureRepo();
-    const result = await fixPath(root);
-    expect(result.validation.diagnostics.some((d) => d.code === 'plugin_fix_ok')).toBe(true);
+    const fixResult = await fixPath(root);
+    const validation = flattenFixValidation(fixResult);
+    expect(validation.diagnostics.some((d) => d.code === 'plugin_fix_ok')).toBe(true);
   });
 });

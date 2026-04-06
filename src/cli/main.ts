@@ -6,6 +6,9 @@ import { installChecks } from './git-hooks.js';
 import { runCleanup } from './cleanup.js';
 import { installWatcher } from './watcher.js';
 import { applyOperationsConfig, getOperationsStatus } from './operations.js';
+import { findConfig } from '../core/config-loader.js';
+import { discoverWorkspaces, loadWorkspaceCache, hashConfigFiles } from '../core/config-loader.js';
+import { createIgnoreMatcher } from '../core/path-ignore.js';
 import {
   generateSchemaFromContent,
   generateComplianceReport,
@@ -94,21 +97,74 @@ export async function runCLI(argv: string[]): Promise<number> {
     .argument('[target]', 'file or directory to validate', '.')
     .option('--json', 'emit machine-readable JSON', false)
     .option('--config <path>', 'explicit config file path (repotype.yaml)', '')
-    .action(async (target: string, options: { json: boolean; config: string }) => {
-      const result = await validatePath(target, options.config || undefined);
-      const counts = countDiagnostics(result.diagnostics);
+    .option('--workspace', 'enable workspace mode (auto-detected by default)', true)
+    .option('--no-workspace', 'disable workspace mode, validate as flat single config')
+    .option('--no-cache', 'skip workspace cache read/write', false)
+    .action(async (target: string, options: { json: boolean; config: string; workspace: boolean; noCache: boolean }) => {
+      const validateResult = await validatePath(target, options.config || undefined, {
+        workspace: options.workspace,
+        noCache: options.noCache,
+      });
+
       if (options.json) {
-        console.log(JSON.stringify(result, null, 2));
+        console.log(JSON.stringify(validateResult, null, 2));
+        process.exitCode = validateResult.result.ok ? 0 : 1;
+        return;
+      }
+
+      if (validateResult.mode === 'workspace') {
+        const wsResult = validateResult.result;
+        console.log(`mode: workspace (${wsResult.workspaces.length} child workspace(s))`);
+        console.log(`files scanned: ${wsResult.filesScanned}`);
+
+        // Root section
+        const rootCounts = countDiagnostics(wsResult.rootResult.diagnostics);
+        console.log(`\n[root]`);
+        console.log(`  files: ${wsResult.rootResult.filesScanned}`);
+        console.log(`  errors: ${rootCounts.errors}, warnings: ${rootCounts.warnings}, suggestions: ${rootCounts.suggestions}`);
+        for (const d of wsResult.rootResult.diagnostics) {
+          console.log(`  [${d.severity}] ${d.code}: ${d.message} (${d.file})`);
+        }
+
+        // Per-workspace sections
+        for (const ws of wsResult.workspaces) {
+          const wsCounts = countDiagnostics(ws.result.diagnostics);
+          console.log(`\n[${ws.subtreeRoot}]`);
+          console.log(`  config: ${ws.configPath}`);
+          console.log(`  files: ${ws.result.filesScanned}`);
+          console.log(`  errors: ${wsCounts.errors}, warnings: ${wsCounts.warnings}, suggestions: ${wsCounts.suggestions}`);
+          for (const d of ws.result.diagnostics) {
+            console.log(`  [${d.severity}] ${d.code}: ${d.message} (${d.file})`);
+          }
+        }
+
+        // Conflicts
+        if (wsResult.conflicts.length > 0) {
+          console.log(`\n[conflicts]`);
+          for (const c of wsResult.conflicts) {
+            console.log(`  [${c.severity}] ${c.code}: ${c.message}`);
+          }
+        }
+
+        const allDiagnostics = [
+          ...wsResult.rootResult.diagnostics,
+          ...wsResult.workspaces.flatMap((ws) => ws.result.diagnostics),
+        ];
+        const totalCounts = countDiagnostics(allDiagnostics);
+        emitBoundaryGuidance('validate', totalCounts);
+        process.exitCode = wsResult.ok ? 0 : 1;
       } else {
+        const result = validateResult.result;
+        const counts = countDiagnostics(result.diagnostics);
         console.log(`files scanned: ${result.filesScanned}`);
         console.log(`diagnostics: ${result.diagnostics.length}`);
         console.log(`errors: ${counts.errors}, warnings: ${counts.warnings}, suggestions: ${counts.suggestions}`);
         for (const d of result.diagnostics) {
           console.log(`[${d.severity}] ${d.code}: ${d.message} (${d.file})`);
         }
+        emitBoundaryGuidance('validate', counts);
+        process.exitCode = result.ok ? 0 : 1;
       }
-      emitBoundaryGuidance('validate', counts);
-      process.exitCode = result.ok ? 0 : 1;
     });
 
   program
@@ -148,13 +204,26 @@ export async function runCLI(argv: string[]): Promise<number> {
     .command('fix')
     .argument('[target]', 'file or directory to validate/fix', '.')
     .option('--config <path>', 'explicit config file path (repotype.yaml)', '')
-    .action(async (target: string, options: { config: string }) => {
-      const output = await fixPath(target, options.config || undefined);
-      const counts = countDiagnostics(output.validation.diagnostics);
+    .option('--workspace', 'enable workspace mode (auto-detected by default)', true)
+    .option('--no-workspace', 'disable workspace mode, fix as flat single config')
+    .option('--no-cache', 'skip workspace cache read/write', false)
+    .action(async (target: string, options: { config: string; workspace: boolean; noCache: boolean }) => {
+      const output = await fixPath(target, options.config || undefined, {
+        workspace: options.workspace,
+        noCache: options.noCache,
+      });
       console.log(`applied fixes: ${output.fix.applied}`);
-      console.log(`remaining diagnostics: ${output.validation.diagnostics.length}`);
+      const allDiagnostics =
+        output.validation.mode === 'workspace'
+          ? [
+              ...output.validation.result.rootResult.diagnostics,
+              ...output.validation.result.workspaces.flatMap((ws) => ws.result.diagnostics),
+            ]
+          : output.validation.result.diagnostics;
+      const counts = countDiagnostics(allDiagnostics);
+      console.log(`remaining diagnostics: ${allDiagnostics.length}`);
       emitBoundaryGuidance('fix', counts);
-      process.exitCode = output.validation.ok ? 0 : 1;
+      process.exitCode = output.validation.result.ok ? 0 : 1;
     });
 
   program
@@ -246,8 +315,29 @@ export async function runCLI(argv: string[]): Promise<number> {
     .option('--json', 'emit machine-readable JSON', false)
     .action((target: string, options: { json: boolean }) => {
       const status = getOperationsStatus(target);
+
+      // Workspace status
+      const repoRoot = status.repoRoot;
+      const sharedIgnoreMatcher = createIgnoreMatcher(repoRoot);
+      const workspaces = discoverWorkspaces(repoRoot, sharedIgnoreMatcher);
+      const allConfigPaths = [status.configPath, ...workspaces.map((ws) => ws.configPath)];
+      const currentHash = workspaces.length > 0 ? hashConfigFiles(allConfigPaths) : null;
+      const cached = workspaces.length > 0 ? loadWorkspaceCache(repoRoot) : null;
+      const cacheStatus = currentHash === null
+        ? 'n/a'
+        : cached && cached.hash === currentHash
+          ? 'fresh'
+          : 'stale or missing';
+
+      const workspaceStatus = {
+        mode: workspaces.length > 0 ? 'workspace' : 'flat',
+        childCount: workspaces.length,
+        subtreeRoots: workspaces.map((ws) => ws.subtreeRoot),
+        cacheStatus,
+      };
+
       if (options.json) {
-        console.log(JSON.stringify(status, null, 2));
+        console.log(JSON.stringify({ ...status, workspace: workspaceStatus }, null, 2));
         return;
       }
 
@@ -263,6 +353,16 @@ export async function runCLI(argv: string[]): Promise<number> {
       }
       console.log(`cleanup queue: ${status.cleanup.queueDir}`);
       console.log(`last cleanup: ${status.cleanup.lastRun.found ? 'found' : 'none'}`);
+
+      // Workspace section
+      console.log(`\nworkspace mode: ${workspaceStatus.mode}`);
+      if (workspaces.length > 0) {
+        console.log(`child configs: ${workspaces.length}`);
+        console.log(`cache status: ${cacheStatus}`);
+        for (const ws of workspaces) {
+          console.log(`  - ${ws.subtreeRoot} (${ws.configPath})`);
+        }
+      }
     });
 
   program
