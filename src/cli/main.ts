@@ -213,16 +213,38 @@ export async function runCLI(argv: string[]): Promise<number> {
         noCache: options.noCache,
       });
       console.log(`applied fixes: ${output.fix.applied}`);
-      const allDiagnostics =
-        output.validation.mode === 'workspace'
-          ? [
-              ...output.validation.result.rootResult.diagnostics,
-              ...output.validation.result.workspaces.flatMap((ws) => ws.result.diagnostics),
-            ]
-          : output.validation.result.diagnostics;
-      const counts = countDiagnostics(allDiagnostics);
-      console.log(`remaining diagnostics: ${allDiagnostics.length}`);
-      emitBoundaryGuidance('fix', counts);
+      if (output.validation.mode === 'workspace') {
+        const wsResult = output.validation.result;
+        console.log(`mode: workspace (${wsResult.workspaces.length} child workspace(s))`);
+        const wsFixes = (output as { workspaceFixes?: { root: { applied: number }; children: Array<{ subtreeRoot: string; fix: { applied: number } }> } }).workspaceFixes;
+        // Root section
+        const rootCounts = countDiagnostics(wsResult.rootResult.diagnostics);
+        console.log(`\n[root]`);
+        console.log(`  fixes applied: ${wsFixes?.root.applied ?? 0}`);
+        console.log(`  remaining: errors: ${rootCounts.errors}, warnings: ${rootCounts.warnings}, suggestions: ${rootCounts.suggestions}`);
+        for (const d of wsResult.rootResult.diagnostics) {
+          console.log(`  [${d.severity}] ${d.code}: ${d.message} (${d.file})`);
+        }
+        // Per-workspace sections
+        for (const ws of wsResult.workspaces) {
+          const childFix = wsFixes?.children.find((c) => c.subtreeRoot === ws.subtreeRoot);
+          const wsCounts = countDiagnostics(ws.result.diagnostics);
+          console.log(`\n[${ws.subtreeRoot}]`);
+          console.log(`  fixes applied: ${childFix?.fix.applied ?? 0}`);
+          console.log(`  remaining: errors: ${wsCounts.errors}, warnings: ${wsCounts.warnings}, suggestions: ${wsCounts.suggestions}`);
+        }
+        const allDiagnostics = [
+          ...wsResult.rootResult.diagnostics,
+          ...wsResult.workspaces.flatMap((ws) => ws.result.diagnostics),
+        ];
+        const counts = countDiagnostics(allDiagnostics);
+        emitBoundaryGuidance('fix', counts);
+      } else {
+        const result = output.validation.result;
+        const counts = countDiagnostics(result.diagnostics);
+        console.log(`remaining diagnostics: ${result.diagnostics.length}`);
+        emitBoundaryGuidance('fix', counts);
+      }
       process.exitCode = output.validation.result.ok ? 0 : 1;
     });
 

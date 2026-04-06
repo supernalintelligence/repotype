@@ -1,6 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { findConfig, loadConfig } from '../core/config-loader.js';
+import { findConfig, loadConfig, discoverWorkspaces } from '../core/config-loader.js';
+import { createIgnoreMatcher } from '../core/path-ignore.js';
 import { installChecks, inspectChecks, uninstallChecks } from './git-hooks.js';
 import { inspectWatcher, installWatcher, uninstallWatcher } from './watcher.js';
 
@@ -83,6 +84,7 @@ export function getOperationsStatus(target: string): {
   hooks: ReturnType<typeof inspectChecks>;
   watcher: ReturnType<typeof inspectWatcher>;
   cleanup: { queueDir: string; lastRun: { found: boolean; entry?: Record<string, unknown> } };
+  workspace: { mode: 'flat' | 'workspace'; childCount: number; children: Array<{ configPath: string; subtreeRoot: string }> };
 } {
   const normalized = normalizeOperations(target);
   const hooks = inspectChecks(normalized.repoRoot);
@@ -92,6 +94,14 @@ export function getOperationsStatus(target: string): {
     lastRun: readLastCleanupEntry(normalized.config.watcher.queueDir),
   };
 
+  const ignoreMatcher = createIgnoreMatcher(normalized.repoRoot);
+  const childWorkspaces = discoverWorkspaces(normalized.repoRoot, ignoreMatcher);
+  const workspace = {
+    mode: childWorkspaces.length > 0 ? 'workspace' as const : 'flat' as const,
+    childCount: childWorkspaces.length,
+    children: childWorkspaces.map((ws) => ({ configPath: ws.configPath, subtreeRoot: ws.subtreeRoot })),
+  };
+
   return {
     repoRoot: normalized.repoRoot,
     configPath: normalized.configPath,
@@ -99,6 +109,7 @@ export function getOperationsStatus(target: string): {
     hooks,
     watcher,
     cleanup,
+    workspace,
   };
 }
 

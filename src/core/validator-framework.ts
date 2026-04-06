@@ -144,6 +144,46 @@ function lintConfigGlobs(config: RepoSchemaConfig, configPath: string): Diagnost
   return diagnostics;
 }
 
+
+function getGlobExtension(glob: string): string | null {
+  const match = glob.match(/\*\.([a-zA-Z0-9]+)$/);
+  return match ? match[1] : null;
+}
+
+function globsCouldOverlap(globA: string, globB: string): boolean {
+  const extA = getGlobExtension(globA);
+  const extB = getGlobExtension(globB);
+  // If both specify explicit extensions and they differ, no overlap
+  if (extA && extB && extA !== extB) return false;
+  return true;
+}
+
+function rootGlobCouldMatchSubtree(rootGlob: string, relSubtreeFromRoot: string): boolean {
+  const normalized = rootGlob.replace(/\\/g, '/');
+  // Unconstrained globs (starting with ** or no path separator) match anywhere
+  if (normalized.startsWith('**/') || !normalized.includes('/')) return true;
+  const firstWild = normalized.indexOf('*');
+  const literalPrefix = firstWild >= 0 ? normalized.slice(0, firstWild) : normalized + '/';
+  const relNorm = relSubtreeFromRoot.replace(/\\/g, '/') + '/';
+  // Overlap if literal prefix is a prefix of the subtree path or vice versa
+  return relNorm.startsWith(literalPrefix) || literalPrefix.startsWith(relNorm);
+}
+
+type FileRuleForConflict = { requiredSections?: string[]; schema?: { schema?: string }; filenamePattern?: string; pathCase?: string; forbidContentPatterns?: string[] };
+
+function fileRulesConflict(rootRule: FileRuleForConflict, childRule: FileRuleForConflict): boolean {
+  const rootSections = [...(rootRule.requiredSections ?? [])].sort().join(',');
+  const childSections = [...(childRule.requiredSections ?? [])].sort().join(',');
+  if (rootSections !== childSections && (rootSections || childSections)) return true;
+  if ((rootRule.schema?.schema ?? null) !== (childRule.schema?.schema ?? null)) return true;
+  if ((rootRule.filenamePattern ?? null) !== (childRule.filenamePattern ?? null)) return true;
+  if ((rootRule.pathCase ?? null) !== (childRule.pathCase ?? null)) return true;
+  const rootForbid = [...(rootRule.forbidContentPatterns ?? [])].sort().join(',');
+  const childForbid = [...(childRule.forbidContentPatterns ?? [])].sort().join(',');
+  if (rootForbid !== childForbid && (rootForbid || childForbid)) return true;
+  return false;
+}
+
 export class ValidationEngine {
   constructor(private readonly adapters: ValidatorAdapter[]) {}
 
@@ -154,6 +194,8 @@ export class ValidationEngine {
       sharedIgnoreMatcher?: IgnoreMatcher;
       globalFileIndex?: Set<string>;
       workspaceTag?: string;
+      /** Pre-computed file list; when provided, skips scanFiles entirely. */
+      fileList?: string[];
     },
   ): Promise<ValidationResult> {
     const absoluteTarget = path.resolve(targetPath);
@@ -165,7 +207,7 @@ export class ValidationEngine {
       : findConfig(absoluteTarget);
     const repoRoot = options?.configPath ? targetRoot : path.dirname(configPath);
     const config = loadConfig(configPath);
-    const files = scanFiles(absoluteTarget, repoRoot, options?.sharedIgnoreMatcher);
+    const files = options?.fileList ?? scanFiles(absoluteTarget, repoRoot, options?.sharedIgnoreMatcher);
     const diagnostics: Diagnostic[] = [...lintConfigGlobs(config, configPath)];
 
     for (const filePath of files) {
@@ -246,6 +288,7 @@ export class ValidationEngine {
 
     let cachedWorkspaces: WorkspaceEntry[] | null = null;
     let cachedResolvedConfigs: Record<string, RepoSchemaConfig> | null = null;
+    let staleCIDiag: WorkspaceConflict | null = null;
 
     if (!options.noCache) {
       const cached = loadWorkspaceCache(repoRoot);
@@ -253,18 +296,16 @@ export class ValidationEngine {
         cachedWorkspaces = cached.workspaces;
         cachedResolvedConfigs = cached.resolvedConfigs;
       } else if (cached && process.env.CI === 'true') {
-        // Stale cache in CI — warn but continue
-        const staleDiag: WorkspaceConflict = {
+        // Stale cache in CI — warn but continue without rebuilding cache
+        staleCIDiag = {
           code: 'workspace_cache_stale',
           severity: 'warning',
           message: 'workspace cache is stale — regenerate locally with `repotype validate .`',
           parentConfigPath: rootConfigPath,
           childConfigPath: rootConfigPath,
         };
-        // Will be surfaced as a conflict below
         cachedWorkspaces = null;
         cachedResolvedConfigs = null;
-        void staleDiag; // referenced later in staleInCI
       }
     }
 
@@ -319,37 +360,26 @@ export class ValidationEngine {
       ),
     );
 
-    // Build set of files claimed by child workspaces (to exclude from root scan)
-    const claimedFiles = new Set(
-      childValidations.flatMap(({ result }) =>
-        result.diagnostics.map((d) => d.file),
-      ),
-    );
-
     // Validate the root — only files not owned by any child
     const allRootFiles = scanFiles(repoRoot, repoRoot, sharedIgnoreMatcher);
     const rootOwnedFiles = allRootFiles.filter(
       (f) => resolveOwningWorkspace(f, activeWorkspaces) === 'root',
     );
 
-    // We validate root but filter diagnostics to root-owned files only
+    // Validate root using only root-owned files — no post-filter needed
     const rawRootResult = await semaphore(() =>
       this.validate(repoRoot, {
         configPath: rootConfigPath,
         sharedIgnoreMatcher,
         globalFileIndex,
         workspaceTag: rootConfigPath,
+        fileList: rootOwnedFiles,
       }),
     );
 
-    // Filter root diagnostics to only root-owned files (exclude child-subtree files)
-    const rootOwnedSet = new Set(rootOwnedFiles);
-    const rootDiagnostics = rawRootResult.diagnostics.filter(
-      (d) => rootOwnedSet.has(d.file) || !d.file || d.file === rootConfigPath,
-    );
     const rootResult: ValidationResult = {
-      ok: rootDiagnostics.every((d) => d.severity !== 'error'),
-      diagnostics: rootDiagnostics,
+      ok: rawRootResult.diagnostics.every((d) => d.severity !== 'error'),
+      diagnostics: rawRootResult.diagnostics,
       filesScanned: rootOwnedFiles.length,
     };
 
@@ -387,6 +417,26 @@ export class ValidationEngine {
         }
       }
 
+      // workspace_pattern_conflict: root file rule could match files in child subtree with different constraints
+      const relSubtree = path.relative(repoRoot, ws.subtreeRoot);
+      for (const rootRule of rootConfig.files ?? []) {
+        if (!rootGlobCouldMatchSubtree(rootRule.glob, relSubtree)) continue;
+        for (const childRule of childConfig.files ?? []) {
+          if (!globsCouldOverlap(rootRule.glob, childRule.glob)) continue;
+          if (fileRulesConflict(rootRule, childRule)) {
+            conflicts.push({
+              code: 'workspace_pattern_conflict',
+              severity: 'warning',
+              message: `Root rule glob '${rootRule.glob}' and child rule glob '${childRule.glob}' in '${ws.subtreeRoot}' may match the same files with different constraints.`,
+              parentConfigPath: rootConfigPath,
+              childConfigPath: ws.configPath,
+              details: { rootGlob: rootRule.glob, childGlob: childRule.glob, subtreeRoot: ws.subtreeRoot },
+            });
+            break; // one conflict per root rule per workspace
+          }
+        }
+      }
+
       // workspace_unmatched_files_asymmetry
       const rootUnmatched = rootConfig.defaults?.unmatchedFiles;
       const childUnmatched = childConfig.defaults?.unmatchedFiles;
@@ -402,15 +452,22 @@ export class ValidationEngine {
       }
     }
 
-    // Emit activation suggestion diagnostic
-    const activationDiag: Diagnostic = {
-      code: 'workspace_mode_active',
-      severity: 'suggestion',
-      message: `workspace mode active — ${activeWorkspaces.length} child config(s) found. Files in child subtrees are now governed by their own repotype.yaml. Root rules no longer apply to those subtrees. Run \`repotype status\` to review workspace boundaries.`,
-      file: rootConfigPath,
-      workspace: rootConfigPath,
-    };
-    rootResult.diagnostics.unshift(activationDiag);
+    // Surface CI stale-cache diagnostic if it was detected
+    if (staleCIDiag) {
+      conflicts.push(staleCIDiag);
+    }
+
+    // Emit activation suggestion only on cache-miss (first discovery or config change)
+    if (!cachedWorkspaces) {
+      const activationDiag: Diagnostic = {
+        code: 'workspace_mode_active',
+        severity: 'suggestion',
+        message: `workspace mode active — ${activeWorkspaces.length} child config(s) found. Files in child subtrees are now governed by their own repotype.yaml. Root rules no longer apply to those subtrees. Run \`repotype status\` to review workspace boundaries.`,
+        file: rootConfigPath,
+        workspace: rootConfigPath,
+      };
+      rootResult.diagnostics.unshift(activationDiag);
+    }
 
     const totalFilesScanned =
       rootResult.filesScanned + childValidations.reduce((acc, cv) => acc + cv.result.filesScanned, 0);
