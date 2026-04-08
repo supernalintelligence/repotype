@@ -1,7 +1,9 @@
 import { defineConfig } from 'vitest/config';
+import path from 'path';
 
 export default defineConfig({
   test: {
+    setupFiles: [path.resolve(__dirname, '../../vitest.setup.ts')],
     exclude: [
       'tests/generated/stories/**',
       'tests/generated/universal-cli.generated.test.ts', // TODO: Fix commander resolution
