@@ -1,0 +1,1151 @@
+{
+  "version": 2,
+  "hash": "dc2c129323bbbd13b45bf9067426064b35f22e0226b2552be94b422b2b640dda",
+  "generatedAt": "2026-04-06T20:01:08.658Z",
+  "repoRoot": "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype",
+  "workspaces": [
+    {
+      "configPath": "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/examples/openclaw-repo/repotype.yaml",
+      "subtreeRoot": "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/examples/openclaw-repo",
+      "depth": 10
+    },
+    {
+      "configPath": "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/profiles/agent-workspace/repotype.yaml",
+      "subtreeRoot": "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/profiles/agent-workspace",
+      "depth": 10
+    },
+    {
+      "configPath": "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/profiles/repotype/repotype.yaml",
+      "subtreeRoot": "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/profiles/repotype",
+      "depth": 10
+    },
+    {
+      "configPath": "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/profiles/skills/repotype.yaml",
+      "subtreeRoot": "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/profiles/skills",
+      "depth": 10
+    },
+    {
+      "configPath": "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/profiles/supernal/repotype.yaml",
+      "subtreeRoot": "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/profiles/supernal",
+      "depth": 10
+    },
+    {
+      "configPath": "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/examples/repotype.yaml",
+      "subtreeRoot": "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/examples",
+      "depth": 9
+    }
+  ],
+  "resolvedConfigs": {
+    "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/examples/openclaw-repo/repotype.yaml": {
+      "version": "1",
+      "defaults": {
+        "unmatchedFiles": "allow"
+      },
+      "operations": {
+        "hooks": {
+          "enabled": false,
+          "hook": "pre-push"
+        },
+        "watcher": {}
+      },
+      "folders": [
+        {
+          "id": "skills-root",
+          "path": "skills",
+          "allowedFolders": [
+            "*"
+          ]
+        },
+        {
+          "id": "skill-structure",
+          "path": "skills/*",
+          "requiredFiles": [
+            "SKILL.md"
+          ]
+        },
+        {
+          "id": "packages-root",
+          "path": "packages",
+          "allowedFolders": [
+            "*"
+          ]
+        },
+        {
+          "id": "package-structure",
+          "path": "packages/*",
+          "requiredFiles": [
+            "package.json",
+            "README.md"
+          ]
+        }
+      ],
+      "files": [
+        {
+          "id": "skill-readme",
+          "glob": "skills/*/SKILL.md",
+          "requiredSections": [
+            "Description"
+          ]
+        },
+        {
+          "id": "package-json",
+          "glob": "packages/*/package.json"
+        },
+        {
+          "id": "package-readme",
+          "glob": "packages/*/README.md"
+        },
+        {
+          "id": "typescript-source",
+          "glob": "src/**/*.ts",
+          "pathCase": "kebab"
+        },
+        {
+          "id": "packages-typescript",
+          "glob": "packages/*/src/**/*.ts"
+        },
+        {
+          "id": "test-files",
+          "glob": "test/**/*.ts"
+        },
+        {
+          "id": "root-configs",
+          "glob": "*.{json,yaml,yml,mjs,ts,toml}"
+        },
+        {
+          "id": "vitest-configs",
+          "glob": "vitest.*.ts"
+        },
+        {
+          "id": "root-docs",
+          "glob": "{README,CONTRIBUTING,VISION,CHANGELOG,LICENSE}.md"
+        },
+        {
+          "id": "docs-folder",
+          "glob": "docs/**/*.md"
+        },
+        {
+          "id": "github-workflows",
+          "glob": ".github/workflows/*.{yml,yaml}"
+        },
+        {
+          "id": "github-actions",
+          "glob": ".github/actions/**/*.{yml,yaml}"
+        },
+        {
+          "id": "scripts",
+          "glob": "scripts/**/*.{sh,mjs,js,ts}"
+        },
+        {
+          "id": "ui-components",
+          "glob": "ui/**/*.{ts,tsx,css,html}"
+        },
+        {
+          "id": "env-example",
+          "glob": ".env.example"
+        },
+        {
+          "id": "env-safety",
+          "glob": ".env*",
+          "forbidContentPatterns": [
+            "sk-[a-zA-Z0-9]{20,}",
+            "ANTHROPIC_API_KEY=[^$]",
+            "ghp_[a-zA-Z0-9]{36}",
+            "npm_[a-zA-Z0-9]{36}"
+          ]
+        },
+        {
+          "id": "source-secrets",
+          "glob": "src/**/*.ts",
+          "forbidContentPatterns": [
+            "sk-[a-zA-Z0-9]{48}",
+            "BEGIN.*PRIVATE.*KEY"
+          ]
+        },
+        {
+          "id": "dotfiles",
+          "glob": ".{gitignore,dockerignore,npmrc,mailmap,shellcheckrc}"
+        },
+        {
+          "id": "linter-configs",
+          "glob": ".{markdownlint,oxlintrc,swiftlint,swiftformat}*"
+        },
+        {
+          "id": "pre-commit",
+          "glob": ".pre-commit-config.yaml"
+        },
+        {
+          "id": "secrets-baseline",
+          "glob": ".secrets.baseline"
+        }
+      ]
+    },
+    "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/profiles/agent-workspace/repotype.yaml": {
+      "version": "1",
+      "defaults": {
+        "inheritance": "merge",
+        "strictness": "balanced",
+        "unmatchedFiles": "deny"
+      },
+      "folders": [
+        {
+          "id": "agent-root-allowlist",
+          "path": ".",
+          "allowedFolders": [
+            ".git",
+            ".openclaw",
+            ".pi",
+            ".soul",
+            ".supernal",
+            ".supernal-local",
+            "memory",
+            "messages",
+            "work",
+            "scripts",
+            "skills",
+            "repos",
+            "docs",
+            "tests",
+            "research",
+            "planning"
+          ],
+          "allowedFiles": [
+            "*.md",
+            ".env",
+            ".gitignore",
+            ".rate-limits.json",
+            "repotype.yaml"
+          ]
+        },
+        {
+          "id": "memory-folder",
+          "path": "memory",
+          "description": "Daily memory logs"
+        },
+        {
+          "id": "work-folder",
+          "path": "work",
+          "description": "Active work, specs, drafts"
+        }
+      ],
+      "files": [
+        {
+          "id": "soul-md",
+          "glob": "SOUL.md",
+          "required": true,
+          "description": "Agent identity and persona",
+          "requiredSections": [
+            "#"
+          ]
+        },
+        {
+          "id": "agents-md",
+          "glob": "AGENTS.md",
+          "required": true,
+          "description": "Operating rules and protocols",
+          "requiredSections": [
+            "#"
+          ]
+        },
+        {
+          "id": "tools-md",
+          "glob": "TOOLS.md",
+          "required": true,
+          "description": "Tool configurations and CLI references"
+        },
+        {
+          "id": "identity-md",
+          "glob": "IDENTITY.md",
+          "required": true,
+          "description": "Quick identity summary"
+        },
+        {
+          "id": "user-md",
+          "glob": "USER.md",
+          "required": true,
+          "description": "Human context and preferences"
+        },
+        {
+          "id": "heartbeat-md",
+          "glob": "HEARTBEAT.md",
+          "description": "Heartbeat/cron configuration"
+        },
+        {
+          "id": "memory-long-term",
+          "glob": "MEMORY.md",
+          "description": "Long-term curated memory"
+        },
+        {
+          "id": "agents-bespoke",
+          "glob": "AGENTS.bespoke.md",
+          "description": "Agent-specific AGENTS.md overrides"
+        },
+        {
+          "id": "principles-md",
+          "glob": "PRINCIPLES.md",
+          "description": "Agent principles and values"
+        },
+        {
+          "id": "resources-md",
+          "glob": "RESOURCES.md",
+          "description": "External resources and links"
+        },
+        {
+          "id": "bootstrap-md",
+          "glob": "BOOTSTRAP.md",
+          "description": "First-run bootstrap instructions"
+        },
+        {
+          "id": "readme-md",
+          "glob": "README.md",
+          "description": "Optional readme"
+        },
+        {
+          "id": "memory-daily",
+          "glob": "memory/*.md",
+          "filenamePattern": "^[0-9]{4}-[0-9]{2}-[0-9]{2}\\.md$",
+          "description": "Daily memory logs (YYYY-MM-DD.md)"
+        },
+        {
+          "id": "memory-json",
+          "glob": "memory/*.json",
+          "description": "Memory data files"
+        },
+        {
+          "id": "work-files",
+          "glob": "work/**/*.{md,sql,txt,json,yaml,yml,html,py,js,mjs,ts}",
+          "description": "Active work documents"
+        },
+        {
+          "id": "work-archive",
+          "glob": "work/archive/**/*",
+          "description": "Archived work"
+        },
+        {
+          "id": "scripts",
+          "glob": "scripts/**/*.{sh,mjs,js,ts,py}",
+          "description": "Utility scripts"
+        },
+        {
+          "id": "supernal-tasks",
+          "glob": ".supernal/tasks/**/*.md",
+          "description": "Task files"
+        },
+        {
+          "id": "supernal-config",
+          "glob": ".supernal/**/*.{json,yaml,yml}",
+          "description": "Supernal config files"
+        },
+        {
+          "id": "docs-files",
+          "glob": "docs/**/*.md",
+          "description": "Documentation"
+        },
+        {
+          "id": "research-files",
+          "glob": "research/**/*.{md,json,yaml}",
+          "description": "Research notes"
+        },
+        {
+          "id": "planning-files",
+          "glob": "planning/**/*.md",
+          "description": "Planning documents"
+        },
+        {
+          "id": "test-files",
+          "glob": "tests/**/*.{ts,js,md}",
+          "description": "Test files"
+        },
+        {
+          "id": "skills-local",
+          "glob": "skills/**/*",
+          "description": "Agent-local skills"
+        },
+        {
+          "id": "repos-ref",
+          "glob": "repos/**",
+          "description": "Symlinks to repos"
+        },
+        {
+          "id": "env-files",
+          "glob": ".env*",
+          "description": "Environment files"
+        },
+        {
+          "id": "gitignore",
+          "glob": ".gitignore"
+        },
+        {
+          "id": "rate-limits",
+          "glob": ".rate-limits.json",
+          "description": "Rate limit configuration"
+        },
+        {
+          "id": "repotype-config",
+          "glob": "repotype.yaml",
+          "description": "This file"
+        }
+      ]
+    },
+    "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/profiles/repotype/repotype.yaml": {
+      "version": "1",
+      "defaults": {
+        "inheritance": "merge",
+        "strictness": "balanced"
+      },
+      "folders": [
+        {
+          "id": "supernal-docs-root",
+          "path": ".supernal",
+          "requiredFolders": [
+            "features",
+            "requirements",
+            "traceability"
+          ]
+        }
+      ],
+      "files": [
+        {
+          "id": "supernal-config",
+          "glob": "supernal.yaml"
+        },
+        {
+          "id": "feature-docs",
+          "glob": ".supernal/features/*.md",
+          "filenamePattern": "^FEAT-[A-Z0-9-]+.*\\.md$",
+          "requiredSections": [
+            "Feature",
+            "Scope",
+            "Evidence"
+          ]
+        },
+        {
+          "id": "requirement-docs",
+          "glob": ".supernal/requirements/REQ-*.md",
+          "filenamePattern": "^REQ-[A-Z0-9-]+.*\\.md$",
+          "requiredSections": [
+            "Requirement",
+            "Acceptance Criteria",
+            "Notes"
+          ]
+        },
+        {
+          "id": "requirement-index",
+          "glob": ".supernal/requirements/README.md",
+          "requiredSections": [
+            "Requirements",
+            "Requirement Summary",
+            "Traceability"
+          ]
+        },
+        {
+          "id": "traceability-output",
+          "glob": ".supernal/traceability/traceability.md",
+          "requiredSections": [
+            "Repotype Requirement Traceability",
+            "Summary",
+            "Matrix"
+          ]
+        },
+        {
+          "id": "gherkin-story-sources",
+          "glob": "stories/*.feature",
+          "filenamePattern": "^[a-z0-9-]+\\.feature$"
+        },
+        {
+          "id": "generated-story-tests",
+          "glob": "tests/generated/stories/*.spec.ts",
+          "filenamePattern": "^[a-z0-9-]+\\.spec\\.ts$"
+        }
+      ]
+    },
+    "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/profiles/skills/repotype.yaml": {
+      "version": "1",
+      "defaults": {
+        "inheritance": "merge",
+        "strictness": "balanced",
+        "unmatchedFiles": "allow"
+      },
+      "folders": [
+        {
+          "id": "skills-root",
+          "path": "skills",
+          "description": "Root directory containing all skills"
+        }
+      ],
+      "files": [
+        {
+          "id": "skill-readme",
+          "glob": "skills/*/SKILL.md",
+          "schema": {
+            "kind": "frontmatter",
+            "schema": "examples/schemas/skill.frontmatter.schema.json"
+          },
+          "requiredSections": [
+            "#"
+          ]
+        },
+        {
+          "id": "skill-scripts",
+          "glob": "skills/*/scripts/**/*.{sh,mjs,js,ts,py}"
+        },
+        {
+          "id": "skill-templates",
+          "glob": "skills/*/templates/**/*"
+        },
+        {
+          "id": "skill-docs",
+          "glob": "skills/*/*.md"
+        },
+        {
+          "id": "skills-manifest",
+          "glob": "skills/manifest.json"
+        },
+        {
+          "id": "skills-installer",
+          "glob": "skills/install.sh"
+        }
+      ],
+      "rules": [
+        {
+          "id": "skill-name-match",
+          "kind": "custom",
+          "description": "Skill directory name must match SKILL.md frontmatter name field"
+        }
+      ]
+    },
+    "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/profiles/supernal/repotype.yaml": {
+      "version": "1",
+      "defaults": {
+        "inheritance": "merge",
+        "strictness": "balanced"
+      },
+      "folders": [
+        {
+          "id": "supernal-docs-root",
+          "path": ".supernal",
+          "requiredFolders": [
+            "features",
+            "requirements",
+            "traceability"
+          ]
+        }
+      ],
+      "files": [
+        {
+          "id": "supernal-config",
+          "glob": "supernal.yaml"
+        },
+        {
+          "id": "feature-docs",
+          "glob": ".supernal/features/*.md",
+          "filenamePattern": "^FEAT-[A-Z0-9-]+.*\\.md$",
+          "requiredSections": [
+            "Feature",
+            "Scope",
+            "Evidence"
+          ]
+        },
+        {
+          "id": "requirement-docs",
+          "glob": ".supernal/requirements/REQ-*.md",
+          "filenamePattern": "^REQ-[A-Z0-9-]+.*\\.md$",
+          "requiredSections": [
+            "Requirement",
+            "Acceptance Criteria",
+            "Notes"
+          ]
+        },
+        {
+          "id": "requirement-index",
+          "glob": ".supernal/requirements/README.md",
+          "requiredSections": [
+            "Requirements",
+            "Requirement Summary",
+            "Traceability"
+          ]
+        },
+        {
+          "id": "traceability-output",
+          "glob": ".supernal/traceability/traceability.md",
+          "requiredSections": [
+            "Repotype Requirement Traceability",
+            "Summary",
+            "Matrix"
+          ]
+        },
+        {
+          "id": "gherkin-story-sources",
+          "glob": "stories/*.feature",
+          "filenamePattern": "^[a-z0-9-]+\\.feature$"
+        },
+        {
+          "id": "generated-story-tests",
+          "glob": "tests/generated/stories/*.spec.ts",
+          "filenamePattern": "^[a-z0-9-]+\\.spec\\.ts$"
+        }
+      ]
+    },
+    "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/examples/repotype.yaml": {
+      "version": "1",
+      "defaults": {
+        "inheritance": "merge",
+        "strictness": "balanced"
+      },
+      "operations": {
+        "hooks": {
+          "enabled": true,
+          "hook": "both"
+        },
+        "watcher": {
+          "enabled": false,
+          "schedule": "*/15 * * * *",
+          "queueDir": "sort_queue",
+          "minErrors": 3,
+          "logFile": ".repotype/logs/watcher.log"
+        }
+      },
+      "folders": [
+        {
+          "id": "docs-root",
+          "path": "docs",
+          "requiredFolders": [
+            "requirements"
+          ]
+        }
+      ],
+      "files": [
+        {
+          "id": "requirement-md",
+          "glob": "docs/requirements/**/*.md",
+          "filenamePattern": "^req-[a-z0-9-]+\\.md$",
+          "schema": {
+            "kind": "frontmatter",
+            "schema": "examples/schemas/requirement.frontmatter.schema.json"
+          },
+          "requiredSections": [
+            "Description",
+            "Acceptance Criteria",
+            "Test Strategy"
+          ],
+          "template": {
+            "id": "requirement",
+            "enforce": true
+          },
+          "crossReferences": {
+            "fields": [
+              "requirements",
+              "related_docs"
+            ],
+            "allowAbsolute": false,
+            "allowedExtensions": [
+              ".md"
+            ]
+          }
+        }
+      ],
+      "templates": [
+        {
+          "id": "requirement",
+          "path": "examples/templates/requirement.md",
+          "description": "Canonical requirement markdown template"
+        }
+      ],
+      "rules": [
+        {
+          "id": "companion-tests",
+          "kind": "companion",
+          "sourceGlob": "docs/requirements/**/*.md",
+          "target": "tests/requirements"
+        }
+      ],
+      "plugins": [
+        {
+          "id": "markdownlint",
+          "enabled": false,
+          "install": [
+            {
+              "cmd": "pnpm add -D markdownlint-cli2"
+            }
+          ],
+          "validate": {
+            "cmd": "pnpm exec markdownlint-cli2 \"**/*.md\""
+          },
+          "severityOnFailure": "error"
+        },
+        {
+          "id": "biome",
+          "enabled": false,
+          "install": [
+            {
+              "cmd": "pnpm add -D @biomejs/biome"
+            }
+          ],
+          "validate": {
+            "cmd": "pnpm exec biome check ."
+          },
+          "fix": {
+            "cmd": "pnpm exec biome check --write ."
+          },
+          "severityOnFailure": "warning"
+        }
+      ]
+    },
+    "/Users/saiterminal/git/supernal/families/supernal-coding/packages/repotype/repotype.yaml": {
+      "version": "1",
+      "defaults": {
+        "inheritance": "merge",
+        "strictness": "balanced",
+        "unmatchedFiles": "deny"
+      },
+      "folders": [
+        {
+          "id": "supernal-docs-root",
+          "path": ".supernal",
+          "requiredFolders": [
+            "features",
+            "requirements",
+            "traceability"
+          ]
+        },
+        {
+          "id": "root-structure",
+          "path": ".",
+          "requiredFolders": [
+            "src",
+            "bin",
+            "site",
+            "docs-site"
+          ],
+          "allowedFolders": [
+            "src",
+            "bin",
+            "dist",
+            "site",
+            "docs",
+            "docs-site",
+            "examples",
+            "profiles",
+            "scripts",
+            "skills",
+            "stories",
+            "tests",
+            "node_modules",
+            ".supernal",
+            ".git",
+            ".github",
+            ".husky",
+            ".turbo",
+            ".vscode",
+            "sort_queue"
+          ]
+        }
+      ],
+      "files": [
+        {
+          "id": "supernal-config",
+          "glob": "supernal.yaml"
+        },
+        {
+          "id": "feature-docs",
+          "glob": ".supernal/features/*.md",
+          "filenamePattern": "^FEAT-[A-Z0-9-]+.*\\.md$",
+          "requiredSections": [
+            "Feature",
+            "Scope",
+            "Evidence"
+          ]
+        },
+        {
+          "id": "requirement-docs",
+          "glob": ".supernal/requirements/REQ-*.md",
+          "filenamePattern": "^REQ-[A-Z0-9-]+.*\\.md$",
+          "requiredSections": [
+            "Requirement",
+            "Acceptance Criteria",
+            "Notes"
+          ]
+        },
+        {
+          "id": "requirement-index",
+          "glob": ".supernal/requirements/README.md",
+          "requiredSections": [
+            "Requirements",
+            "Requirement Summary",
+            "Traceability"
+          ]
+        },
+        {
+          "id": "traceability-output",
+          "glob": ".supernal/traceability/traceability.md",
+          "requiredSections": [
+            "Repotype Requirement Traceability",
+            "Summary",
+            "Matrix"
+          ]
+        },
+        {
+          "id": "gherkin-story-sources",
+          "glob": "stories/*.feature",
+          "filenamePattern": "^[a-z0-9-]+\\.feature$"
+        },
+        {
+          "id": "generated-story-tests",
+          "glob": "tests/generated/stories/*.spec.ts",
+          "filenamePattern": "^[a-z0-9-]+\\.spec\\.ts$"
+        },
+        {
+          "id": "typescript-source-root",
+          "glob": "src/*.ts",
+          "pathCase": "kebab"
+        },
+        {
+          "id": "typescript-source-core",
+          "glob": "src/core/*.ts",
+          "pathCase": "kebab"
+        },
+        {
+          "id": "typescript-source-cli",
+          "glob": "src/cli/*.ts",
+          "pathCase": "kebab"
+        },
+        {
+          "id": "typescript-source-adapters",
+          "glob": "src/adapters/*.ts",
+          "pathCase": "kebab"
+        },
+        {
+          "id": "typescript-source-sdk",
+          "glob": "src/sdk/*.ts",
+          "pathCase": "kebab"
+        },
+        {
+          "id": "typescript-source-service",
+          "glob": "src/service/*.ts",
+          "pathCase": "kebab"
+        },
+        {
+          "id": "cli-entry",
+          "glob": "bin/*.js"
+        },
+        {
+          "id": "dist-files",
+          "glob": "dist/**/*.{js,ts,map}",
+          "lint": {
+            "allowOverbroad": true,
+            "reason": "Build output artifacts are intentionally recursive and not contract-managed inputs."
+          }
+        },
+        {
+          "id": "root-configs",
+          "glob": "*.{json,yaml,yml,mjs,cjs,ts}"
+        },
+        {
+          "id": "license-file",
+          "glob": "LICENSE"
+        },
+        {
+          "id": "typescript-config",
+          "glob": "tsconfig.json"
+        },
+        {
+          "id": "package-json",
+          "glob": "package.json"
+        },
+        {
+          "id": "package-readme",
+          "glob": "README.md",
+          "requiredSections": [
+            "Install",
+            "Quick Start",
+            "What It Validates",
+            "CLI Commands",
+            "License"
+          ]
+        },
+        {
+          "id": "package-agents",
+          "glob": "AGENTS.md",
+          "requiredSections": [
+            "Purpose",
+            "Use This Package For",
+            "Recommended Agent Workflow"
+          ]
+        },
+        {
+          "id": "package-contributing",
+          "glob": "CONTRIBUTING.md",
+          "requiredSections": [
+            "Scope",
+            "Local Development",
+            "Pull Request Checklist"
+          ]
+        },
+        {
+          "id": "package-changelog",
+          "glob": "CHANGELOG.md",
+          "requiredSections": [
+            "Added"
+          ]
+        },
+        {
+          "id": "package-roadmap",
+          "glob": "ROADMAP.md",
+          "requiredSections": [
+            "Near Term",
+            "Runtime Portability"
+          ]
+        },
+        {
+          "id": "docs-migration",
+          "glob": "docs/*.md",
+          "requiredSections": [
+            "What changed",
+            "Required action"
+          ]
+        },
+        {
+          "id": "site-readme",
+          "glob": "site/README.md",
+          "requiredSections": [
+            "Local Preview",
+            "GitHub Pages"
+          ]
+        },
+        {
+          "id": "site-files-root",
+          "glob": "site/*.{html,css,js,json,ico,png,svg,webp}"
+        },
+        {
+          "id": "site-files-assets",
+          "glob": "site/assets/*.{png,svg,webp}"
+        },
+        {
+          "id": "site-badges",
+          "glob": "site/badges/*.json"
+        },
+        {
+          "id": "site-assets",
+          "glob": "site/assets/*"
+        },
+        {
+          "id": "docs-site-config",
+          "glob": "docs-site/*.{json,mjs,ts}"
+        },
+        {
+          "id": "docs-site-content-root",
+          "glob": "docs-site/src/*.{mdx,md,ts,css,png,webp,svg}"
+        },
+        {
+          "id": "docs-site-content-config",
+          "glob": "docs-site/src/content.config.ts"
+        },
+        {
+          "id": "docs-site-content-docs-index",
+          "glob": "docs-site/src/content/docs/index.mdx"
+        },
+        {
+          "id": "docs-site-content-docs-getting-started",
+          "glob": "docs-site/src/content/docs/getting-started/*.mdx"
+        },
+        {
+          "id": "docs-site-content-docs-guides",
+          "glob": "docs-site/src/content/docs/guides/*.mdx"
+        },
+        {
+          "id": "docs-site-content-docs-examples",
+          "glob": "docs-site/src/content/docs/examples/*.mdx"
+        },
+        {
+          "id": "docs-site-content-docs-reference",
+          "glob": "docs-site/src/content/docs/reference/*.mdx"
+        },
+        {
+          "id": "docs-site-content-styles",
+          "glob": "docs-site/src/styles/*.css"
+        },
+        {
+          "id": "docs-site-content-assets",
+          "glob": "docs-site/src/assets/*.{png,webp,svg}"
+        },
+        {
+          "id": "docs-site-scripts",
+          "glob": "docs-site/scripts/*.mjs"
+        },
+        {
+          "id": "docs-site-public",
+          "glob": "docs-site/public/*"
+        },
+        {
+          "id": "docs-site-dist",
+          "glob": "docs-site/dist/**/*",
+          "lint": {
+            "allowOverbroad": true,
+            "reason": "Built docs artifacts are generated output and intentionally recursive."
+          }
+        },
+        {
+          "id": "docs-site-misc",
+          "glob": "docs-site/.gitignore"
+        },
+        {
+          "id": "docs-site-readme",
+          "glob": "docs-site/README.md",
+          "requiredSections": [
+            "🚀 Project Structure",
+            "🧞 Commands",
+            "👀 Want to learn more?"
+          ]
+        },
+        {
+          "id": "docs-site-vscode",
+          "glob": "docs-site/.vscode/*.json"
+        },
+        {
+          "id": "example-configs-root",
+          "glob": "examples/*.{yaml,yml,md}"
+        },
+        {
+          "id": "example-configs-openclaw",
+          "glob": "examples/openclaw-repo/*.{yaml,yml,md}"
+        },
+        {
+          "id": "example-pr-description",
+          "glob": "examples/openclaw-repo/PR_DESCRIPTION.md",
+          "requiredSections": [
+            "What is Repotype?",
+            "What this PR adds",
+            "Usage"
+          ]
+        },
+        {
+          "id": "example-configs-templates",
+          "glob": "examples/templates/*.md"
+        },
+        {
+          "id": "example-template-requirement",
+          "glob": "examples/templates/requirement.md",
+          "requiredSections": [
+            "Description",
+            "Acceptance Criteria",
+            "Test Strategy"
+          ]
+        },
+        {
+          "id": "example-schemas",
+          "glob": "examples/schemas/*.json"
+        },
+        {
+          "id": "example-templates",
+          "glob": "examples/templates/*.md"
+        },
+        {
+          "id": "profile-configs",
+          "glob": "profiles/*/*.yaml"
+        },
+        {
+          "id": "build-scripts",
+          "glob": "scripts/*.{mjs,js,sh}"
+        },
+        {
+          "id": "skill-files-skillmd",
+          "glob": "skills/*/SKILL.md",
+          "schema": {
+            "kind": "frontmatter",
+            "schema": "examples/schemas/skill.frontmatter.schema.json"
+          },
+          "requiredSections": [
+            "Prerequisites",
+            "Primary Workflow",
+            "Safety Rules"
+          ]
+        },
+        {
+          "id": "skill-files-root",
+          "glob": "skills/*/*.md"
+        },
+        {
+          "id": "skill-files-references",
+          "glob": "skills/*/references/*.md",
+          "requiredSections": [
+            "Validation",
+            "Operations"
+          ]
+        },
+        {
+          "id": "skill-files-scripts",
+          "glob": "skills/*/scripts/*.sh"
+        },
+        {
+          "id": "test-files-root",
+          "glob": "tests/*.{ts,mjs}"
+        },
+        {
+          "id": "generated-tests",
+          "glob": "tests/generated/*.{ts,json}"
+        },
+        {
+          "id": "generated-story-tests",
+          "glob": "tests/generated/stories/*.ts"
+        },
+        {
+          "id": "github-workflows",
+          "glob": ".github/workflows/*.yml"
+        },
+        {
+          "id": "husky-hooks",
+          "glob": ".husky/*"
+        },
+        {
+          "id": "env-files",
+          "glob": ".env*",
+          "forbidContentPatterns": [
+            "sk-[a-zA-Z0-9]{20,}",
+            "ghp_[a-zA-Z0-9]{36}",
+            "npm_[a-zA-Z0-9]{36}",
+            "xox[baprs]-[a-zA-Z0-9-]+"
+          ]
+        },
+        {
+          "id": "npmrc-safety",
+          "glob": ".npmrc",
+          "forbidContentPatterns": [
+            "//registry.npmjs.org/:_authToken=npm_"
+          ]
+        },
+        {
+          "id": "gitignore",
+          "glob": ".gitignore"
+        },
+        {
+          "id": "vscode-config",
+          "glob": ".vscode/*.json"
+        },
+        {
+          "id": "lockfiles",
+          "glob": "*.lock"
+        },
+        {
+          "id": "package-lock",
+          "glob": "package-lock.json"
+        },
+        {
+          "id": "node-modules",
+          "glob": "node_modules/**/*",
+          "lint": {
+            "allowOverbroad": true,
+            "reason": "Dependency tree is external/vendor content and not contract-managed."
+          }
+        },
+        {
+          "id": "sort-queue",
+          "glob": "sort_queue/**/*",
+          "lint": {
+            "allowOverbroad": true,
+            "reason": "Quarantine queue intentionally accepts arbitrary nested files."
+          }
+        }
+      ]
+    }
+  }
+}
