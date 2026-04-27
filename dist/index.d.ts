@@ -54,6 +54,8 @@ interface FileRule {
     pathCase?: 'kebab' | 'snake' | 'camel' | 'lower';
     templateHints?: string[];
     forbidContentPatterns?: string[];
+    /** Override the severity of forbidden content pattern violations. Defaults to 'error'. */
+    forbidContentSeverity?: DiagnosticSeverity;
     schema?: SchemaBinding;
     requiredSections?: string[];
     companionFiles?: string[];

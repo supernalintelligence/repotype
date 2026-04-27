@@ -1294,7 +1294,7 @@ var ContentPolicyAdapter = class {
           diagnostics.push({
             code: "forbidden_content_pattern",
             message: `Forbidden content pattern matched: ${pattern}`,
-            severity: "error",
+            severity: rule.forbidContentSeverity ?? "error",
             file: filePath,
             ruleId: rule.id,
             details: {
