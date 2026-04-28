@@ -3,6 +3,7 @@ import path from 'path';
 
 export default defineConfig({
   test: {
+    forceExit: true,
     setupFiles: [path.resolve(__dirname, '../../vitest.setup.ts')],
     exclude: [
       'tests/generated/stories/**',
