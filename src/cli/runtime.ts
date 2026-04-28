@@ -1,4 +1,5 @@
 import { CrossReferenceAdapter } from '../adapters/cross-reference-adapter.js';
+import { CrossFileRuleAdapter } from '../adapters/cross-file-rule-adapter.js';
 import { ContentPolicyAdapter } from '../adapters/content-policy-adapter.js';
 import { FileSchemaAdapter } from '../adapters/file-schema-adapter.js';
 import { FilenameAdapter } from '../adapters/filename-adapter.js';
@@ -18,6 +19,7 @@ export function createDefaultEngine(): ValidationEngine {
     new FrontmatterSchemaAdapter(),
     new FileSchemaAdapter(),
     new CrossReferenceAdapter(),
+    new CrossFileRuleAdapter(),
     new ContentPolicyAdapter(),
     new GuidanceAdapter(),
   ]);

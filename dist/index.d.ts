@@ -81,6 +81,10 @@ interface CrossFileRule {
     sourceGlob: string;
     target?: string;
     field?: string;
+    /** Diagnostic severity when the reference is broken. Defaults to 'error'. */
+    severity?: DiagnosticSeverity;
+    /** When true, skip validation if the field is absent or empty string. */
+    optional?: boolean;
 }
 interface RepoSchemaConfig {
     version: string;
