@@ -34,6 +34,34 @@ function isRepotypeSystemFile(relativePath: string): boolean {
   return normalized === 'repotype.yaml' || normalized === 'repo-schema.yaml';
 }
 
+// Detects unquoted YAML plain scalars containing ' #' which YAML parses as a
+// comment start, silently truncating the value. Only fires for simple key: value
+// lines — skips quoted values ("...", '...') and block scalars (|, >, [, {).
+function findFrontmatterCommentTruncations(body: string): { line: number; key: string; raw: string }[] {
+  const results: { line: number; key: string; raw: string }[] = [];
+  if (!body.startsWith('---\n')) {
+    return results;
+  }
+  const endMarker = body.indexOf('\n---', 4);
+  if (endMarker === -1) {
+    return results;
+  }
+  const frontmatter = body.slice(4, endMarker);
+  const lines = frontmatter.split('\n');
+  // key: plain-scalar-value  # comment
+  // Exclude whitespace from the first char so backtracking can't give up the
+  // colon's trailing space and make a flow-indicator value (e.g. [a,b]) appear
+  // to start as a plain scalar.
+  const plainScalarWithHash = /^(\s*)([\w][\w-]*)(\s*:\s*)([^|>['"{}\s][^\n]*)\s+#/;
+  for (let i = 0; i < lines.length; i++) {
+    const m = plainScalarWithHash.exec(lines[i]);
+    if (m) {
+      results.push({ line: i + 2, key: m[2], raw: lines[i].trim() });
+    }
+  }
+  return results;
+}
+
 function isReferencedByConfig(relativePath: string, context: ValidatorContext): boolean {
   const normalized = normalizePath(relativePath);
 
@@ -136,6 +164,20 @@ export class GuidanceAdapter implements ValidatorAdapter {
         severity: 'suggestion',
         file: filePath,
       });
+    }
+
+    if (hasFrontmatter) {
+      for (const hit of findFrontmatterCommentTruncations(body)) {
+        diagnostics.push({
+          code: 'frontmatter_comment_truncation',
+          message:
+            `Frontmatter field '${hit.key}' (line ${hit.line}) contains ' #' in an unquoted scalar — ` +
+            `YAML will silently treat everything after it as a comment. Quote the value to preserve it.`,
+          severity: 'warning',
+          file: filePath,
+          details: { line: hit.line, raw: hit.raw },
+        });
+      }
     }
 
     return diagnostics;

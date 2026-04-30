@@ -1789,6 +1789,26 @@ function isRepotypeSystemFile(relativePath) {
   const normalized = normalizePath(relativePath);
   return normalized === "repotype.yaml" || normalized === "repo-schema.yaml";
 }
+function findFrontmatterCommentTruncations(body) {
+  const results = [];
+  if (!body.startsWith("---\n")) {
+    return results;
+  }
+  const endMarker = body.indexOf("\n---", 4);
+  if (endMarker === -1) {
+    return results;
+  }
+  const frontmatter = body.slice(4, endMarker);
+  const lines = frontmatter.split("\n");
+  const plainScalarWithHash = /^(\s*)([\w][\w-]*)(\s*:\s*)([^|>['"{}\s][^\n]*)\s+#/;
+  for (let i = 0; i < lines.length; i++) {
+    const m = plainScalarWithHash.exec(lines[i]);
+    if (m) {
+      results.push({ line: i + 2, key: m[2], raw: lines[i].trim() });
+    }
+  }
+  return results;
+}
 function isReferencedByConfig(relativePath, context) {
   const normalized = normalizePath(relativePath);
   if ((context.config.templates || []).some((t) => typeof t.path === "string" && normalizePath(t.path) === normalized)) {
@@ -1873,6 +1893,17 @@ var GuidanceAdapter = class {
         severity: "suggestion",
         file: filePath
       });
+    }
+    if (hasFrontmatter) {
+      for (const hit of findFrontmatterCommentTruncations(body)) {
+        diagnostics.push({
+          code: "frontmatter_comment_truncation",
+          message: `Frontmatter field '${hit.key}' (line ${hit.line}) contains ' #' in an unquoted scalar \u2014 YAML will silently treat everything after it as a comment. Quote the value to preserve it.`,
+          severity: "warning",
+          file: filePath,
+          details: { line: hit.line, raw: hit.raw }
+        });
+      }
     }
     return diagnostics;
   }
