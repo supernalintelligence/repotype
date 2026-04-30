@@ -413,7 +413,7 @@ function folderRuleMatches(rule, relativePath) {
 function resolveEffectiveRules(config, repoRoot, absoluteFilePath) {
   const relativePath = normalize2(path3.relative(repoRoot, absoluteFilePath));
   const folderRules = (config.folders || []).filter((rule) => folderRuleMatches(rule, relativePath));
-  const fileRules = (config.files || []).filter((rule) => matchesGlob(relativePath, normalize2(rule.glob)));
+  const fileRules = (config.files || []).filter((rule) => typeof rule.glob === "string" && matchesGlob(relativePath, normalize2(rule.glob)));
   const requiredSections = /* @__PURE__ */ new Set();
   const templateHints = /* @__PURE__ */ new Set();
   let schema;
@@ -1408,6 +1408,9 @@ var FileSchemaAdapter = class {
       return diagnostics;
     }
     const schemaRef = binding.schema;
+    if (typeof schemaRef !== "string") {
+      return diagnostics;
+    }
     const schemaPath = path10.resolve(context.repoRoot, schemaRef);
     if (!fs10.existsSync(schemaPath)) {
       return [
@@ -1707,7 +1710,7 @@ var FrontmatterSchemaAdapter = class {
   async validate(filePath, context) {
     const diagnostics = [];
     const schemaRef = context.ruleSet.schema?.schema;
-    if (!schemaRef) {
+    if (!schemaRef || typeof schemaRef !== "string") {
       return diagnostics;
     }
     const schemaPath = path13.resolve(context.repoRoot, schemaRef);
@@ -1788,7 +1791,7 @@ function isRepotypeSystemFile(relativePath) {
 }
 function isReferencedByConfig(relativePath, context) {
   const normalized = normalizePath(relativePath);
-  if ((context.config.templates || []).some((t) => normalizePath(t.path) === normalized)) {
+  if ((context.config.templates || []).some((t) => typeof t.path === "string" && normalizePath(t.path) === normalized)) {
     return true;
   }
   for (const rule of context.config.files || []) {

@@ -37,7 +37,7 @@ function isRepotypeSystemFile(relativePath: string): boolean {
 function isReferencedByConfig(relativePath: string, context: ValidatorContext): boolean {
   const normalized = normalizePath(relativePath);
 
-  if ((context.config.templates || []).some((t) => normalizePath(t.path) === normalized)) {
+  if ((context.config.templates || []).some((t) => typeof t.path === 'string' && normalizePath(t.path) === normalized)) {
     return true;
   }
 

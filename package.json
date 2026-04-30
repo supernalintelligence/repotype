@@ -1,6 +1,6 @@
 {
   "name": "repotype",
-  "version": "0.1.2",
+  "version": "0.1.3",
   "description": "Repository schema validation, scaffolding, autofix, and service runtime",
   "homepage": "https://supernalintelligence.github.io/repotype/",
   "repository": {

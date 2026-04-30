@@ -32,7 +32,7 @@ export function resolveEffectiveRules(
 ): EffectiveRuleSet {
   const relativePath = normalize(path.relative(repoRoot, absoluteFilePath));
   const folderRules = (config.folders || []).filter((rule) => folderRuleMatches(rule, relativePath));
-  const fileRules = (config.files || []).filter((rule) => matchesGlob(relativePath, normalize(rule.glob)));
+  const fileRules = (config.files || []).filter((rule) => typeof rule.glob === 'string' && matchesGlob(relativePath, normalize(rule.glob)));
 
   const requiredSections = new Set<string>();
   const templateHints = new Set<string>();

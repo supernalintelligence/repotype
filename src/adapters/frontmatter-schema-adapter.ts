@@ -18,7 +18,7 @@ export class FrontmatterSchemaAdapter implements ValidatorAdapter {
   async validate(filePath: string, context: ValidatorContext): Promise<Diagnostic[]> {
     const diagnostics: Diagnostic[] = [];
     const schemaRef = context.ruleSet.schema?.schema;
-    if (!schemaRef) {
+    if (!schemaRef || typeof schemaRef !== 'string') {
       return diagnostics;
     }
 

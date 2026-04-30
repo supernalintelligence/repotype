@@ -30,6 +30,10 @@ export class FileSchemaAdapter implements ValidatorAdapter {
     }
 
     const schemaRef = binding.schema;
+    if (typeof schemaRef !== 'string') {
+      return diagnostics;
+    }
+
     const schemaPath = path.resolve(context.repoRoot, schemaRef);
     if (!fs.existsSync(schemaPath)) {
       return [
