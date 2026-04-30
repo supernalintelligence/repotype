@@ -42,7 +42,7 @@ function isReferencedByConfig(relativePath: string, context: ValidatorContext): 
   }
 
   for (const rule of context.config.files || []) {
-    if (rule.schema && normalizePath(rule.schema.schema) === normalized) {
+    if (rule.schema && typeof rule.schema.schema === 'string' && normalizePath(rule.schema.schema) === normalized) {
       return true;
     }
   }
@@ -51,7 +51,7 @@ function isReferencedByConfig(relativePath: string, context: ValidatorContext): 
     const bindings = folder.schemaBindings || {};
     for (const key of Object.keys(bindings)) {
       const binding = bindings[key];
-      if (normalizePath(binding.schema) === normalized) {
+      if (typeof binding.schema === 'string' && normalizePath(binding.schema) === normalized) {
         return true;
       }
     }
