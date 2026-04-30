@@ -617,4 +617,150 @@ description: something: else
     const validation = flattenFixValidation(fixResult);
     expect(validation.diagnostics.some((d) => d.code === 'plugin_fix_ok')).toBe(true);
   });
+
+  // --- Robustness: inline schema objects and missing fields ---
+
+  it('does not crash when a file rule uses an inline schema object instead of a path string', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-inline-schema-'));
+    fs.mkdirSync(path.join(root, 'data'), { recursive: true });
+    // schema.schema is an inline object — would previously throw "p.replace is not a function"
+    fs.writeFileSync(
+      path.join(root, 'repotype.yaml'),
+      `version: "1"
+defaults:
+  unmatchedFiles: deny
+files:
+  - id: data-files
+    glob: "data/*.json"
+    schema:
+      kind: file
+      schema:
+        type: object
+        required: [name]
+        properties:
+          name: {type: string}
+`,
+    );
+    fs.writeFileSync(path.join(root, 'data', 'item.json'), JSON.stringify({ name: 'test' }));
+    // Should not throw
+    await expect(validatePath(root)).resolves.toBeDefined();
+  });
+
+  it('does not crash when a file rule is missing its glob field', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-missing-glob-'));
+    // A rule with id but no glob — would previously throw in normalize(rule.glob)
+    fs.writeFileSync(
+      path.join(root, 'repotype.yaml'),
+      `version: "1"
+defaults:
+  unmatchedFiles: allow
+files:
+  - id: broken-rule
+`,
+    );
+    fs.writeFileSync(path.join(root, 'README.md'), '# Test\n');
+    await expect(validatePath(root)).resolves.toBeDefined();
+  });
+
+  it('does not crash when a template has a null path', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-null-template-'));
+    fs.writeFileSync(
+      path.join(root, 'repotype.yaml'),
+      `version: "1"
+defaults:
+  unmatchedFiles: allow
+templates:
+  - id: broken
+    path: ~
+`,
+    );
+    fs.writeFileSync(path.join(root, 'README.md'), '# Test\n');
+    await expect(validatePath(root)).resolves.toBeDefined();
+  });
+
+  // --- frontmatter_comment_truncation warning ---
+
+  it('warns when a frontmatter plain scalar contains space-hash comment truncation risk', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-hash-warn-'));
+    fs.mkdirSync(path.join(root, 'skills', 'my-skill'), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, 'repotype.yaml'),
+      `version: "1"
+defaults:
+  unmatchedFiles: allow
+files:
+  - id: skills
+    glob: "skills/*/SKILL.md"
+`,
+    );
+    // description contains ' #' — YAML will silently truncate it
+    fs.writeFileSync(
+      path.join(root, 'skills', 'my-skill', 'SKILL.md'),
+      `---
+name: my-skill
+description: Does the thing # internal only
+---
+
+# My Skill
+`,
+    );
+    const result = flattenResult(await validatePath(root));
+    expect(result.diagnostics.some((d) => d.code === 'frontmatter_comment_truncation')).toBe(true);
+    expect(result.diagnostics.find((d) => d.code === 'frontmatter_comment_truncation')?.severity).toBe('warning');
+  });
+
+  it('does not warn on quoted frontmatter values containing hash', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-hash-quoted-'));
+    fs.mkdirSync(path.join(root, 'skills', 'my-skill'), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, 'repotype.yaml'),
+      `version: "1"
+defaults:
+  unmatchedFiles: allow
+files:
+  - id: skills
+    glob: "skills/*/SKILL.md"
+`,
+    );
+    fs.writeFileSync(
+      path.join(root, 'skills', 'my-skill', 'SKILL.md'),
+      `---
+name: my-skill
+description: "Does the thing # safe because quoted"
+---
+
+# My Skill
+`,
+    );
+    const result = flattenResult(await validatePath(root));
+    expect(result.diagnostics.some((d) => d.code === 'frontmatter_comment_truncation')).toBe(false);
+  });
+
+  it('does not warn on flow-sequence values containing hash', async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-hash-flow-'));
+    fs.mkdirSync(path.join(root, 'skills', 'my-skill'), { recursive: true });
+    fs.writeFileSync(
+      path.join(root, 'repotype.yaml'),
+      `version: "1"
+defaults:
+  unmatchedFiles: allow
+files:
+  - id: skills
+    glob: "skills/*/SKILL.md"
+`,
+    );
+    fs.writeFileSync(
+      path.join(root, 'skills', 'my-skill', 'SKILL.md'),
+      `---
+name: my-skill
+description: Does the thing
+tags: [a, b] # comment on flow sequence
+---
+
+# My Skill
+`,
+    );
+    const result = flattenResult(await validatePath(root));
+    expect(result.diagnostics.some((d) => d.code === 'frontmatter_comment_truncation')).toBe(false);
+  });
 });
