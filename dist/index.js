@@ -1124,8 +1124,8 @@ var ValidationEngine = class {
 };
 
 // src/cli/use-cases.ts
-import fs15 from "fs";
-import path17 from "path";
+import fs16 from "fs";
+import path18 from "path";
 
 // src/core/autofix.ts
 import fs7 from "fs";
@@ -2133,6 +2133,206 @@ var PathPolicyAdapter = class {
   }
 };
 
+// src/adapters/board-yaml-completeness-adapter.ts
+import fs15 from "fs";
+import path17 from "path";
+import yaml4 from "js-yaml";
+function isBoardYaml(filePath) {
+  return filePath.endsWith("/board.yaml") || filePath === "board.yaml";
+}
+var BoardYamlCompletenessAdapter = class {
+  id = "board-yaml-completeness";
+  supports(filePath, _context) {
+    const normalized = filePath.replace(/\\/g, "/");
+    return isBoardYaml(normalized);
+  }
+  async validate(filePath, _context) {
+    const diagnostics = [];
+    let raw;
+    try {
+      raw = fs15.readFileSync(filePath, "utf8");
+    } catch (err) {
+      return [
+        {
+          code: "board_yaml_unreadable",
+          message: `board.yaml could not be read: ${err.message}`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id
+        }
+      ];
+    }
+    let doc;
+    try {
+      const parsed = yaml4.load(raw);
+      if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed)) {
+        return [
+          {
+            code: "board_yaml_not_object",
+            message: "board.yaml must be a YAML mapping (object), not a scalar or array.",
+            severity: "error",
+            file: filePath,
+            ruleId: this.id
+          }
+        ];
+      }
+      doc = parsed;
+    } catch (err) {
+      return [
+        {
+          code: "board_yaml_invalid_yaml",
+          message: `board.yaml has invalid YAML syntax: ${err.message}`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id
+        }
+      ];
+    }
+    const dirName = path17.basename(path17.dirname(filePath));
+    if (!("id" in doc) || doc["id"] === void 0 || doc["id"] === null || doc["id"] === "") {
+      diagnostics.push({
+        code: "board_yaml_missing_id",
+        message: "board.yaml must have an id field.",
+        severity: "error",
+        file: filePath,
+        ruleId: this.id
+      });
+    } else if (typeof doc["id"] === "string" && doc["id"] !== dirName) {
+      diagnostics.push({
+        code: "board_yaml_id_mismatch",
+        message: `board.yaml id "${doc["id"]}" does not match directory name "${dirName}".`,
+        severity: "error",
+        file: filePath,
+        ruleId: this.id,
+        details: { id: doc["id"], dirName }
+      });
+    }
+    if (!("label" in doc) || doc["label"] === void 0 || doc["label"] === null || doc["label"] === "") {
+      diagnostics.push({
+        code: "board_yaml_missing_label",
+        message: "board.yaml must have a label field.",
+        severity: "error",
+        file: filePath,
+        ruleId: this.id
+      });
+    }
+    if (!("description" in doc) || doc["description"] === void 0 || doc["description"] === null) {
+      diagnostics.push({
+        code: "board_yaml_missing_description",
+        message: "board.yaml must have a description field.",
+        severity: "error",
+        file: filePath,
+        ruleId: this.id
+      });
+    } else if (typeof doc["description"] === "string" && doc["description"].trim().length === 0) {
+      diagnostics.push({
+        code: "board_yaml_empty_description",
+        message: "board.yaml description must not be empty.",
+        severity: "error",
+        file: filePath,
+        ruleId: this.id
+      });
+    }
+    if (!("category" in doc) || doc["category"] === void 0 || doc["category"] === null || doc["category"] === "") {
+      diagnostics.push({
+        code: "board_yaml_missing_category",
+        message: "board.yaml should have a category field (revenue | operations | intelligence | content | custom).",
+        severity: "warning",
+        file: filePath,
+        ruleId: this.id
+      });
+    }
+    if (!("icon" in doc) || doc["icon"] === void 0 || doc["icon"] === null || doc["icon"] === "") {
+      diagnostics.push({
+        code: "board_yaml_missing_icon",
+        message: "board.yaml should have an icon field (lucide icon name).",
+        severity: "warning",
+        file: filePath,
+        ruleId: this.id
+      });
+    }
+    const hasConnectors = "connectors" in doc && doc["connectors"] !== void 0 && doc["connectors"] !== null;
+    const hasCrons = "crons" in doc && doc["crons"] !== void 0 && doc["crons"] !== null;
+    const hasSecrets = "secrets" in doc && doc["secrets"] !== void 0 && doc["secrets"] !== null;
+    if (!hasConnectors && !hasCrons && !hasSecrets) {
+      diagnostics.push({
+        code: "board_yaml_no_external_deps",
+        message: "board.yaml declares no connectors, crons, or secrets \u2014 agent will have nothing to schedule or connect. Add connectors/crons/secrets sections or this note is expected for utility boards.",
+        severity: "suggestion",
+        file: filePath,
+        ruleId: this.id
+      });
+    }
+    if (hasConnectors && Array.isArray(doc["connectors"])) {
+      const connectors = doc["connectors"];
+      for (let i = 0; i < connectors.length; i++) {
+        const c = connectors[i];
+        if (typeof c !== "object" || c === null || Array.isArray(c)) continue;
+        const connector = c;
+        const missing = [];
+        if (!connector["id"]) missing.push("id");
+        if (!connector["label"]) missing.push("label");
+        if (!connector["auth"]) missing.push("auth");
+        if (missing.length > 0) {
+          diagnostics.push({
+            code: "board_yaml_connector_missing_fields",
+            message: `connectors[${i}] is missing required fields: ${missing.join(", ")}.`,
+            severity: "warning",
+            file: filePath,
+            ruleId: this.id,
+            details: { index: i, missing }
+          });
+        }
+      }
+    }
+    if (hasSecrets && Array.isArray(doc["secrets"])) {
+      const secrets = doc["secrets"];
+      for (let i = 0; i < secrets.length; i++) {
+        const s = secrets[i];
+        if (typeof s !== "object" || s === null || Array.isArray(s)) continue;
+        const secret = s;
+        const missing = [];
+        if (!secret["key"]) missing.push("key");
+        if (!secret["label"]) missing.push("label");
+        if (missing.length > 0) {
+          diagnostics.push({
+            code: "board_yaml_secret_missing_fields",
+            message: `secrets[${i}] is missing required fields: ${missing.join(", ")}.`,
+            severity: "warning",
+            file: filePath,
+            ruleId: this.id,
+            details: { index: i, missing }
+          });
+        }
+      }
+    }
+    if (hasCrons && Array.isArray(doc["crons"])) {
+      const crons = doc["crons"];
+      for (let i = 0; i < crons.length; i++) {
+        const cr = crons[i];
+        if (typeof cr !== "object" || cr === null || Array.isArray(cr)) continue;
+        const cron = cr;
+        const missing = [];
+        if (!cron["id"]) missing.push("id");
+        if (!cron["schedule"]) missing.push("schedule");
+        if (!cron["action"]) missing.push("action");
+        if (!cron["description"]) missing.push("description");
+        if (missing.length > 0) {
+          diagnostics.push({
+            code: "board_yaml_cron_missing_fields",
+            message: `crons[${i}] is missing required fields: ${missing.join(", ")}.`,
+            severity: "warning",
+            file: filePath,
+            ruleId: this.id,
+            details: { index: i, missing }
+          });
+        }
+      }
+    }
+    return diagnostics;
+  }
+};
+
 // src/cli/runtime.ts
 function createDefaultEngine() {
   return new ValidationEngine([
@@ -2145,7 +2345,8 @@ function createDefaultEngine() {
     new CrossReferenceAdapter(),
     new CrossFileRuleAdapter(),
     new ContentPolicyAdapter(),
-    new GuidanceAdapter()
+    new GuidanceAdapter(),
+    new BoardYamlCompletenessAdapter()
   ]);
 }
 
@@ -2289,21 +2490,21 @@ function renderComplianceReportFromJson(json, format = "html") {
 }
 
 // src/cli/use-cases.ts
-import yaml4 from "js-yaml";
+import yaml5 from "js-yaml";
 function deriveTargetRoot(targetPath) {
-  if (fs15.existsSync(targetPath) && fs15.statSync(targetPath).isDirectory()) {
+  if (fs16.existsSync(targetPath) && fs16.statSync(targetPath).isDirectory()) {
     return targetPath;
   }
-  return path17.dirname(targetPath);
+  return path18.dirname(targetPath);
 }
 async function validatePath(target, configOverridePath, opts = {}) {
-  const absolute = path17.resolve(target);
+  const absolute = path18.resolve(target);
   const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path17.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path17.dirname(configPath);
+  const configPath = configOverridePath ? path18.resolve(configOverridePath) : findConfig(absolute);
+  const repoRoot = configOverridePath ? targetRoot : path18.dirname(configPath);
   const config = loadConfig(configPath);
   const engine = createDefaultEngine();
-  const isDirectory = fs15.existsSync(absolute) && fs15.statSync(absolute).isDirectory();
+  const isDirectory = fs16.existsSync(absolute) && fs16.statSync(absolute).isDirectory();
   const workspaceEnabled = opts.workspace !== false;
   if (isDirectory && workspaceEnabled && !configOverridePath) {
     const wsResult = await engine.validateWorkspace(absolute, { noCache: opts.noCache });
@@ -2342,18 +2543,18 @@ async function validatePath(target, configOverridePath, opts = {}) {
   };
 }
 function explainPath(target, configOverridePath) {
-  const absolute = path17.resolve(target);
+  const absolute = path18.resolve(target);
   const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path17.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path17.dirname(configPath);
+  const configPath = configOverridePath ? path18.resolve(configOverridePath) : findConfig(absolute);
+  const repoRoot = configOverridePath ? targetRoot : path18.dirname(configPath);
   const config = loadConfig(configPath);
   return explainRules(config, repoRoot, absolute);
 }
 async function fixPath(target, configOverridePath, opts = {}) {
-  const absolute = path17.resolve(target);
+  const absolute = path18.resolve(target);
   const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path17.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path17.dirname(configPath);
+  const configPath = configOverridePath ? path18.resolve(configOverridePath) : findConfig(absolute);
+  const repoRoot = configOverridePath ? targetRoot : path18.dirname(configPath);
   const config = loadConfig(configPath);
   const validateResult = await validatePath(target, configOverridePath, opts);
   if (validateResult.mode === "workspace") {
@@ -2395,16 +2596,16 @@ async function fixPath(target, configOverridePath, opts = {}) {
   };
 }
 function scaffoldFromTemplate(templateId, outputPath, variables) {
-  const absolute = path17.resolve(outputPath);
+  const absolute = path18.resolve(outputPath);
   const configPath = findConfig(absolute);
-  const repoRoot = path17.dirname(configPath);
+  const repoRoot = path18.dirname(configPath);
   const config = loadConfig(configPath);
   const content = renderTemplate(config, repoRoot, templateId, variables);
-  const parent = path17.dirname(absolute);
-  if (!fs15.existsSync(parent)) {
-    fs15.mkdirSync(parent, { recursive: true });
+  const parent = path18.dirname(absolute);
+  if (!fs16.existsSync(parent)) {
+    fs16.mkdirSync(parent, { recursive: true });
   }
-  fs15.writeFileSync(absolute, content);
+  fs16.writeFileSync(absolute, content);
   return absolute;
 }
 function generateSchemaFromContent(target, output, pattern = "**/*.md") {
@@ -2413,21 +2614,21 @@ function generateSchemaFromContent(target, output, pattern = "**/*.md") {
 function initRepotypeConfig(targetDir, options = {}) {
   const type = options.type ?? "default";
   const force = options.force ?? false;
-  const absoluteTarget = path17.resolve(targetDir);
-  const outputPath = path17.join(absoluteTarget, "repotype.yaml");
-  if (fs15.existsSync(outputPath) && !force) {
+  const absoluteTarget = path18.resolve(targetDir);
+  const outputPath = path18.join(absoluteTarget, "repotype.yaml");
+  if (fs16.existsSync(outputPath) && !force) {
     throw new Error(`repotype.yaml already exists at ${outputPath}. Use --force to overwrite.`);
   }
-  const config = options.from ? yaml4.load(fs15.readFileSync(path17.resolve(options.from), "utf8")) : createPresetConfig(type);
+  const config = options.from ? yaml5.load(fs16.readFileSync(path18.resolve(options.from), "utf8")) : createPresetConfig(type);
   if (!config || typeof config !== "object" || !config.version) {
     throw new Error('Source config is invalid. Expected YAML with top-level "version".');
   }
-  const rendered = yaml4.dump(config, { lineWidth: 120 });
-  fs15.mkdirSync(absoluteTarget, { recursive: true });
-  fs15.writeFileSync(outputPath, rendered);
+  const rendered = yaml5.dump(config, { lineWidth: 120 });
+  fs16.mkdirSync(absoluteTarget, { recursive: true });
+  fs16.writeFileSync(outputPath, rendered);
   return {
     outputPath,
-    source: options.from ? `file:${path17.resolve(options.from)}` : `preset:${type}`
+    source: options.from ? `file:${path18.resolve(options.from)}` : `preset:${type}`
   };
 }
 function getRepotypePresetMetadata() {
@@ -2436,9 +2637,9 @@ function getRepotypePresetMetadata() {
   };
 }
 function installPluginRequirements(target) {
-  const absolute = path17.resolve(target);
+  const absolute = path18.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path17.dirname(configPath);
+  const repoRoot = path18.dirname(configPath);
   const config = loadConfig(configPath);
   const installs = installPlugins(config, repoRoot);
   return {
@@ -2449,9 +2650,9 @@ function installPluginRequirements(target) {
   };
 }
 function pluginStatus(target) {
-  const absolute = path17.resolve(target);
+  const absolute = path18.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path17.dirname(configPath);
+  const repoRoot = path18.dirname(configPath);
   const config = loadConfig(configPath);
   const plugins = describePlugins(config);
   return {
@@ -2461,10 +2662,10 @@ function pluginStatus(target) {
   };
 }
 async function generateComplianceReport(target, format = "markdown", configOverridePath) {
-  const absolute = path17.resolve(target);
+  const absolute = path18.resolve(target);
   const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path17.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path17.dirname(configPath);
+  const configPath = configOverridePath ? path18.resolve(configOverridePath) : findConfig(absolute);
+  const repoRoot = configOverridePath ? targetRoot : path18.dirname(configPath);
   const validateResult = await validatePath(target, configOverridePath);
   const allDiagnostics = validateResult.mode === "workspace" ? [
     ...validateResult.result.rootResult.diagnostics,
@@ -2531,26 +2732,26 @@ async function generateComplianceReport(target, format = "markdown", configOverr
 }
 
 // src/cli/operations.ts
-import fs18 from "fs";
-import path20 from "path";
+import fs19 from "fs";
+import path21 from "path";
 
 // src/cli/git-hooks.ts
-import fs16 from "fs";
-import path18 from "path";
+import fs17 from "fs";
+import path19 from "path";
 var START_MARKER = "# >>> repotype-checks >>>";
 var END_MARKER = "# <<< repotype-checks <<<";
 var MARKER_REGEX = new RegExp(`${START_MARKER}[\\s\\S]*?${END_MARKER}\\n?`, "m");
 function findGitRoot(startPath) {
-  let dir = path18.resolve(startPath);
-  if (fs16.existsSync(dir) && fs16.statSync(dir).isFile()) {
-    dir = path18.dirname(dir);
+  let dir = path19.resolve(startPath);
+  if (fs17.existsSync(dir) && fs17.statSync(dir).isFile()) {
+    dir = path19.dirname(dir);
   }
   while (true) {
-    const gitPath = path18.join(dir, ".git");
-    if (fs16.existsSync(gitPath)) {
+    const gitPath = path19.join(dir, ".git");
+    if (fs17.existsSync(gitPath)) {
       return dir;
     }
-    const parent = path18.dirname(dir);
+    const parent = path19.dirname(dir);
     if (parent === dir) {
       throw new Error("No .git directory found in current or parent directories");
     }
@@ -2558,30 +2759,30 @@ function findGitRoot(startPath) {
   }
 }
 function resolveGitDir(repoRoot) {
-  const dotGit = path18.join(repoRoot, ".git");
-  if (!fs16.existsSync(dotGit)) {
+  const dotGit = path19.join(repoRoot, ".git");
+  if (!fs17.existsSync(dotGit)) {
     throw new Error(`.git path not found for repo root: ${repoRoot}`);
   }
-  const stat = fs16.statSync(dotGit);
+  const stat = fs17.statSync(dotGit);
   if (stat.isDirectory()) {
     return dotGit;
   }
   if (stat.isFile()) {
-    const content = fs16.readFileSync(dotGit, "utf8").trim();
+    const content = fs17.readFileSync(dotGit, "utf8").trim();
     const match = content.match(/^gitdir:\s*(.+)$/i);
     if (!match) {
       throw new Error(`Unsupported .git file format at: ${dotGit}`);
     }
     const rawGitDir = match[1].trim();
-    return path18.isAbsolute(rawGitDir) ? rawGitDir : path18.resolve(repoRoot, rawGitDir);
+    return path19.isAbsolute(rawGitDir) ? rawGitDir : path19.resolve(repoRoot, rawGitDir);
   }
   throw new Error(`Unsupported .git path type at: ${dotGit}`);
 }
 function resolveHooksDir(repoRoot) {
   const gitDir = resolveGitDir(repoRoot);
-  const hooksDir = path18.join(gitDir, "hooks");
-  if (!fs16.existsSync(hooksDir)) {
-    fs16.mkdirSync(hooksDir, { recursive: true });
+  const hooksDir = path19.join(gitDir, "hooks");
+  if (!fs17.existsSync(hooksDir)) {
+    fs17.mkdirSync(hooksDir, { recursive: true });
   }
   return hooksDir;
 }
@@ -2601,28 +2802,28 @@ ${END_MARKER}
 }
 function upsertHook(hookFile, snippet) {
   const shebang = "#!/usr/bin/env bash\nset -euo pipefail\n\n";
-  if (!fs16.existsSync(hookFile)) {
-    fs16.writeFileSync(hookFile, `${shebang}${snippet}`);
-    fs16.chmodSync(hookFile, 493);
+  if (!fs17.existsSync(hookFile)) {
+    fs17.writeFileSync(hookFile, `${shebang}${snippet}`);
+    fs17.chmodSync(hookFile, 493);
     return "created";
   }
-  let current = fs16.readFileSync(hookFile, "utf8");
+  let current = fs17.readFileSync(hookFile, "utf8");
   if (!current.startsWith("#!")) {
     current = `${shebang}${current}`;
   }
   if (MARKER_REGEX.test(current)) {
     const next = current.replace(MARKER_REGEX, snippet);
     if (next === current) {
-      fs16.chmodSync(hookFile, 493);
+      fs17.chmodSync(hookFile, 493);
       return "unchanged";
     }
-    fs16.writeFileSync(hookFile, next);
-    fs16.chmodSync(hookFile, 493);
+    fs17.writeFileSync(hookFile, next);
+    fs17.chmodSync(hookFile, 493);
     return "updated";
   }
   const separator = current.endsWith("\n") ? "\n" : "\n\n";
-  fs16.writeFileSync(hookFile, `${current}${separator}${snippet}`);
-  fs16.chmodSync(hookFile, 493);
+  fs17.writeFileSync(hookFile, `${current}${separator}${snippet}`);
+  fs17.chmodSync(hookFile, 493);
   return "updated";
 }
 function installChecks(options) {
@@ -2631,7 +2832,7 @@ function installChecks(options) {
   const hookNames = options.hook === "both" ? ["pre-commit", "pre-push"] : [options.hook];
   const snippet = makeHookSnippet(repoRoot);
   const hooks = hookNames.map((hook) => {
-    const hookPath = path18.join(hooksDir, hook);
+    const hookPath = path19.join(hooksDir, hook);
     const status = upsertHook(hookPath, snippet);
     return { hook, status, path: hookPath };
   });
@@ -2642,11 +2843,11 @@ function inspectChecks(target) {
   const hooksDir = resolveHooksDir(repoRoot);
   const hookNames = ["pre-commit", "pre-push"];
   const hooks = hookNames.map((hook) => {
-    const hookPath = path18.join(hooksDir, hook);
-    if (!fs16.existsSync(hookPath)) {
+    const hookPath = path19.join(hooksDir, hook);
+    if (!fs17.existsSync(hookPath)) {
       return { hook, path: hookPath, exists: false, managed: false };
     }
-    const content = fs16.readFileSync(hookPath, "utf8");
+    const content = fs17.readFileSync(hookPath, "utf8");
     return {
       hook,
       path: hookPath,
@@ -2661,26 +2862,26 @@ function uninstallChecks(options) {
   const hooksDir = resolveHooksDir(repoRoot);
   const hookNames = options.hook === "both" ? ["pre-commit", "pre-push"] : [options.hook];
   const hooks = hookNames.map((hook) => {
-    const hookPath = path18.join(hooksDir, hook);
-    if (!fs16.existsSync(hookPath)) {
+    const hookPath = path19.join(hooksDir, hook);
+    if (!fs17.existsSync(hookPath)) {
       return { hook, status: "not_found", path: hookPath };
     }
-    const current = fs16.readFileSync(hookPath, "utf8");
+    const current = fs17.readFileSync(hookPath, "utf8");
     if (!MARKER_REGEX.test(current)) {
       return { hook, status: "unchanged", path: hookPath };
     }
     const next = current.replace(MARKER_REGEX, "").trimEnd();
-    fs16.writeFileSync(hookPath, next.length > 0 ? `${next}
+    fs17.writeFileSync(hookPath, next.length > 0 ? `${next}
 ` : "");
-    fs16.chmodSync(hookPath, 493);
+    fs17.chmodSync(hookPath, 493);
     return { hook, status: "removed", path: hookPath };
   });
   return { repoRoot, hooks };
 }
 
 // src/cli/watcher.ts
-import fs17 from "fs";
-import path19 from "path";
+import fs18 from "fs";
+import path20 from "path";
 import { spawnSync } from "child_process";
 function shQuote(input) {
   return `'${input.replace(/'/g, `'"'"'`)}'`;
@@ -2699,11 +2900,11 @@ function writeCrontab(content) {
   }
 }
 function installWatcher(options) {
-  const target = path19.resolve(options.target);
-  const queueDir = path19.resolve(options.queueDir);
-  const logFile = path19.resolve(options.logFile);
-  fs17.mkdirSync(path19.dirname(logFile), { recursive: true });
-  fs17.mkdirSync(queueDir, { recursive: true });
+  const target = path20.resolve(options.target);
+  const queueDir = path20.resolve(options.queueDir);
+  const logFile = path20.resolve(options.logFile);
+  fs18.mkdirSync(path20.dirname(logFile), { recursive: true });
+  fs18.mkdirSync(queueDir, { recursive: true });
   const marker = `# REPOTYPE_WATCHER:${target}`;
   const command = [
     `cd ${shQuote(target)}`,
@@ -2732,7 +2933,7 @@ function installWatcher(options) {
   };
 }
 function inspectWatcher(target) {
-  const resolved = path19.resolve(target);
+  const resolved = path20.resolve(target);
   const marker = `# REPOTYPE_WATCHER:${resolved}`;
   const current = readCrontab();
   const lines = current.split("\n").map((entry) => entry.trimEnd()).filter((entry) => entry.length > 0);
@@ -2744,7 +2945,7 @@ function inspectWatcher(target) {
   };
 }
 function uninstallWatcher(target, dryRun = false) {
-  const resolved = path19.resolve(target);
+  const resolved = path20.resolve(target);
   const marker = `# REPOTYPE_WATCHER:${resolved}`;
   const current = readCrontab();
   const lines = current.split("\n").map((entry) => entry.trimEnd()).filter((entry) => entry.length > 0);
@@ -2764,9 +2965,9 @@ function uninstallWatcher(target, dryRun = false) {
 
 // src/cli/operations.ts
 function resolveRepoRoot(target) {
-  const absolute = path20.resolve(target);
+  const absolute = path21.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path20.dirname(configPath);
+  const repoRoot = path21.dirname(configPath);
   return { repoRoot, configPath };
 }
 function normalizeOperations(target) {
@@ -2780,9 +2981,9 @@ function normalizeOperations(target) {
     watcher: {
       enabled: config.operations?.watcher?.enabled ?? false,
       schedule: config.operations?.watcher?.schedule ?? "*/15 * * * *",
-      queueDir: path20.resolve(repoRoot, config.operations?.watcher?.queueDir ?? "sort_queue"),
+      queueDir: path21.resolve(repoRoot, config.operations?.watcher?.queueDir ?? "sort_queue"),
       minErrors: config.operations?.watcher?.minErrors ?? 3,
-      logFile: path20.resolve(repoRoot, config.operations?.watcher?.logFile ?? ".repotype/logs/watcher.log")
+      logFile: path21.resolve(repoRoot, config.operations?.watcher?.logFile ?? ".repotype/logs/watcher.log")
     }
   };
   return {
@@ -2792,11 +2993,11 @@ function normalizeOperations(target) {
   };
 }
 function readLastCleanupEntry(queueDir) {
-  const logPath = path20.join(queueDir, "cleanup-log.jsonl");
-  if (!fs18.existsSync(logPath)) {
+  const logPath = path21.join(queueDir, "cleanup-log.jsonl");
+  if (!fs19.existsSync(logPath)) {
     return { found: false };
   }
-  const lines = fs18.readFileSync(logPath, "utf8").split("\n").map((line) => line.trim()).filter(Boolean);
+  const lines = fs19.readFileSync(logPath, "utf8").split("\n").map((line) => line.trim()).filter(Boolean);
   if (lines.length === 0) {
     return { found: false };
   }
@@ -2898,14 +3099,14 @@ async function startService(options) {
 
 // src/universal-commands.ts
 import { UniversalCommand } from "@supernal/universal-command";
-import path22 from "path";
+import path23 from "path";
 
 // src/cli/cleanup.ts
-import fs19 from "fs";
-import path21 from "path";
+import fs20 from "fs";
+import path22 from "path";
 function ensureDir(dir) {
-  if (!fs19.existsSync(dir)) {
-    fs19.mkdirSync(dir, { recursive: true });
+  if (!fs20.existsSync(dir)) {
+    fs20.mkdirSync(dir, { recursive: true });
   }
 }
 function getTimestamp() {
@@ -2915,22 +3116,22 @@ function dedupe(items) {
   return [...new Set(items)];
 }
 function safeDestination(baseQueue, targetRoot, sourceFile) {
-  const relative = path21.relative(targetRoot, sourceFile);
-  const clamped = relative.startsWith("..") ? path21.basename(sourceFile) : relative;
-  const destination = path21.join(baseQueue, clamped);
-  if (!fs19.existsSync(destination)) {
+  const relative = path22.relative(targetRoot, sourceFile);
+  const clamped = relative.startsWith("..") ? path22.basename(sourceFile) : relative;
+  const destination = path22.join(baseQueue, clamped);
+  if (!fs20.existsSync(destination)) {
     return destination;
   }
-  const ext = path21.extname(destination);
+  const ext = path22.extname(destination);
   const stem = destination.slice(0, destination.length - ext.length);
   return `${stem}.moved-${Date.now()}${ext}`;
 }
 function writeAuditLogs(queueDir, entries) {
   ensureDir(queueDir);
-  const jsonlPath = path21.join(queueDir, "cleanup-log.jsonl");
-  const textPath = path21.join(queueDir, "cleanup-log.md");
+  const jsonlPath = path22.join(queueDir, "cleanup-log.jsonl");
+  const textPath = path22.join(queueDir, "cleanup-log.md");
   for (const entry of entries) {
-    fs19.appendFileSync(jsonlPath, `${JSON.stringify(entry)}
+    fs20.appendFileSync(jsonlPath, `${JSON.stringify(entry)}
 `);
     const summary = [
       `- ${entry.timestamp}`,
@@ -2941,12 +3142,12 @@ function writeAuditLogs(queueDir, entries) {
       ...entry.diagnostics.map((d) => `  - ${d.code}: ${d.message}`),
       ""
     ].join("\n");
-    fs19.appendFileSync(textPath, summary);
+    fs20.appendFileSync(textPath, summary);
   }
 }
 async function runCleanup(options) {
-  const targetRoot = path21.resolve(options.target);
-  const queueDir = path21.resolve(options.queueDir);
+  const targetRoot = path22.resolve(options.target);
+  const queueDir = path22.resolve(options.queueDir);
   ensureDir(queueDir);
   const validateResult = await validatePath(targetRoot);
   const allDiagnostics = validateResult.mode === "workspace" ? [
@@ -2962,7 +3163,7 @@ async function runCleanup(options) {
   const entries = [];
   let moved = 0;
   for (const file of files) {
-    if (!fs19.existsSync(file)) {
+    if (!fs20.existsSync(file)) {
       continue;
     }
     const diagnostics = errorDiagnostics.filter((d) => d.file === file);
@@ -2970,9 +3171,9 @@ async function runCleanup(options) {
       continue;
     }
     const destination = safeDestination(queueDir, targetRoot, file);
-    ensureDir(path21.dirname(destination));
+    ensureDir(path22.dirname(destination));
     if (!options.dryRun) {
-      fs19.renameSync(file, destination);
+      fs20.renameSync(file, destination);
       moved += 1;
     }
     entries.push({
@@ -3222,8 +3423,8 @@ var repotypeCleanupRunCommand = new UniversalCommand({
   },
   output: { type: "json" },
   async handler({ target = ".", queue = "sort_queue", minErrors = 3, dryRun = false }) {
-    const absoluteTarget = path22.resolve(target);
-    const queueDir = path22.isAbsolute(queue) ? queue : path22.resolve(absoluteTarget, queue);
+    const absoluteTarget = path23.resolve(target);
+    const queueDir = path23.isAbsolute(queue) ? queue : path23.resolve(absoluteTarget, queue);
     return runCleanup({ target: absoluteTarget, queueDir, minErrors, dryRun });
   }
 });
@@ -3267,9 +3468,9 @@ var repotypeInstallWatcherCommand = new UniversalCommand({
     logFile = ".repotype/logs/watcher.log",
     dryRun = true
   }) {
-    const resolvedTarget = path22.resolve(target);
-    const queueDir = path22.isAbsolute(queue) ? queue : path22.resolve(resolvedTarget, queue);
-    const resolvedLogFile = path22.isAbsolute(logFile) ? logFile : path22.resolve(resolvedTarget, logFile);
+    const resolvedTarget = path23.resolve(target);
+    const queueDir = path23.isAbsolute(queue) ? queue : path23.resolve(resolvedTarget, queue);
+    const resolvedLogFile = path23.isAbsolute(logFile) ? logFile : path23.resolve(resolvedTarget, logFile);
     return installWatcher({
       target: resolvedTarget,
       schedule,

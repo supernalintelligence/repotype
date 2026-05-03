@@ -8,6 +8,7 @@ import { FrontmatterSchemaAdapter } from '../adapters/frontmatter-schema-adapter
 import { GuidanceAdapter } from '../adapters/guidance-adapter.js';
 import { MarkdownTemplateAdapter } from '../adapters/markdown-template-adapter.js';
 import { PathPolicyAdapter } from '../adapters/path-policy-adapter.js';
+import { BoardYamlCompletenessAdapter } from '../adapters/board-yaml-completeness-adapter.js';
 import { ValidationEngine } from '../core/validator-framework.js';
 
 export function createDefaultEngine(): ValidationEngine {
@@ -22,5 +23,6 @@ export function createDefaultEngine(): ValidationEngine {
     new CrossFileRuleAdapter(),
     new ContentPolicyAdapter(),
     new GuidanceAdapter(),
+    new BoardYamlCompletenessAdapter(),
   ]);
 }
