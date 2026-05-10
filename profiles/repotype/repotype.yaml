@@ -53,3 +53,10 @@ files:
   - id: generated-story-tests
     glob: "tests/generated/stories/*.spec.ts"
     filenamePattern: "^[a-z0-9-]+\\.spec\\.ts$"
+
+  - id: no-openclaw-board-storage
+    glob: "**/*.{ts,tsx,js,mjs,cjs,md,yaml,sh}"
+    forbidContentPatterns:
+      - "\\.openclaw[/'\"].*soul-widget"
+      - "\\.openclaw/workspace/shared/soul-widget"
+    forbidContentSeverity: error

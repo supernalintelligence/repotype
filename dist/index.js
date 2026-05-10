@@ -1124,8 +1124,8 @@ var ValidationEngine = class {
 };
 
 // src/cli/use-cases.ts
-import fs16 from "fs";
-import path18 from "path";
+import fs17 from "fs";
+import path19 from "path";
 
 // src/core/autofix.ts
 import fs7 from "fs";
@@ -2333,6 +2333,69 @@ var BoardYamlCompletenessAdapter = class {
   }
 };
 
+// src/adapters/board-story-completeness-adapter.ts
+import fs16 from "fs";
+import path18 from "path";
+var BOARDS_DIR_SEGMENT = `${path18.sep}packages${path18.sep}boards${path18.sep}`;
+var BOARDS_DIR_SEGMENT_FWD = "/packages/boards/";
+function isBoardYaml2(filePath) {
+  const normalized = filePath.replace(/\\/g, "/");
+  return normalized.includes(BOARDS_DIR_SEGMENT_FWD) && (normalized.endsWith("/board.yaml") || normalized === "board.yaml");
+}
+function boardNameFromPath(filePath) {
+  return path18.basename(path18.dirname(filePath));
+}
+var SKIP_DIRS = /* @__PURE__ */ new Set([
+  "__mocks__",
+  "__system__",
+  "lib",
+  "lib-dist",
+  "scripts",
+  "specs",
+  "agents",
+  "doc-folder"
+]);
+var BoardStoryCompletenessAdapter = class {
+  id = "board-story-required";
+  supports(filePath, _context) {
+    const normalized = filePath.replace(/\\/g, "/");
+    if (!isBoardYaml2(normalized)) return false;
+    const boardName = boardNameFromPath(filePath);
+    return !SKIP_DIRS.has(boardName);
+  }
+  async validate(filePath, _context) {
+    const boardDir = path18.dirname(filePath);
+    const boardName = boardNameFromPath(filePath);
+    const storiesDir = path18.join(boardDir, "stories");
+    if (!fs16.existsSync(storiesDir) || !fs16.statSync(storiesDir).isDirectory()) {
+      return [
+        {
+          code: "board_story_missing",
+          message: `Board '${boardName}' has no stories/ directory. Every board must have at least one .feature file in stories/. Run the Story Generation Agent to create it.`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id,
+          details: { boardName, expectedDir: storiesDir }
+        }
+      ];
+    }
+    const featureFiles = fs16.readdirSync(storiesDir).filter((f) => f.endsWith(".feature"));
+    if (featureFiles.length === 0) {
+      return [
+        {
+          code: "board_story_empty",
+          message: `Board '${boardName}' has a stories/ directory but no .feature files. Add at least one .feature file or run the Story Generation Agent.`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id,
+          details: { boardName, storiesDir }
+        }
+      ];
+    }
+    return [];
+  }
+};
+
 // src/cli/runtime.ts
 function createDefaultEngine() {
   return new ValidationEngine([
@@ -2346,7 +2409,8 @@ function createDefaultEngine() {
     new CrossFileRuleAdapter(),
     new ContentPolicyAdapter(),
     new GuidanceAdapter(),
-    new BoardYamlCompletenessAdapter()
+    new BoardYamlCompletenessAdapter(),
+    new BoardStoryCompletenessAdapter()
   ]);
 }
 
@@ -2492,19 +2556,19 @@ function renderComplianceReportFromJson(json, format = "html") {
 // src/cli/use-cases.ts
 import yaml5 from "js-yaml";
 function deriveTargetRoot(targetPath) {
-  if (fs16.existsSync(targetPath) && fs16.statSync(targetPath).isDirectory()) {
+  if (fs17.existsSync(targetPath) && fs17.statSync(targetPath).isDirectory()) {
     return targetPath;
   }
-  return path18.dirname(targetPath);
+  return path19.dirname(targetPath);
 }
 async function validatePath(target, configOverridePath, opts = {}) {
-  const absolute = path18.resolve(target);
+  const absolute = path19.resolve(target);
   const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path18.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path18.dirname(configPath);
+  const configPath = configOverridePath ? path19.resolve(configOverridePath) : findConfig(absolute);
+  const repoRoot = configOverridePath ? targetRoot : path19.dirname(configPath);
   const config = loadConfig(configPath);
   const engine = createDefaultEngine();
-  const isDirectory = fs16.existsSync(absolute) && fs16.statSync(absolute).isDirectory();
+  const isDirectory = fs17.existsSync(absolute) && fs17.statSync(absolute).isDirectory();
   const workspaceEnabled = opts.workspace !== false;
   if (isDirectory && workspaceEnabled && !configOverridePath) {
     const wsResult = await engine.validateWorkspace(absolute, { noCache: opts.noCache });
@@ -2543,18 +2607,18 @@ async function validatePath(target, configOverridePath, opts = {}) {
   };
 }
 function explainPath(target, configOverridePath) {
-  const absolute = path18.resolve(target);
+  const absolute = path19.resolve(target);
   const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path18.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path18.dirname(configPath);
+  const configPath = configOverridePath ? path19.resolve(configOverridePath) : findConfig(absolute);
+  const repoRoot = configOverridePath ? targetRoot : path19.dirname(configPath);
   const config = loadConfig(configPath);
   return explainRules(config, repoRoot, absolute);
 }
 async function fixPath(target, configOverridePath, opts = {}) {
-  const absolute = path18.resolve(target);
+  const absolute = path19.resolve(target);
   const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path18.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path18.dirname(configPath);
+  const configPath = configOverridePath ? path19.resolve(configOverridePath) : findConfig(absolute);
+  const repoRoot = configOverridePath ? targetRoot : path19.dirname(configPath);
   const config = loadConfig(configPath);
   const validateResult = await validatePath(target, configOverridePath, opts);
   if (validateResult.mode === "workspace") {
@@ -2596,16 +2660,16 @@ async function fixPath(target, configOverridePath, opts = {}) {
   };
 }
 function scaffoldFromTemplate(templateId, outputPath, variables) {
-  const absolute = path18.resolve(outputPath);
+  const absolute = path19.resolve(outputPath);
   const configPath = findConfig(absolute);
-  const repoRoot = path18.dirname(configPath);
+  const repoRoot = path19.dirname(configPath);
   const config = loadConfig(configPath);
   const content = renderTemplate(config, repoRoot, templateId, variables);
-  const parent = path18.dirname(absolute);
-  if (!fs16.existsSync(parent)) {
-    fs16.mkdirSync(parent, { recursive: true });
+  const parent = path19.dirname(absolute);
+  if (!fs17.existsSync(parent)) {
+    fs17.mkdirSync(parent, { recursive: true });
   }
-  fs16.writeFileSync(absolute, content);
+  fs17.writeFileSync(absolute, content);
   return absolute;
 }
 function generateSchemaFromContent(target, output, pattern = "**/*.md") {
@@ -2614,21 +2678,21 @@ function generateSchemaFromContent(target, output, pattern = "**/*.md") {
 function initRepotypeConfig(targetDir, options = {}) {
   const type = options.type ?? "default";
   const force = options.force ?? false;
-  const absoluteTarget = path18.resolve(targetDir);
-  const outputPath = path18.join(absoluteTarget, "repotype.yaml");
-  if (fs16.existsSync(outputPath) && !force) {
+  const absoluteTarget = path19.resolve(targetDir);
+  const outputPath = path19.join(absoluteTarget, "repotype.yaml");
+  if (fs17.existsSync(outputPath) && !force) {
     throw new Error(`repotype.yaml already exists at ${outputPath}. Use --force to overwrite.`);
   }
-  const config = options.from ? yaml5.load(fs16.readFileSync(path18.resolve(options.from), "utf8")) : createPresetConfig(type);
+  const config = options.from ? yaml5.load(fs17.readFileSync(path19.resolve(options.from), "utf8")) : createPresetConfig(type);
   if (!config || typeof config !== "object" || !config.version) {
     throw new Error('Source config is invalid. Expected YAML with top-level "version".');
   }
   const rendered = yaml5.dump(config, { lineWidth: 120 });
-  fs16.mkdirSync(absoluteTarget, { recursive: true });
-  fs16.writeFileSync(outputPath, rendered);
+  fs17.mkdirSync(absoluteTarget, { recursive: true });
+  fs17.writeFileSync(outputPath, rendered);
   return {
     outputPath,
-    source: options.from ? `file:${path18.resolve(options.from)}` : `preset:${type}`
+    source: options.from ? `file:${path19.resolve(options.from)}` : `preset:${type}`
   };
 }
 function getRepotypePresetMetadata() {
@@ -2637,9 +2701,9 @@ function getRepotypePresetMetadata() {
   };
 }
 function installPluginRequirements(target) {
-  const absolute = path18.resolve(target);
+  const absolute = path19.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path18.dirname(configPath);
+  const repoRoot = path19.dirname(configPath);
   const config = loadConfig(configPath);
   const installs = installPlugins(config, repoRoot);
   return {
@@ -2650,9 +2714,9 @@ function installPluginRequirements(target) {
   };
 }
 function pluginStatus(target) {
-  const absolute = path18.resolve(target);
+  const absolute = path19.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path18.dirname(configPath);
+  const repoRoot = path19.dirname(configPath);
   const config = loadConfig(configPath);
   const plugins = describePlugins(config);
   return {
@@ -2662,10 +2726,10 @@ function pluginStatus(target) {
   };
 }
 async function generateComplianceReport(target, format = "markdown", configOverridePath) {
-  const absolute = path18.resolve(target);
+  const absolute = path19.resolve(target);
   const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path18.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path18.dirname(configPath);
+  const configPath = configOverridePath ? path19.resolve(configOverridePath) : findConfig(absolute);
+  const repoRoot = configOverridePath ? targetRoot : path19.dirname(configPath);
   const validateResult = await validatePath(target, configOverridePath);
   const allDiagnostics = validateResult.mode === "workspace" ? [
     ...validateResult.result.rootResult.diagnostics,
@@ -2732,26 +2796,26 @@ async function generateComplianceReport(target, format = "markdown", configOverr
 }
 
 // src/cli/operations.ts
-import fs19 from "fs";
-import path21 from "path";
+import fs20 from "fs";
+import path22 from "path";
 
 // src/cli/git-hooks.ts
-import fs17 from "fs";
-import path19 from "path";
+import fs18 from "fs";
+import path20 from "path";
 var START_MARKER = "# >>> repotype-checks >>>";
 var END_MARKER = "# <<< repotype-checks <<<";
 var MARKER_REGEX = new RegExp(`${START_MARKER}[\\s\\S]*?${END_MARKER}\\n?`, "m");
 function findGitRoot(startPath) {
-  let dir = path19.resolve(startPath);
-  if (fs17.existsSync(dir) && fs17.statSync(dir).isFile()) {
-    dir = path19.dirname(dir);
+  let dir = path20.resolve(startPath);
+  if (fs18.existsSync(dir) && fs18.statSync(dir).isFile()) {
+    dir = path20.dirname(dir);
   }
   while (true) {
-    const gitPath = path19.join(dir, ".git");
-    if (fs17.existsSync(gitPath)) {
+    const gitPath = path20.join(dir, ".git");
+    if (fs18.existsSync(gitPath)) {
       return dir;
     }
-    const parent = path19.dirname(dir);
+    const parent = path20.dirname(dir);
     if (parent === dir) {
       throw new Error("No .git directory found in current or parent directories");
     }
@@ -2759,30 +2823,30 @@ function findGitRoot(startPath) {
   }
 }
 function resolveGitDir(repoRoot) {
-  const dotGit = path19.join(repoRoot, ".git");
-  if (!fs17.existsSync(dotGit)) {
+  const dotGit = path20.join(repoRoot, ".git");
+  if (!fs18.existsSync(dotGit)) {
     throw new Error(`.git path not found for repo root: ${repoRoot}`);
   }
-  const stat = fs17.statSync(dotGit);
+  const stat = fs18.statSync(dotGit);
   if (stat.isDirectory()) {
     return dotGit;
   }
   if (stat.isFile()) {
-    const content = fs17.readFileSync(dotGit, "utf8").trim();
+    const content = fs18.readFileSync(dotGit, "utf8").trim();
     const match = content.match(/^gitdir:\s*(.+)$/i);
     if (!match) {
       throw new Error(`Unsupported .git file format at: ${dotGit}`);
     }
     const rawGitDir = match[1].trim();
-    return path19.isAbsolute(rawGitDir) ? rawGitDir : path19.resolve(repoRoot, rawGitDir);
+    return path20.isAbsolute(rawGitDir) ? rawGitDir : path20.resolve(repoRoot, rawGitDir);
   }
   throw new Error(`Unsupported .git path type at: ${dotGit}`);
 }
 function resolveHooksDir(repoRoot) {
   const gitDir = resolveGitDir(repoRoot);
-  const hooksDir = path19.join(gitDir, "hooks");
-  if (!fs17.existsSync(hooksDir)) {
-    fs17.mkdirSync(hooksDir, { recursive: true });
+  const hooksDir = path20.join(gitDir, "hooks");
+  if (!fs18.existsSync(hooksDir)) {
+    fs18.mkdirSync(hooksDir, { recursive: true });
   }
   return hooksDir;
 }
@@ -2802,28 +2866,28 @@ ${END_MARKER}
 }
 function upsertHook(hookFile, snippet) {
   const shebang = "#!/usr/bin/env bash\nset -euo pipefail\n\n";
-  if (!fs17.existsSync(hookFile)) {
-    fs17.writeFileSync(hookFile, `${shebang}${snippet}`);
-    fs17.chmodSync(hookFile, 493);
+  if (!fs18.existsSync(hookFile)) {
+    fs18.writeFileSync(hookFile, `${shebang}${snippet}`);
+    fs18.chmodSync(hookFile, 493);
     return "created";
   }
-  let current = fs17.readFileSync(hookFile, "utf8");
+  let current = fs18.readFileSync(hookFile, "utf8");
   if (!current.startsWith("#!")) {
     current = `${shebang}${current}`;
   }
   if (MARKER_REGEX.test(current)) {
     const next = current.replace(MARKER_REGEX, snippet);
     if (next === current) {
-      fs17.chmodSync(hookFile, 493);
+      fs18.chmodSync(hookFile, 493);
       return "unchanged";
     }
-    fs17.writeFileSync(hookFile, next);
-    fs17.chmodSync(hookFile, 493);
+    fs18.writeFileSync(hookFile, next);
+    fs18.chmodSync(hookFile, 493);
     return "updated";
   }
   const separator = current.endsWith("\n") ? "\n" : "\n\n";
-  fs17.writeFileSync(hookFile, `${current}${separator}${snippet}`);
-  fs17.chmodSync(hookFile, 493);
+  fs18.writeFileSync(hookFile, `${current}${separator}${snippet}`);
+  fs18.chmodSync(hookFile, 493);
   return "updated";
 }
 function installChecks(options) {
@@ -2832,7 +2896,7 @@ function installChecks(options) {
   const hookNames = options.hook === "both" ? ["pre-commit", "pre-push"] : [options.hook];
   const snippet = makeHookSnippet(repoRoot);
   const hooks = hookNames.map((hook) => {
-    const hookPath = path19.join(hooksDir, hook);
+    const hookPath = path20.join(hooksDir, hook);
     const status = upsertHook(hookPath, snippet);
     return { hook, status, path: hookPath };
   });
@@ -2843,11 +2907,11 @@ function inspectChecks(target) {
   const hooksDir = resolveHooksDir(repoRoot);
   const hookNames = ["pre-commit", "pre-push"];
   const hooks = hookNames.map((hook) => {
-    const hookPath = path19.join(hooksDir, hook);
-    if (!fs17.existsSync(hookPath)) {
+    const hookPath = path20.join(hooksDir, hook);
+    if (!fs18.existsSync(hookPath)) {
       return { hook, path: hookPath, exists: false, managed: false };
     }
-    const content = fs17.readFileSync(hookPath, "utf8");
+    const content = fs18.readFileSync(hookPath, "utf8");
     return {
       hook,
       path: hookPath,
@@ -2862,26 +2926,26 @@ function uninstallChecks(options) {
   const hooksDir = resolveHooksDir(repoRoot);
   const hookNames = options.hook === "both" ? ["pre-commit", "pre-push"] : [options.hook];
   const hooks = hookNames.map((hook) => {
-    const hookPath = path19.join(hooksDir, hook);
-    if (!fs17.existsSync(hookPath)) {
+    const hookPath = path20.join(hooksDir, hook);
+    if (!fs18.existsSync(hookPath)) {
       return { hook, status: "not_found", path: hookPath };
     }
-    const current = fs17.readFileSync(hookPath, "utf8");
+    const current = fs18.readFileSync(hookPath, "utf8");
     if (!MARKER_REGEX.test(current)) {
       return { hook, status: "unchanged", path: hookPath };
     }
     const next = current.replace(MARKER_REGEX, "").trimEnd();
-    fs17.writeFileSync(hookPath, next.length > 0 ? `${next}
+    fs18.writeFileSync(hookPath, next.length > 0 ? `${next}
 ` : "");
-    fs17.chmodSync(hookPath, 493);
+    fs18.chmodSync(hookPath, 493);
     return { hook, status: "removed", path: hookPath };
   });
   return { repoRoot, hooks };
 }
 
 // src/cli/watcher.ts
-import fs18 from "fs";
-import path20 from "path";
+import fs19 from "fs";
+import path21 from "path";
 import { spawnSync } from "child_process";
 function shQuote(input) {
   return `'${input.replace(/'/g, `'"'"'`)}'`;
@@ -2900,11 +2964,11 @@ function writeCrontab(content) {
   }
 }
 function installWatcher(options) {
-  const target = path20.resolve(options.target);
-  const queueDir = path20.resolve(options.queueDir);
-  const logFile = path20.resolve(options.logFile);
-  fs18.mkdirSync(path20.dirname(logFile), { recursive: true });
-  fs18.mkdirSync(queueDir, { recursive: true });
+  const target = path21.resolve(options.target);
+  const queueDir = path21.resolve(options.queueDir);
+  const logFile = path21.resolve(options.logFile);
+  fs19.mkdirSync(path21.dirname(logFile), { recursive: true });
+  fs19.mkdirSync(queueDir, { recursive: true });
   const marker = `# REPOTYPE_WATCHER:${target}`;
   const command = [
     `cd ${shQuote(target)}`,
@@ -2933,7 +2997,7 @@ function installWatcher(options) {
   };
 }
 function inspectWatcher(target) {
-  const resolved = path20.resolve(target);
+  const resolved = path21.resolve(target);
   const marker = `# REPOTYPE_WATCHER:${resolved}`;
   const current = readCrontab();
   const lines = current.split("\n").map((entry) => entry.trimEnd()).filter((entry) => entry.length > 0);
@@ -2945,7 +3009,7 @@ function inspectWatcher(target) {
   };
 }
 function uninstallWatcher(target, dryRun = false) {
-  const resolved = path20.resolve(target);
+  const resolved = path21.resolve(target);
   const marker = `# REPOTYPE_WATCHER:${resolved}`;
   const current = readCrontab();
   const lines = current.split("\n").map((entry) => entry.trimEnd()).filter((entry) => entry.length > 0);
@@ -2965,9 +3029,9 @@ function uninstallWatcher(target, dryRun = false) {
 
 // src/cli/operations.ts
 function resolveRepoRoot(target) {
-  const absolute = path21.resolve(target);
+  const absolute = path22.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path21.dirname(configPath);
+  const repoRoot = path22.dirname(configPath);
   return { repoRoot, configPath };
 }
 function normalizeOperations(target) {
@@ -2981,9 +3045,9 @@ function normalizeOperations(target) {
     watcher: {
       enabled: config.operations?.watcher?.enabled ?? false,
       schedule: config.operations?.watcher?.schedule ?? "*/15 * * * *",
-      queueDir: path21.resolve(repoRoot, config.operations?.watcher?.queueDir ?? "sort_queue"),
+      queueDir: path22.resolve(repoRoot, config.operations?.watcher?.queueDir ?? "sort_queue"),
       minErrors: config.operations?.watcher?.minErrors ?? 3,
-      logFile: path21.resolve(repoRoot, config.operations?.watcher?.logFile ?? ".repotype/logs/watcher.log")
+      logFile: path22.resolve(repoRoot, config.operations?.watcher?.logFile ?? ".repotype/logs/watcher.log")
     }
   };
   return {
@@ -2993,11 +3057,11 @@ function normalizeOperations(target) {
   };
 }
 function readLastCleanupEntry(queueDir) {
-  const logPath = path21.join(queueDir, "cleanup-log.jsonl");
-  if (!fs19.existsSync(logPath)) {
+  const logPath = path22.join(queueDir, "cleanup-log.jsonl");
+  if (!fs20.existsSync(logPath)) {
     return { found: false };
   }
-  const lines = fs19.readFileSync(logPath, "utf8").split("\n").map((line) => line.trim()).filter(Boolean);
+  const lines = fs20.readFileSync(logPath, "utf8").split("\n").map((line) => line.trim()).filter(Boolean);
   if (lines.length === 0) {
     return { found: false };
   }
@@ -3099,14 +3163,15 @@ async function startService(options) {
 
 // src/universal-commands.ts
 import { UniversalCommand } from "@supernal/universal-command";
-import path23 from "path";
+import fs22 from "fs";
+import path24 from "path";
 
 // src/cli/cleanup.ts
-import fs20 from "fs";
-import path22 from "path";
+import fs21 from "fs";
+import path23 from "path";
 function ensureDir(dir) {
-  if (!fs20.existsSync(dir)) {
-    fs20.mkdirSync(dir, { recursive: true });
+  if (!fs21.existsSync(dir)) {
+    fs21.mkdirSync(dir, { recursive: true });
   }
 }
 function getTimestamp() {
@@ -3116,22 +3181,22 @@ function dedupe(items) {
   return [...new Set(items)];
 }
 function safeDestination(baseQueue, targetRoot, sourceFile) {
-  const relative = path22.relative(targetRoot, sourceFile);
-  const clamped = relative.startsWith("..") ? path22.basename(sourceFile) : relative;
-  const destination = path22.join(baseQueue, clamped);
-  if (!fs20.existsSync(destination)) {
+  const relative = path23.relative(targetRoot, sourceFile);
+  const clamped = relative.startsWith("..") ? path23.basename(sourceFile) : relative;
+  const destination = path23.join(baseQueue, clamped);
+  if (!fs21.existsSync(destination)) {
     return destination;
   }
-  const ext = path22.extname(destination);
+  const ext = path23.extname(destination);
   const stem = destination.slice(0, destination.length - ext.length);
   return `${stem}.moved-${Date.now()}${ext}`;
 }
 function writeAuditLogs(queueDir, entries) {
   ensureDir(queueDir);
-  const jsonlPath = path22.join(queueDir, "cleanup-log.jsonl");
-  const textPath = path22.join(queueDir, "cleanup-log.md");
+  const jsonlPath = path23.join(queueDir, "cleanup-log.jsonl");
+  const textPath = path23.join(queueDir, "cleanup-log.md");
   for (const entry of entries) {
-    fs20.appendFileSync(jsonlPath, `${JSON.stringify(entry)}
+    fs21.appendFileSync(jsonlPath, `${JSON.stringify(entry)}
 `);
     const summary = [
       `- ${entry.timestamp}`,
@@ -3142,12 +3207,12 @@ function writeAuditLogs(queueDir, entries) {
       ...entry.diagnostics.map((d) => `  - ${d.code}: ${d.message}`),
       ""
     ].join("\n");
-    fs20.appendFileSync(textPath, summary);
+    fs21.appendFileSync(textPath, summary);
   }
 }
 async function runCleanup(options) {
-  const targetRoot = path22.resolve(options.target);
-  const queueDir = path22.resolve(options.queueDir);
+  const targetRoot = path23.resolve(options.target);
+  const queueDir = path23.resolve(options.queueDir);
   ensureDir(queueDir);
   const validateResult = await validatePath(targetRoot);
   const allDiagnostics = validateResult.mode === "workspace" ? [
@@ -3163,7 +3228,7 @@ async function runCleanup(options) {
   const entries = [];
   let moved = 0;
   for (const file of files) {
-    if (!fs20.existsSync(file)) {
+    if (!fs21.existsSync(file)) {
       continue;
     }
     const diagnostics = errorDiagnostics.filter((d) => d.file === file);
@@ -3171,9 +3236,9 @@ async function runCleanup(options) {
       continue;
     }
     const destination = safeDestination(queueDir, targetRoot, file);
-    ensureDir(path22.dirname(destination));
+    ensureDir(path23.dirname(destination));
     if (!options.dryRun) {
-      fs20.renameSync(file, destination);
+      fs21.renameSync(file, destination);
       moved += 1;
     }
     entries.push({
@@ -3238,6 +3303,12 @@ var repotypeValidateCommand = new UniversalCommand({
   },
   output: {
     type: "json"
+  },
+  cli: {
+    format(result) {
+      if (!result.ok) process.exitCode = 1;
+      return JSON.stringify(result, null, 2);
+    }
   },
   async handler({ target = ".", config }) {
     const validateResult = await validatePath(target, config);
@@ -3370,14 +3441,44 @@ var repotypeReportCommand = new UniversalCommand({
         description: "Explicit config path",
         positional: false,
         required: false
+      },
+      {
+        name: "output",
+        type: "string",
+        description: "Write rendered report to this file path",
+        positional: false,
+        required: false
       }
     ]
   },
   output: {
     type: "json"
   },
-  async handler({ target = ".", format = "markdown", config }) {
-    return generateComplianceReport(target, format, config);
+  cli: {
+    // The installed @supernal/universal-command@0.1.0 calls format(result) with
+    // no args, so all arg-dependent logic lives in the handler instead.
+    // This format function only controls what gets printed to stdout.
+    format(result) {
+      if (!result.ok) process.exitCode = 1;
+      if (result._writtenTo) {
+        return JSON.stringify(
+          { ok: result.ok, output: result._writtenTo },
+          null,
+          2
+        );
+      }
+      return result.rendered;
+    }
+  },
+  async handler({ target = ".", format = "markdown", config, output }) {
+    const result = await generateComplianceReport(target, format, config);
+    if (output) {
+      const outPath = path24.resolve(output);
+      fs22.mkdirSync(path24.dirname(outPath), { recursive: true });
+      fs22.writeFileSync(outPath, result.rendered);
+      return { ...result, _writtenTo: outPath };
+    }
+    return result;
   }
 });
 var repotypeFixCommand = new UniversalCommand({
@@ -3415,16 +3516,45 @@ var repotypeCleanupRunCommand = new UniversalCommand({
   keywords: ["repotype", "cleanup", "triage", "sort_queue"],
   input: {
     parameters: [
-      { name: "target", type: "string", description: "Target path", positional: true, required: false },
-      { name: "queue", type: "string", description: "Queue directory", positional: false, required: false },
-      { name: "minErrors", type: "number", description: "Minimum error count before moving", positional: false, required: false },
-      { name: "dryRun", type: "boolean", description: "Dry run only", positional: false, required: false }
+      {
+        name: "target",
+        type: "string",
+        description: "Target path",
+        positional: true,
+        required: false
+      },
+      {
+        name: "queue",
+        type: "string",
+        description: "Queue directory",
+        positional: false,
+        required: false
+      },
+      {
+        name: "minErrors",
+        type: "number",
+        description: "Minimum error count before moving",
+        positional: false,
+        required: false
+      },
+      {
+        name: "dryRun",
+        type: "boolean",
+        description: "Dry run only",
+        positional: false,
+        required: false
+      }
     ]
   },
   output: { type: "json" },
-  async handler({ target = ".", queue = "sort_queue", minErrors = 3, dryRun = false }) {
-    const absoluteTarget = path23.resolve(target);
-    const queueDir = path23.isAbsolute(queue) ? queue : path23.resolve(absoluteTarget, queue);
+  async handler({
+    target = ".",
+    queue = "sort_queue",
+    minErrors = 3,
+    dryRun = false
+  }) {
+    const absoluteTarget = path24.resolve(target);
+    const queueDir = path24.isAbsolute(queue) ? queue : path24.resolve(absoluteTarget, queue);
     return runCleanup({ target: absoluteTarget, queueDir, minErrors, dryRun });
   }
 });
@@ -3435,8 +3565,20 @@ var repotypeInstallChecksCommand = new UniversalCommand({
   keywords: ["repotype", "git", "hooks", "pre-commit", "pre-push"],
   input: {
     parameters: [
-      { name: "target", type: "string", description: "Repository path", positional: false, required: false },
-      { name: "hook", type: "string", description: "Hook mode: pre-commit|pre-push|both", positional: false, required: false }
+      {
+        name: "target",
+        type: "string",
+        description: "Repository path",
+        positional: false,
+        required: false
+      },
+      {
+        name: "hook",
+        type: "string",
+        description: "Hook mode: pre-commit|pre-push|both",
+        positional: false,
+        required: false
+      }
     ]
   },
   output: { type: "json" },
@@ -3451,12 +3593,48 @@ var repotypeInstallWatcherCommand = new UniversalCommand({
   keywords: ["repotype", "watcher", "cron", "cleanup"],
   input: {
     parameters: [
-      { name: "target", type: "string", description: "Repository path", positional: false, required: false },
-      { name: "schedule", type: "string", description: "Cron schedule", positional: false, required: false },
-      { name: "queue", type: "string", description: "Queue directory", positional: false, required: false },
-      { name: "minErrors", type: "number", description: "Minimum errors threshold", positional: false, required: false },
-      { name: "logFile", type: "string", description: "Watcher log file path", positional: false, required: false },
-      { name: "dryRun", type: "boolean", description: "Dry-run installation", positional: false, required: false }
+      {
+        name: "target",
+        type: "string",
+        description: "Repository path",
+        positional: false,
+        required: false
+      },
+      {
+        name: "schedule",
+        type: "string",
+        description: "Cron schedule",
+        positional: false,
+        required: false
+      },
+      {
+        name: "queue",
+        type: "string",
+        description: "Queue directory",
+        positional: false,
+        required: false
+      },
+      {
+        name: "minErrors",
+        type: "number",
+        description: "Minimum errors threshold",
+        positional: false,
+        required: false
+      },
+      {
+        name: "logFile",
+        type: "string",
+        description: "Watcher log file path",
+        positional: false,
+        required: false
+      },
+      {
+        name: "dryRun",
+        type: "boolean",
+        description: "Dry-run installation",
+        positional: false,
+        required: false
+      }
     ]
   },
   output: { type: "json" },
@@ -3468,9 +3646,9 @@ var repotypeInstallWatcherCommand = new UniversalCommand({
     logFile = ".repotype/logs/watcher.log",
     dryRun = true
   }) {
-    const resolvedTarget = path23.resolve(target);
-    const queueDir = path23.isAbsolute(queue) ? queue : path23.resolve(resolvedTarget, queue);
-    const resolvedLogFile = path23.isAbsolute(logFile) ? logFile : path23.resolve(resolvedTarget, logFile);
+    const resolvedTarget = path24.resolve(target);
+    const queueDir = path24.isAbsolute(queue) ? queue : path24.resolve(resolvedTarget, queue);
+    const resolvedLogFile = path24.isAbsolute(logFile) ? logFile : path24.resolve(resolvedTarget, logFile);
     return installWatcher({
       target: resolvedTarget,
       schedule,
@@ -3488,14 +3666,36 @@ var repotypeScaffoldCommand = new UniversalCommand({
   keywords: ["repotype", "scaffold", "template", "generate"],
   input: {
     parameters: [
-      { name: "templateId", type: "string", description: "Template id", positional: true, required: true },
-      { name: "output", type: "string", description: "Output path", positional: true, required: true },
-      { name: "set", type: "string", description: "Template variable key=value (repeatable)", positional: false, required: false }
+      {
+        name: "templateId",
+        type: "string",
+        description: "Template id",
+        positional: true,
+        required: true
+      },
+      {
+        name: "output",
+        type: "string",
+        description: "Output path",
+        positional: true,
+        required: true
+      },
+      {
+        name: "set",
+        type: "string",
+        description: "Template variable key=value (repeatable)",
+        positional: false,
+        required: false
+      }
     ]
   },
   output: { type: "json" },
   async handler({ templateId, output, set = [] }) {
-    const created = scaffoldFromTemplate(templateId, output, parseSetFlags(Array.isArray(set) ? set : [set]));
+    const created = scaffoldFromTemplate(
+      templateId,
+      output,
+      parseSetFlags(Array.isArray(set) ? set : [set])
+    );
     return { created };
   }
 });
@@ -3506,12 +3706,36 @@ var repotypeGenerateSchemaCommand = new UniversalCommand({
   keywords: ["repotype", "generate", "schema", "frontmatter"],
   input: {
     parameters: [
-      { name: "target", type: "string", description: "File or directory target", positional: true, required: true },
-      { name: "output", type: "string", description: "Output schema path", positional: true, required: true },
-      { name: "pattern", type: "string", description: "Glob pattern when target is directory", positional: false, required: false }
+      {
+        name: "target",
+        type: "string",
+        description: "File or directory target",
+        positional: true,
+        required: true
+      },
+      {
+        name: "output",
+        type: "string",
+        description: "Output schema path",
+        positional: true,
+        required: true
+      },
+      {
+        name: "pattern",
+        type: "string",
+        description: "Glob pattern when target is directory",
+        positional: false,
+        required: false
+      }
     ]
   },
   output: { type: "json" },
+  cli: {
+    format(result) {
+      return `schema written: ${result.output}
+${JSON.stringify(result, null, 2)}`;
+    }
+  },
   async handler({ target, output, pattern = "**/*.md" }) {
     return generateSchemaFromContent(target, output, pattern);
   }
@@ -3523,10 +3747,34 @@ var repotypeInitCommand = new UniversalCommand({
   keywords: ["repotype", "init", "profile", "bootstrap"],
   input: {
     parameters: [
-      { name: "target", type: "string", description: "Target directory", positional: true, required: false },
-      { name: "type", type: "string", description: "Profile type (default)", positional: false, required: false },
-      { name: "from", type: "string", description: "External config path", positional: false, required: false },
-      { name: "force", type: "boolean", description: "Overwrite existing config", positional: false, required: false }
+      {
+        name: "target",
+        type: "string",
+        description: "Target directory",
+        positional: true,
+        required: false
+      },
+      {
+        name: "type",
+        type: "string",
+        description: "Profile type (default)",
+        positional: false,
+        required: false
+      },
+      {
+        name: "from",
+        type: "string",
+        description: "External config path",
+        positional: false,
+        required: false
+      },
+      {
+        name: "force",
+        type: "boolean",
+        description: "Overwrite existing config",
+        positional: false,
+        required: false
+      }
     ]
   },
   output: { type: "json" },
@@ -3545,7 +3793,13 @@ var repotypePluginsStatusCommand = new UniversalCommand({
   keywords: ["repotype", "plugins", "status"],
   input: {
     parameters: [
-      { name: "target", type: "string", description: "Repository path", positional: true, required: false }
+      {
+        name: "target",
+        type: "string",
+        description: "Repository path",
+        positional: true,
+        required: false
+      }
     ]
   },
   output: { type: "json" },
@@ -3560,7 +3814,13 @@ var repotypePluginsInstallCommand = new UniversalCommand({
   keywords: ["repotype", "plugins", "install"],
   input: {
     parameters: [
-      { name: "target", type: "string", description: "Repository path", positional: true, required: false }
+      {
+        name: "target",
+        type: "string",
+        description: "Repository path",
+        positional: true,
+        required: false
+      }
     ]
   },
   output: { type: "json" },

@@ -14,7 +14,8 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "repotype": "bin/repotype.js"
+    "repotype": "bin/repotype.js",
+    "repotype-mcp": "bin/repotype-mcp.js"
   },
   "exports": {
     ".": {

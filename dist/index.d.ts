@@ -567,6 +567,7 @@ declare const repotypeReportCommand: UniversalCommand<{
     target?: string;
     format?: "markdown" | "json" | "html";
     config?: string;
+    output?: string;
 }, {
     ok: boolean;
     report: ComplianceReport;

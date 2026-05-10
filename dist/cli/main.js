@@ -1,14 +1,12 @@
 // src/cli/main.ts
-import fs21 from "fs";
-import path23 from "path";
 import { Command } from "commander";
 
 // src/service/server.ts
 import express from "express";
 
 // src/cli/use-cases.ts
-import fs16 from "fs";
-import path18 from "path";
+import fs17 from "fs";
+import path19 from "path";
 
 // src/core/autofix.ts
 import fs2 from "fs";
@@ -1897,18 +1895,81 @@ var BoardYamlCompletenessAdapter = class {
   }
 };
 
-// src/core/validator-framework.ts
+// src/adapters/board-story-completeness-adapter.ts
 import fs15 from "fs";
-import os from "os";
 import path17 from "path";
+var BOARDS_DIR_SEGMENT = `${path17.sep}packages${path17.sep}boards${path17.sep}`;
+var BOARDS_DIR_SEGMENT_FWD = "/packages/boards/";
+function isBoardYaml2(filePath) {
+  const normalized = filePath.replace(/\\/g, "/");
+  return normalized.includes(BOARDS_DIR_SEGMENT_FWD) && (normalized.endsWith("/board.yaml") || normalized === "board.yaml");
+}
+function boardNameFromPath(filePath) {
+  return path17.basename(path17.dirname(filePath));
+}
+var SKIP_DIRS = /* @__PURE__ */ new Set([
+  "__mocks__",
+  "__system__",
+  "lib",
+  "lib-dist",
+  "scripts",
+  "specs",
+  "agents",
+  "doc-folder"
+]);
+var BoardStoryCompletenessAdapter = class {
+  id = "board-story-required";
+  supports(filePath, _context) {
+    const normalized = filePath.replace(/\\/g, "/");
+    if (!isBoardYaml2(normalized)) return false;
+    const boardName = boardNameFromPath(filePath);
+    return !SKIP_DIRS.has(boardName);
+  }
+  async validate(filePath, _context) {
+    const boardDir = path17.dirname(filePath);
+    const boardName = boardNameFromPath(filePath);
+    const storiesDir = path17.join(boardDir, "stories");
+    if (!fs15.existsSync(storiesDir) || !fs15.statSync(storiesDir).isDirectory()) {
+      return [
+        {
+          code: "board_story_missing",
+          message: `Board '${boardName}' has no stories/ directory. Every board must have at least one .feature file in stories/. Run the Story Generation Agent to create it.`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id,
+          details: { boardName, expectedDir: storiesDir }
+        }
+      ];
+    }
+    const featureFiles = fs15.readdirSync(storiesDir).filter((f) => f.endsWith(".feature"));
+    if (featureFiles.length === 0) {
+      return [
+        {
+          code: "board_story_empty",
+          message: `Board '${boardName}' has a stories/ directory but no .feature files. Add at least one .feature file or run the Story Generation Agent.`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id,
+          details: { boardName, storiesDir }
+        }
+      ];
+    }
+    return [];
+  }
+};
+
+// src/core/validator-framework.ts
+import fs16 from "fs";
+import os from "os";
+import path18 from "path";
 import { globSync as globSync6 } from "glob";
 var CONFIG_FILE_NAMES = /* @__PURE__ */ new Set(["repotype.yaml", "repo-schema.yaml"]);
 function scanFiles(targetPath, repoRoot, sharedIgnoreMatcher) {
   const ignoreMatcher = sharedIgnoreMatcher ?? createIgnoreMatcher(repoRoot);
-  const stats = fs15.statSync(targetPath);
+  const stats = fs16.statSync(targetPath);
   if (stats.isFile()) {
-    const absoluteFile = path17.resolve(targetPath);
-    if (CONFIG_FILE_NAMES.has(path17.basename(absoluteFile))) return [];
+    const absoluteFile = path18.resolve(targetPath);
+    if (CONFIG_FILE_NAMES.has(path18.basename(absoluteFile))) return [];
     return ignoreMatcher.isIgnored(absoluteFile) ? [] : [absoluteFile];
   }
   const files = globSync6("**/*", {
@@ -1918,7 +1979,7 @@ function scanFiles(targetPath, repoRoot, sharedIgnoreMatcher) {
     ignore: getStaticIgnoreGlobs()
   });
   return files.filter((filePath) => {
-    if (CONFIG_FILE_NAMES.has(path17.basename(filePath))) return false;
+    if (CONFIG_FILE_NAMES.has(path18.basename(filePath))) return false;
     return !ignoreMatcher.isIgnored(filePath);
   });
 }
@@ -2043,10 +2104,10 @@ var ValidationEngine = class {
     this.adapters = adapters;
   }
   async validate(targetPath, options) {
-    const absoluteTarget = path17.resolve(targetPath);
-    const targetRoot = fs15.existsSync(absoluteTarget) && fs15.statSync(absoluteTarget).isDirectory() ? absoluteTarget : path17.dirname(absoluteTarget);
-    const configPath = options?.configPath ? path17.resolve(options.configPath) : findConfig(absoluteTarget);
-    const repoRoot = options?.configPath ? targetRoot : path17.dirname(configPath);
+    const absoluteTarget = path18.resolve(targetPath);
+    const targetRoot = fs16.existsSync(absoluteTarget) && fs16.statSync(absoluteTarget).isDirectory() ? absoluteTarget : path18.dirname(absoluteTarget);
+    const configPath = options?.configPath ? path18.resolve(options.configPath) : findConfig(absoluteTarget);
+    const repoRoot = options?.configPath ? targetRoot : path18.dirname(configPath);
     const config = loadConfig(configPath);
     const files = options?.fileList ?? scanFiles(absoluteTarget, repoRoot, options?.sharedIgnoreMatcher);
     const diagnostics = [...lintConfigGlobs(config, configPath)];
@@ -2096,9 +2157,9 @@ var ValidationEngine = class {
    * Auto-detects child configs under rootDir.
    */
   async validateWorkspace(rootDir, options = {}) {
-    const root = path17.resolve(rootDir);
+    const root = path18.resolve(rootDir);
     const rootConfigPath = findConfig(root);
-    const repoRoot = path17.dirname(rootConfigPath);
+    const repoRoot = path18.dirname(rootConfigPath);
     const sharedIgnoreMatcher = createIgnoreMatcher(repoRoot);
     const workspaces = discoverWorkspaces(repoRoot, sharedIgnoreMatcher);
     if (workspaces.length === 0) {
@@ -2199,10 +2260,10 @@ var ValidationEngine = class {
       }
       for (const folder of rootConfig.folders ?? []) {
         for (const reqFile of folder.requiredFiles ?? []) {
-          const absReqFile = path17.resolve(repoRoot, reqFile);
-          if (absReqFile.startsWith(ws.subtreeRoot + path17.sep) || absReqFile === ws.subtreeRoot) {
+          const absReqFile = path18.resolve(repoRoot, reqFile);
+          if (absReqFile.startsWith(ws.subtreeRoot + path18.sep) || absReqFile === ws.subtreeRoot) {
             const childRequires = (childConfig.folders ?? []).some(
-              (cf) => (cf.requiredFiles ?? []).some((rf) => path17.resolve(ws.subtreeRoot, rf) === absReqFile)
+              (cf) => (cf.requiredFiles ?? []).some((rf) => path18.resolve(ws.subtreeRoot, rf) === absReqFile)
             );
             if (!childRequires) {
               conflicts.push({
@@ -2217,7 +2278,7 @@ var ValidationEngine = class {
           }
         }
       }
-      const relSubtree = path17.relative(repoRoot, ws.subtreeRoot);
+      const relSubtree = path18.relative(repoRoot, ws.subtreeRoot);
       for (const rootRule of rootConfig.files ?? []) {
         if (!rootGlobCouldMatchSubtree(rootRule.glob, relSubtree)) continue;
         for (const childRule of childConfig.files ?? []) {
@@ -2288,7 +2349,8 @@ function createDefaultEngine() {
     new CrossFileRuleAdapter(),
     new ContentPolicyAdapter(),
     new GuidanceAdapter(),
-    new BoardYamlCompletenessAdapter()
+    new BoardYamlCompletenessAdapter(),
+    new BoardStoryCompletenessAdapter()
   ]);
 }
 
@@ -2494,19 +2556,19 @@ function renderComplianceReport(report, format = "markdown") {
 // src/cli/use-cases.ts
 import yaml5 from "js-yaml";
 function deriveTargetRoot(targetPath) {
-  if (fs16.existsSync(targetPath) && fs16.statSync(targetPath).isDirectory()) {
+  if (fs17.existsSync(targetPath) && fs17.statSync(targetPath).isDirectory()) {
     return targetPath;
   }
-  return path18.dirname(targetPath);
+  return path19.dirname(targetPath);
 }
 async function validatePath(target, configOverridePath, opts = {}) {
-  const absolute = path18.resolve(target);
+  const absolute = path19.resolve(target);
   const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path18.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path18.dirname(configPath);
+  const configPath = configOverridePath ? path19.resolve(configOverridePath) : findConfig(absolute);
+  const repoRoot = configOverridePath ? targetRoot : path19.dirname(configPath);
   const config = loadConfig(configPath);
   const engine = createDefaultEngine();
-  const isDirectory = fs16.existsSync(absolute) && fs16.statSync(absolute).isDirectory();
+  const isDirectory = fs17.existsSync(absolute) && fs17.statSync(absolute).isDirectory();
   const workspaceEnabled = opts.workspace !== false;
   if (isDirectory && workspaceEnabled && !configOverridePath) {
     const wsResult = await engine.validateWorkspace(absolute, { noCache: opts.noCache });
@@ -2545,18 +2607,18 @@ async function validatePath(target, configOverridePath, opts = {}) {
   };
 }
 function explainPath(target, configOverridePath) {
-  const absolute = path18.resolve(target);
+  const absolute = path19.resolve(target);
   const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path18.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path18.dirname(configPath);
+  const configPath = configOverridePath ? path19.resolve(configOverridePath) : findConfig(absolute);
+  const repoRoot = configOverridePath ? targetRoot : path19.dirname(configPath);
   const config = loadConfig(configPath);
   return explainRules(config, repoRoot, absolute);
 }
 async function fixPath(target, configOverridePath, opts = {}) {
-  const absolute = path18.resolve(target);
+  const absolute = path19.resolve(target);
   const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path18.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path18.dirname(configPath);
+  const configPath = configOverridePath ? path19.resolve(configOverridePath) : findConfig(absolute);
+  const repoRoot = configOverridePath ? targetRoot : path19.dirname(configPath);
   const config = loadConfig(configPath);
   const validateResult = await validatePath(target, configOverridePath, opts);
   if (validateResult.mode === "workspace") {
@@ -2598,16 +2660,16 @@ async function fixPath(target, configOverridePath, opts = {}) {
   };
 }
 function scaffoldFromTemplate(templateId, outputPath, variables) {
-  const absolute = path18.resolve(outputPath);
+  const absolute = path19.resolve(outputPath);
   const configPath = findConfig(absolute);
-  const repoRoot = path18.dirname(configPath);
+  const repoRoot = path19.dirname(configPath);
   const config = loadConfig(configPath);
   const content = renderTemplate(config, repoRoot, templateId, variables);
-  const parent = path18.dirname(absolute);
-  if (!fs16.existsSync(parent)) {
-    fs16.mkdirSync(parent, { recursive: true });
+  const parent = path19.dirname(absolute);
+  if (!fs17.existsSync(parent)) {
+    fs17.mkdirSync(parent, { recursive: true });
   }
-  fs16.writeFileSync(absolute, content);
+  fs17.writeFileSync(absolute, content);
   return absolute;
 }
 function generateSchemaFromContent(target, output, pattern = "**/*.md") {
@@ -2616,21 +2678,21 @@ function generateSchemaFromContent(target, output, pattern = "**/*.md") {
 function initRepotypeConfig(targetDir, options = {}) {
   const type = options.type ?? "default";
   const force = options.force ?? false;
-  const absoluteTarget = path18.resolve(targetDir);
-  const outputPath = path18.join(absoluteTarget, "repotype.yaml");
-  if (fs16.existsSync(outputPath) && !force) {
+  const absoluteTarget = path19.resolve(targetDir);
+  const outputPath = path19.join(absoluteTarget, "repotype.yaml");
+  if (fs17.existsSync(outputPath) && !force) {
     throw new Error(`repotype.yaml already exists at ${outputPath}. Use --force to overwrite.`);
   }
-  const config = options.from ? yaml5.load(fs16.readFileSync(path18.resolve(options.from), "utf8")) : createPresetConfig(type);
+  const config = options.from ? yaml5.load(fs17.readFileSync(path19.resolve(options.from), "utf8")) : createPresetConfig(type);
   if (!config || typeof config !== "object" || !config.version) {
     throw new Error('Source config is invalid. Expected YAML with top-level "version".');
   }
   const rendered = yaml5.dump(config, { lineWidth: 120 });
-  fs16.mkdirSync(absoluteTarget, { recursive: true });
-  fs16.writeFileSync(outputPath, rendered);
+  fs17.mkdirSync(absoluteTarget, { recursive: true });
+  fs17.writeFileSync(outputPath, rendered);
   return {
     outputPath,
-    source: options.from ? `file:${path18.resolve(options.from)}` : `preset:${type}`
+    source: options.from ? `file:${path19.resolve(options.from)}` : `preset:${type}`
   };
 }
 function getRepotypePresetMetadata() {
@@ -2639,9 +2701,9 @@ function getRepotypePresetMetadata() {
   };
 }
 function installPluginRequirements(target) {
-  const absolute = path18.resolve(target);
+  const absolute = path19.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path18.dirname(configPath);
+  const repoRoot = path19.dirname(configPath);
   const config = loadConfig(configPath);
   const installs = installPlugins(config, repoRoot);
   return {
@@ -2652,9 +2714,9 @@ function installPluginRequirements(target) {
   };
 }
 function pluginStatus(target) {
-  const absolute = path18.resolve(target);
+  const absolute = path19.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path18.dirname(configPath);
+  const repoRoot = path19.dirname(configPath);
   const config = loadConfig(configPath);
   const plugins = describePlugins(config);
   return {
@@ -2664,10 +2726,10 @@ function pluginStatus(target) {
   };
 }
 async function generateComplianceReport(target, format = "markdown", configOverridePath) {
-  const absolute = path18.resolve(target);
+  const absolute = path19.resolve(target);
   const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path18.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path18.dirname(configPath);
+  const configPath = configOverridePath ? path19.resolve(configOverridePath) : findConfig(absolute);
+  const repoRoot = configOverridePath ? targetRoot : path19.dirname(configPath);
   const validateResult = await validatePath(target, configOverridePath);
   const allDiagnostics = validateResult.mode === "workspace" ? [
     ...validateResult.result.rootResult.diagnostics,
@@ -2776,23 +2838,28 @@ async function startService(options) {
   });
 }
 
+// src/universal-commands.ts
+import { UniversalCommand } from "@supernal/universal-command";
+import fs22 from "fs";
+import path24 from "path";
+
 // src/cli/git-hooks.ts
-import fs17 from "fs";
-import path19 from "path";
+import fs18 from "fs";
+import path20 from "path";
 var START_MARKER = "# >>> repotype-checks >>>";
 var END_MARKER = "# <<< repotype-checks <<<";
 var MARKER_REGEX = new RegExp(`${START_MARKER}[\\s\\S]*?${END_MARKER}\\n?`, "m");
 function findGitRoot(startPath) {
-  let dir = path19.resolve(startPath);
-  if (fs17.existsSync(dir) && fs17.statSync(dir).isFile()) {
-    dir = path19.dirname(dir);
+  let dir = path20.resolve(startPath);
+  if (fs18.existsSync(dir) && fs18.statSync(dir).isFile()) {
+    dir = path20.dirname(dir);
   }
   while (true) {
-    const gitPath = path19.join(dir, ".git");
-    if (fs17.existsSync(gitPath)) {
+    const gitPath = path20.join(dir, ".git");
+    if (fs18.existsSync(gitPath)) {
       return dir;
     }
-    const parent = path19.dirname(dir);
+    const parent = path20.dirname(dir);
     if (parent === dir) {
       throw new Error("No .git directory found in current or parent directories");
     }
@@ -2800,30 +2867,30 @@ function findGitRoot(startPath) {
   }
 }
 function resolveGitDir(repoRoot) {
-  const dotGit = path19.join(repoRoot, ".git");
-  if (!fs17.existsSync(dotGit)) {
+  const dotGit = path20.join(repoRoot, ".git");
+  if (!fs18.existsSync(dotGit)) {
     throw new Error(`.git path not found for repo root: ${repoRoot}`);
   }
-  const stat = fs17.statSync(dotGit);
+  const stat = fs18.statSync(dotGit);
   if (stat.isDirectory()) {
     return dotGit;
   }
   if (stat.isFile()) {
-    const content = fs17.readFileSync(dotGit, "utf8").trim();
+    const content = fs18.readFileSync(dotGit, "utf8").trim();
     const match = content.match(/^gitdir:\s*(.+)$/i);
     if (!match) {
       throw new Error(`Unsupported .git file format at: ${dotGit}`);
     }
     const rawGitDir = match[1].trim();
-    return path19.isAbsolute(rawGitDir) ? rawGitDir : path19.resolve(repoRoot, rawGitDir);
+    return path20.isAbsolute(rawGitDir) ? rawGitDir : path20.resolve(repoRoot, rawGitDir);
   }
   throw new Error(`Unsupported .git path type at: ${dotGit}`);
 }
 function resolveHooksDir(repoRoot) {
   const gitDir = resolveGitDir(repoRoot);
-  const hooksDir = path19.join(gitDir, "hooks");
-  if (!fs17.existsSync(hooksDir)) {
-    fs17.mkdirSync(hooksDir, { recursive: true });
+  const hooksDir = path20.join(gitDir, "hooks");
+  if (!fs18.existsSync(hooksDir)) {
+    fs18.mkdirSync(hooksDir, { recursive: true });
   }
   return hooksDir;
 }
@@ -2843,28 +2910,28 @@ ${END_MARKER}
 }
 function upsertHook(hookFile, snippet) {
   const shebang = "#!/usr/bin/env bash\nset -euo pipefail\n\n";
-  if (!fs17.existsSync(hookFile)) {
-    fs17.writeFileSync(hookFile, `${shebang}${snippet}`);
-    fs17.chmodSync(hookFile, 493);
+  if (!fs18.existsSync(hookFile)) {
+    fs18.writeFileSync(hookFile, `${shebang}${snippet}`);
+    fs18.chmodSync(hookFile, 493);
     return "created";
   }
-  let current = fs17.readFileSync(hookFile, "utf8");
+  let current = fs18.readFileSync(hookFile, "utf8");
   if (!current.startsWith("#!")) {
     current = `${shebang}${current}`;
   }
   if (MARKER_REGEX.test(current)) {
     const next = current.replace(MARKER_REGEX, snippet);
     if (next === current) {
-      fs17.chmodSync(hookFile, 493);
+      fs18.chmodSync(hookFile, 493);
       return "unchanged";
     }
-    fs17.writeFileSync(hookFile, next);
-    fs17.chmodSync(hookFile, 493);
+    fs18.writeFileSync(hookFile, next);
+    fs18.chmodSync(hookFile, 493);
     return "updated";
   }
   const separator = current.endsWith("\n") ? "\n" : "\n\n";
-  fs17.writeFileSync(hookFile, `${current}${separator}${snippet}`);
-  fs17.chmodSync(hookFile, 493);
+  fs18.writeFileSync(hookFile, `${current}${separator}${snippet}`);
+  fs18.chmodSync(hookFile, 493);
   return "updated";
 }
 function installChecks(options) {
@@ -2873,7 +2940,7 @@ function installChecks(options) {
   const hookNames = options.hook === "both" ? ["pre-commit", "pre-push"] : [options.hook];
   const snippet = makeHookSnippet(repoRoot);
   const hooks = hookNames.map((hook) => {
-    const hookPath = path19.join(hooksDir, hook);
+    const hookPath = path20.join(hooksDir, hook);
     const status = upsertHook(hookPath, snippet);
     return { hook, status, path: hookPath };
   });
@@ -2884,11 +2951,11 @@ function inspectChecks(target) {
   const hooksDir = resolveHooksDir(repoRoot);
   const hookNames = ["pre-commit", "pre-push"];
   const hooks = hookNames.map((hook) => {
-    const hookPath = path19.join(hooksDir, hook);
-    if (!fs17.existsSync(hookPath)) {
+    const hookPath = path20.join(hooksDir, hook);
+    if (!fs18.existsSync(hookPath)) {
       return { hook, path: hookPath, exists: false, managed: false };
     }
-    const content = fs17.readFileSync(hookPath, "utf8");
+    const content = fs18.readFileSync(hookPath, "utf8");
     return {
       hook,
       path: hookPath,
@@ -2903,29 +2970,29 @@ function uninstallChecks(options) {
   const hooksDir = resolveHooksDir(repoRoot);
   const hookNames = options.hook === "both" ? ["pre-commit", "pre-push"] : [options.hook];
   const hooks = hookNames.map((hook) => {
-    const hookPath = path19.join(hooksDir, hook);
-    if (!fs17.existsSync(hookPath)) {
+    const hookPath = path20.join(hooksDir, hook);
+    if (!fs18.existsSync(hookPath)) {
       return { hook, status: "not_found", path: hookPath };
     }
-    const current = fs17.readFileSync(hookPath, "utf8");
+    const current = fs18.readFileSync(hookPath, "utf8");
     if (!MARKER_REGEX.test(current)) {
       return { hook, status: "unchanged", path: hookPath };
     }
     const next = current.replace(MARKER_REGEX, "").trimEnd();
-    fs17.writeFileSync(hookPath, next.length > 0 ? `${next}
+    fs18.writeFileSync(hookPath, next.length > 0 ? `${next}
 ` : "");
-    fs17.chmodSync(hookPath, 493);
+    fs18.chmodSync(hookPath, 493);
     return { hook, status: "removed", path: hookPath };
   });
   return { repoRoot, hooks };
 }
 
 // src/cli/cleanup.ts
-import fs18 from "fs";
-import path20 from "path";
+import fs19 from "fs";
+import path21 from "path";
 function ensureDir(dir) {
-  if (!fs18.existsSync(dir)) {
-    fs18.mkdirSync(dir, { recursive: true });
+  if (!fs19.existsSync(dir)) {
+    fs19.mkdirSync(dir, { recursive: true });
   }
 }
 function getTimestamp() {
@@ -2935,22 +3002,22 @@ function dedupe(items) {
   return [...new Set(items)];
 }
 function safeDestination(baseQueue, targetRoot, sourceFile) {
-  const relative = path20.relative(targetRoot, sourceFile);
-  const clamped = relative.startsWith("..") ? path20.basename(sourceFile) : relative;
-  const destination = path20.join(baseQueue, clamped);
-  if (!fs18.existsSync(destination)) {
+  const relative = path21.relative(targetRoot, sourceFile);
+  const clamped = relative.startsWith("..") ? path21.basename(sourceFile) : relative;
+  const destination = path21.join(baseQueue, clamped);
+  if (!fs19.existsSync(destination)) {
     return destination;
   }
-  const ext = path20.extname(destination);
+  const ext = path21.extname(destination);
   const stem = destination.slice(0, destination.length - ext.length);
   return `${stem}.moved-${Date.now()}${ext}`;
 }
 function writeAuditLogs(queueDir, entries) {
   ensureDir(queueDir);
-  const jsonlPath = path20.join(queueDir, "cleanup-log.jsonl");
-  const textPath = path20.join(queueDir, "cleanup-log.md");
+  const jsonlPath = path21.join(queueDir, "cleanup-log.jsonl");
+  const textPath = path21.join(queueDir, "cleanup-log.md");
   for (const entry of entries) {
-    fs18.appendFileSync(jsonlPath, `${JSON.stringify(entry)}
+    fs19.appendFileSync(jsonlPath, `${JSON.stringify(entry)}
 `);
     const summary = [
       `- ${entry.timestamp}`,
@@ -2961,12 +3028,12 @@ function writeAuditLogs(queueDir, entries) {
       ...entry.diagnostics.map((d) => `  - ${d.code}: ${d.message}`),
       ""
     ].join("\n");
-    fs18.appendFileSync(textPath, summary);
+    fs19.appendFileSync(textPath, summary);
   }
 }
 async function runCleanup(options) {
-  const targetRoot = path20.resolve(options.target);
-  const queueDir = path20.resolve(options.queueDir);
+  const targetRoot = path21.resolve(options.target);
+  const queueDir = path21.resolve(options.queueDir);
   ensureDir(queueDir);
   const validateResult = await validatePath(targetRoot);
   const allDiagnostics = validateResult.mode === "workspace" ? [
@@ -2982,7 +3049,7 @@ async function runCleanup(options) {
   const entries = [];
   let moved = 0;
   for (const file of files) {
-    if (!fs18.existsSync(file)) {
+    if (!fs19.existsSync(file)) {
       continue;
     }
     const diagnostics = errorDiagnostics.filter((d) => d.file === file);
@@ -2990,9 +3057,9 @@ async function runCleanup(options) {
       continue;
     }
     const destination = safeDestination(queueDir, targetRoot, file);
-    ensureDir(path20.dirname(destination));
+    ensureDir(path21.dirname(destination));
     if (!options.dryRun) {
-      fs18.renameSync(file, destination);
+      fs19.renameSync(file, destination);
       moved += 1;
     }
     entries.push({
@@ -3021,8 +3088,8 @@ async function runCleanup(options) {
 }
 
 // src/cli/watcher.ts
-import fs19 from "fs";
-import path21 from "path";
+import fs20 from "fs";
+import path22 from "path";
 import { spawnSync } from "child_process";
 function shQuote(input) {
   return `'${input.replace(/'/g, `'"'"'`)}'`;
@@ -3041,11 +3108,11 @@ function writeCrontab(content) {
   }
 }
 function installWatcher(options) {
-  const target = path21.resolve(options.target);
-  const queueDir = path21.resolve(options.queueDir);
-  const logFile = path21.resolve(options.logFile);
-  fs19.mkdirSync(path21.dirname(logFile), { recursive: true });
-  fs19.mkdirSync(queueDir, { recursive: true });
+  const target = path22.resolve(options.target);
+  const queueDir = path22.resolve(options.queueDir);
+  const logFile = path22.resolve(options.logFile);
+  fs20.mkdirSync(path22.dirname(logFile), { recursive: true });
+  fs20.mkdirSync(queueDir, { recursive: true });
   const marker = `# REPOTYPE_WATCHER:${target}`;
   const command = [
     `cd ${shQuote(target)}`,
@@ -3074,7 +3141,7 @@ function installWatcher(options) {
   };
 }
 function inspectWatcher(target) {
-  const resolved = path21.resolve(target);
+  const resolved = path22.resolve(target);
   const marker = `# REPOTYPE_WATCHER:${resolved}`;
   const current = readCrontab();
   const lines = current.split("\n").map((entry) => entry.trimEnd()).filter((entry) => entry.length > 0);
@@ -3086,7 +3153,7 @@ function inspectWatcher(target) {
   };
 }
 function uninstallWatcher(target, dryRun = false) {
-  const resolved = path21.resolve(target);
+  const resolved = path22.resolve(target);
   const marker = `# REPOTYPE_WATCHER:${resolved}`;
   const current = readCrontab();
   const lines = current.split("\n").map((entry) => entry.trimEnd()).filter((entry) => entry.length > 0);
@@ -3105,12 +3172,12 @@ function uninstallWatcher(target, dryRun = false) {
 }
 
 // src/cli/operations.ts
-import fs20 from "fs";
-import path22 from "path";
+import fs21 from "fs";
+import path23 from "path";
 function resolveRepoRoot(target) {
-  const absolute = path22.resolve(target);
+  const absolute = path23.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path22.dirname(configPath);
+  const repoRoot = path23.dirname(configPath);
   return { repoRoot, configPath };
 }
 function normalizeOperations(target) {
@@ -3124,9 +3191,9 @@ function normalizeOperations(target) {
     watcher: {
       enabled: config.operations?.watcher?.enabled ?? false,
       schedule: config.operations?.watcher?.schedule ?? "*/15 * * * *",
-      queueDir: path22.resolve(repoRoot, config.operations?.watcher?.queueDir ?? "sort_queue"),
+      queueDir: path23.resolve(repoRoot, config.operations?.watcher?.queueDir ?? "sort_queue"),
       minErrors: config.operations?.watcher?.minErrors ?? 3,
-      logFile: path22.resolve(repoRoot, config.operations?.watcher?.logFile ?? ".repotype/logs/watcher.log")
+      logFile: path23.resolve(repoRoot, config.operations?.watcher?.logFile ?? ".repotype/logs/watcher.log")
     }
   };
   return {
@@ -3136,11 +3203,11 @@ function normalizeOperations(target) {
   };
 }
 function readLastCleanupEntry(queueDir) {
-  const logPath = path22.join(queueDir, "cleanup-log.jsonl");
-  if (!fs20.existsSync(logPath)) {
+  const logPath = path23.join(queueDir, "cleanup-log.jsonl");
+  if (!fs21.existsSync(logPath)) {
     return { found: false };
   }
-  const lines = fs20.readFileSync(logPath, "utf8").split("\n").map((line) => line.trim()).filter(Boolean);
+  const lines = fs21.readFileSync(logPath, "utf8").split("\n").map((line) => line.trim()).filter(Boolean);
   if (lines.length === 0) {
     return { found: false };
   }
@@ -3196,20 +3263,572 @@ function applyOperationsConfig(target) {
   };
 }
 
+// src/universal-commands.ts
+function parseSetFlags(values = []) {
+  const output = {};
+  for (const entry of values) {
+    const idx = entry.indexOf("=");
+    if (idx <= 0) continue;
+    const key = entry.slice(0, idx);
+    const value = entry.slice(idx + 1);
+    output[key] = value;
+  }
+  return output;
+}
+var repotypeValidateCommand = new UniversalCommand({
+  name: "repotype validate",
+  description: "Validate repository structure and markdown/frontmatter rules against repotype.yaml",
+  scope: "project",
+  keywords: ["repo", "schema", "lint", "markdown", "frontmatter", "validation"],
+  input: {
+    parameters: [
+      {
+        name: "target",
+        type: "string",
+        description: "Target file/directory to validate",
+        positional: true,
+        required: false
+      },
+      {
+        name: "config",
+        type: "string",
+        description: "Explicit config path",
+        positional: false,
+        required: false
+      }
+    ]
+  },
+  output: {
+    type: "json"
+  },
+  cli: {
+    format(result) {
+      if (!result.ok) process.exitCode = 1;
+      return JSON.stringify(result, null, 2);
+    }
+  },
+  async handler({ target = ".", config }) {
+    const validateResult = await validatePath(target, config);
+    if (validateResult.mode === "workspace") {
+      const wsResult = validateResult.result;
+      const allDiagnostics = [
+        ...wsResult.rootResult.diagnostics,
+        ...wsResult.workspaces.flatMap((ws) => ws.result.diagnostics)
+      ];
+      return {
+        ok: wsResult.ok,
+        filesScanned: wsResult.filesScanned,
+        diagnostics: allDiagnostics,
+        mode: "workspace",
+        workspaces: wsResult.workspaces.map((ws) => ws.subtreeRoot)
+      };
+    }
+    return {
+      ok: validateResult.result.ok,
+      filesScanned: validateResult.result.filesScanned,
+      diagnostics: validateResult.result.diagnostics,
+      mode: "flat"
+    };
+  }
+});
+var repotypeExplainCommand = new UniversalCommand({
+  name: "repotype explain",
+  description: "Explain which schema rules apply to a specific file",
+  scope: "project",
+  keywords: ["repo", "schema", "explain", "rules"],
+  input: {
+    parameters: [
+      {
+        name: "file",
+        type: "string",
+        description: "File path to explain",
+        positional: true,
+        required: true
+      },
+      {
+        name: "config",
+        type: "string",
+        description: "Explicit config path",
+        positional: false,
+        required: false
+      }
+    ]
+  },
+  output: {
+    type: "json"
+  },
+  async handler({ file, config }) {
+    const output = explainPath(file, config);
+    return {
+      reason: output.reason,
+      effective: output.effective
+    };
+  }
+});
+var repotypeStatusCommand = new UniversalCommand({
+  name: "repotype status",
+  description: "Show repotype-managed hooks, watcher state, and cleanup log status",
+  scope: "project",
+  keywords: ["repotype", "status", "hooks", "watcher", "cleanup"],
+  input: {
+    parameters: [
+      {
+        name: "target",
+        type: "string",
+        description: "Repository path",
+        positional: true,
+        required: false
+      }
+    ]
+  },
+  output: {
+    type: "json"
+  },
+  async handler({ target = "." }) {
+    return getOperationsStatus(target);
+  }
+});
+var repotypeApplyCommand = new UniversalCommand({
+  name: "repotype apply",
+  description: "Apply operations config from repotype.yaml (hooks and watcher)",
+  scope: "project",
+  keywords: ["repotype", "apply", "operations", "hooks", "watcher"],
+  input: {
+    parameters: [
+      {
+        name: "target",
+        type: "string",
+        description: "Repository path",
+        positional: true,
+        required: false
+      }
+    ]
+  },
+  output: {
+    type: "json"
+  },
+  async handler({ target = "." }) {
+    return applyOperationsConfig(target);
+  }
+});
+var repotypeReportCommand = new UniversalCommand({
+  name: "repotype report",
+  description: "Generate compliance evidence report for a target path",
+  scope: "project",
+  keywords: ["repotype", "report", "evidence", "compliance"],
+  input: {
+    parameters: [
+      {
+        name: "target",
+        type: "string",
+        description: "Target file/directory to report on",
+        positional: true,
+        required: false
+      },
+      {
+        name: "format",
+        type: "string",
+        description: "Report format (markdown|json|html)",
+        positional: false,
+        required: false
+      },
+      {
+        name: "config",
+        type: "string",
+        description: "Explicit config path",
+        positional: false,
+        required: false
+      },
+      {
+        name: "output",
+        type: "string",
+        description: "Write rendered report to this file path",
+        positional: false,
+        required: false
+      }
+    ]
+  },
+  output: {
+    type: "json"
+  },
+  cli: {
+    // The installed @supernal/universal-command@0.1.0 calls format(result) with
+    // no args, so all arg-dependent logic lives in the handler instead.
+    // This format function only controls what gets printed to stdout.
+    format(result) {
+      if (!result.ok) process.exitCode = 1;
+      if (result._writtenTo) {
+        return JSON.stringify(
+          { ok: result.ok, output: result._writtenTo },
+          null,
+          2
+        );
+      }
+      return result.rendered;
+    }
+  },
+  async handler({ target = ".", format = "markdown", config, output }) {
+    const result = await generateComplianceReport(target, format, config);
+    if (output) {
+      const outPath = path24.resolve(output);
+      fs22.mkdirSync(path24.dirname(outPath), { recursive: true });
+      fs22.writeFileSync(outPath, result.rendered);
+      return { ...result, _writtenTo: outPath };
+    }
+    return result;
+  }
+});
+var repotypeFixCommand = new UniversalCommand({
+  name: "repotype fix",
+  description: "Apply safe autofixes and return remaining diagnostics",
+  scope: "project",
+  keywords: ["repotype", "fix", "autofix", "validation"],
+  input: {
+    parameters: [
+      {
+        name: "target",
+        type: "string",
+        description: "Target file or directory",
+        positional: true,
+        required: false
+      },
+      {
+        name: "config",
+        type: "string",
+        description: "Explicit config path",
+        positional: false,
+        required: false
+      }
+    ]
+  },
+  output: { type: "json" },
+  async handler({ target = ".", config }) {
+    return fixPath(target, config);
+  }
+});
+var repotypeCleanupRunCommand = new UniversalCommand({
+  name: "repotype cleanup-run",
+  description: "Move severely invalid files into a triage queue",
+  scope: "project",
+  keywords: ["repotype", "cleanup", "triage", "sort_queue"],
+  input: {
+    parameters: [
+      {
+        name: "target",
+        type: "string",
+        description: "Target path",
+        positional: true,
+        required: false
+      },
+      {
+        name: "queue",
+        type: "string",
+        description: "Queue directory",
+        positional: false,
+        required: false
+      },
+      {
+        name: "minErrors",
+        type: "number",
+        description: "Minimum error count before moving",
+        positional: false,
+        required: false
+      },
+      {
+        name: "dryRun",
+        type: "boolean",
+        description: "Dry run only",
+        positional: false,
+        required: false
+      }
+    ]
+  },
+  output: { type: "json" },
+  async handler({
+    target = ".",
+    queue = "sort_queue",
+    minErrors = 3,
+    dryRun = false
+  }) {
+    const absoluteTarget = path24.resolve(target);
+    const queueDir = path24.isAbsolute(queue) ? queue : path24.resolve(absoluteTarget, queue);
+    return runCleanup({ target: absoluteTarget, queueDir, minErrors, dryRun });
+  }
+});
+var repotypeInstallChecksCommand = new UniversalCommand({
+  name: "repotype install-checks",
+  description: "Install repotype git hooks (pre-commit/pre-push)",
+  scope: "project",
+  keywords: ["repotype", "git", "hooks", "pre-commit", "pre-push"],
+  input: {
+    parameters: [
+      {
+        name: "target",
+        type: "string",
+        description: "Repository path",
+        positional: false,
+        required: false
+      },
+      {
+        name: "hook",
+        type: "string",
+        description: "Hook mode: pre-commit|pre-push|both",
+        positional: false,
+        required: false
+      }
+    ]
+  },
+  output: { type: "json" },
+  async handler({ target = ".", hook = "both" }) {
+    return installChecks({ target, hook });
+  }
+});
+var repotypeInstallWatcherCommand = new UniversalCommand({
+  name: "repotype install-watcher",
+  description: "Install cron watcher for repotype cleanup automation",
+  scope: "project",
+  keywords: ["repotype", "watcher", "cron", "cleanup"],
+  input: {
+    parameters: [
+      {
+        name: "target",
+        type: "string",
+        description: "Repository path",
+        positional: false,
+        required: false
+      },
+      {
+        name: "schedule",
+        type: "string",
+        description: "Cron schedule",
+        positional: false,
+        required: false
+      },
+      {
+        name: "queue",
+        type: "string",
+        description: "Queue directory",
+        positional: false,
+        required: false
+      },
+      {
+        name: "minErrors",
+        type: "number",
+        description: "Minimum errors threshold",
+        positional: false,
+        required: false
+      },
+      {
+        name: "logFile",
+        type: "string",
+        description: "Watcher log file path",
+        positional: false,
+        required: false
+      },
+      {
+        name: "dryRun",
+        type: "boolean",
+        description: "Dry-run installation",
+        positional: false,
+        required: false
+      }
+    ]
+  },
+  output: { type: "json" },
+  async handler({
+    target = ".",
+    schedule = "*/15 * * * *",
+    queue = "sort_queue",
+    minErrors = 3,
+    logFile = ".repotype/logs/watcher.log",
+    dryRun = true
+  }) {
+    const resolvedTarget = path24.resolve(target);
+    const queueDir = path24.isAbsolute(queue) ? queue : path24.resolve(resolvedTarget, queue);
+    const resolvedLogFile = path24.isAbsolute(logFile) ? logFile : path24.resolve(resolvedTarget, logFile);
+    return installWatcher({
+      target: resolvedTarget,
+      schedule,
+      queueDir,
+      minErrors,
+      logFile: resolvedLogFile,
+      dryRun
+    });
+  }
+});
+var repotypeScaffoldCommand = new UniversalCommand({
+  name: "repotype scaffold",
+  description: "Create a file from a configured template",
+  scope: "project",
+  keywords: ["repotype", "scaffold", "template", "generate"],
+  input: {
+    parameters: [
+      {
+        name: "templateId",
+        type: "string",
+        description: "Template id",
+        positional: true,
+        required: true
+      },
+      {
+        name: "output",
+        type: "string",
+        description: "Output path",
+        positional: true,
+        required: true
+      },
+      {
+        name: "set",
+        type: "string",
+        description: "Template variable key=value (repeatable)",
+        positional: false,
+        required: false
+      }
+    ]
+  },
+  output: { type: "json" },
+  async handler({ templateId, output, set = [] }) {
+    const created = scaffoldFromTemplate(
+      templateId,
+      output,
+      parseSetFlags(Array.isArray(set) ? set : [set])
+    );
+    return { created };
+  }
+});
+var repotypeGenerateSchemaCommand = new UniversalCommand({
+  name: "repotype generate schema",
+  description: "Generate frontmatter JSON schema from markdown content",
+  scope: "project",
+  keywords: ["repotype", "generate", "schema", "frontmatter"],
+  input: {
+    parameters: [
+      {
+        name: "target",
+        type: "string",
+        description: "File or directory target",
+        positional: true,
+        required: true
+      },
+      {
+        name: "output",
+        type: "string",
+        description: "Output schema path",
+        positional: true,
+        required: true
+      },
+      {
+        name: "pattern",
+        type: "string",
+        description: "Glob pattern when target is directory",
+        positional: false,
+        required: false
+      }
+    ]
+  },
+  output: { type: "json" },
+  cli: {
+    format(result) {
+      return `schema written: ${result.output}
+${JSON.stringify(result, null, 2)}`;
+    }
+  },
+  async handler({ target, output, pattern = "**/*.md" }) {
+    return generateSchemaFromContent(target, output, pattern);
+  }
+});
+var repotypeInitCommand = new UniversalCommand({
+  name: "repotype init",
+  description: "Initialize repotype.yaml from generic preset or external source",
+  scope: "project",
+  keywords: ["repotype", "init", "profile", "bootstrap"],
+  input: {
+    parameters: [
+      {
+        name: "target",
+        type: "string",
+        description: "Target directory",
+        positional: true,
+        required: false
+      },
+      {
+        name: "type",
+        type: "string",
+        description: "Profile type (default)",
+        positional: false,
+        required: false
+      },
+      {
+        name: "from",
+        type: "string",
+        description: "External config path",
+        positional: false,
+        required: false
+      },
+      {
+        name: "force",
+        type: "boolean",
+        description: "Overwrite existing config",
+        positional: false,
+        required: false
+      }
+    ]
+  },
+  output: { type: "json" },
+  async handler({ target = ".", type = "default", from, force = false }) {
+    const metadata = getRepotypePresetMetadata();
+    if (!metadata.types.includes(type)) {
+      throw new Error(`Unsupported preset type '${type}'.`);
+    }
+    return initRepotypeConfig(target, { type, from, force });
+  }
+});
+var repotypePluginsStatusCommand = new UniversalCommand({
+  name: "repotype plugins status",
+  description: "Show configured plugin requirement status",
+  scope: "project",
+  keywords: ["repotype", "plugins", "status"],
+  input: {
+    parameters: [
+      {
+        name: "target",
+        type: "string",
+        description: "Repository path",
+        positional: true,
+        required: false
+      }
+    ]
+  },
+  output: { type: "json" },
+  async handler({ target = "." }) {
+    return pluginStatus(target);
+  }
+});
+var repotypePluginsInstallCommand = new UniversalCommand({
+  name: "repotype plugins install",
+  description: "Run configured plugin installation commands",
+  scope: "project",
+  keywords: ["repotype", "plugins", "install"],
+  input: {
+    parameters: [
+      {
+        name: "target",
+        type: "string",
+        description: "Repository path",
+        positional: true,
+        required: false
+      }
+    ]
+  },
+  output: { type: "json" },
+  async handler({ target = "." }) {
+    return installPluginRequirements(target);
+  }
+});
+
 // src/cli/main.ts
 var ISSUE_URL = "https://github.com/supernalintelligence/supernal-coding/issues";
 var STAR_URL = "https://github.com/supernalintelligence/supernal-coding";
-function countDiagnostics(diagnostics) {
-  return diagnostics.reduce(
-    (acc, d) => {
-      if (d.severity === "error") acc.errors += 1;
-      if (d.severity === "warning") acc.warnings += 1;
-      if (d.severity === "suggestion") acc.suggestions += 1;
-      return acc;
-    },
-    { errors: 0, warnings: 0, suggestions: 0 }
-  );
-}
 function maybeEmitCommunityPrompt() {
   if (Math.random() < 0.2) {
     console.error(
@@ -3217,343 +3836,64 @@ function maybeEmitCommunityPrompt() {
     );
   }
 }
-function emitBoundaryGuidance(context, counts) {
-  if (counts.errors > 0) {
-    console.error(
-      `[repotype] ${context}: found ${counts.errors} error(s). If this looks wrong or important, file an issue: ${ISSUE_URL}`
+function registerUniversalCommands(program) {
+  const CLI_PREFIX = "repotype";
+  const groups = /* @__PURE__ */ new Map();
+  function getOrCreateGroup(parent, groupName) {
+    const existing = parent.commands.find(
+      (c) => c.name() === groupName
     );
-  } else if (counts.warnings > 0) {
-    console.error(
-      `[repotype] ${context}: found ${counts.warnings} warning(s). If behavior is unexpected, file an issue: ${ISSUE_URL}`
-    );
+    if (existing) return existing;
+    const group = new Command(groupName);
+    parent.addCommand(group);
+    return group;
   }
-  maybeEmitCommunityPrompt();
-}
-function parseSetFlags(values) {
-  const output = {};
-  for (const entry of values) {
-    const idx = entry.indexOf("=");
-    if (idx <= 0) {
-      continue;
+  const universalCommands = [
+    repotypeValidateCommand,
+    repotypeExplainCommand,
+    repotypeStatusCommand,
+    repotypeApplyCommand,
+    repotypeReportCommand,
+    repotypeFixCommand,
+    repotypeCleanupRunCommand,
+    repotypeInstallChecksCommand,
+    repotypeInstallWatcherCommand,
+    repotypeScaffoldCommand,
+    repotypeGenerateSchemaCommand,
+    repotypeInitCommand,
+    repotypePluginsStatusCommand,
+    repotypePluginsInstallCommand
+  ];
+  for (const cmd of universalCommands) {
+    const rawName = cmd.schema?.name ?? "";
+    const tokens = rawName.split(" ");
+    const parts = tokens[0] === CLI_PREFIX ? tokens.slice(1) : tokens;
+    if (parts.length <= 1) {
+      program.addCommand(cmd.toCLI());
+    } else {
+      let parent = program;
+      const groupKey = parts.slice(0, -1).join(".");
+      if (!groups.has(groupKey)) {
+        for (const part of parts.slice(0, -1)) {
+          parent = getOrCreateGroup(parent, part);
+        }
+        groups.set(groupKey, parent);
+      } else {
+        parent = groups.get(groupKey);
+      }
+      parent.addCommand(cmd.toCLI());
     }
-    const key = entry.slice(0, idx);
-    const value = entry.slice(idx + 1);
-    output[key] = value;
   }
-  return output;
 }
 async function runCLI(argv) {
   const program = new Command();
-  program.name("repotype").description("Repository schema validation, scaffolding, fix, and service runtime").version("0.1.0");
+  program.name("repotype").description(
+    "Repository schema validation, scaffolding, fix, and service runtime"
+  ).version("0.1.0");
   program.hook("postAction", () => {
     maybeEmitCommunityPrompt();
   });
-  program.command("validate").argument("[target]", "file or directory to validate", ".").option("--json", "emit machine-readable JSON", false).option("--config <path>", "explicit config file path (repotype.yaml)", "").option("--workspace", "enable workspace mode (auto-detected by default)", true).option("--no-workspace", "disable workspace mode, validate as flat single config").option("--no-cache", "skip workspace cache read/write", false).action(async (target, options) => {
-    const validateResult = await validatePath(target, options.config || void 0, {
-      workspace: options.workspace,
-      noCache: options.noCache
-    });
-    if (options.json) {
-      console.log(JSON.stringify(validateResult, null, 2));
-      process.exitCode = validateResult.result.ok ? 0 : 1;
-      return;
-    }
-    if (validateResult.mode === "workspace") {
-      const wsResult = validateResult.result;
-      console.log(`mode: workspace (${wsResult.workspaces.length} child workspace(s))`);
-      console.log(`files scanned: ${wsResult.filesScanned}`);
-      const rootCounts = countDiagnostics(wsResult.rootResult.diagnostics);
-      console.log(`
-[root]`);
-      console.log(`  files: ${wsResult.rootResult.filesScanned}`);
-      console.log(`  errors: ${rootCounts.errors}, warnings: ${rootCounts.warnings}, suggestions: ${rootCounts.suggestions}`);
-      for (const d of wsResult.rootResult.diagnostics) {
-        console.log(`  [${d.severity}] ${d.code}: ${d.message} (${d.file})`);
-      }
-      for (const ws of wsResult.workspaces) {
-        const wsCounts = countDiagnostics(ws.result.diagnostics);
-        console.log(`
-[${ws.subtreeRoot}]`);
-        console.log(`  config: ${ws.configPath}`);
-        console.log(`  files: ${ws.result.filesScanned}`);
-        console.log(`  errors: ${wsCounts.errors}, warnings: ${wsCounts.warnings}, suggestions: ${wsCounts.suggestions}`);
-        for (const d of ws.result.diagnostics) {
-          console.log(`  [${d.severity}] ${d.code}: ${d.message} (${d.file})`);
-        }
-      }
-      if (wsResult.conflicts.length > 0) {
-        console.log(`
-[conflicts]`);
-        for (const c of wsResult.conflicts) {
-          console.log(`  [${c.severity}] ${c.code}: ${c.message}`);
-        }
-      }
-      const allDiagnostics = [
-        ...wsResult.rootResult.diagnostics,
-        ...wsResult.workspaces.flatMap((ws) => ws.result.diagnostics)
-      ];
-      const totalCounts = countDiagnostics(allDiagnostics);
-      emitBoundaryGuidance("validate", totalCounts);
-      process.exitCode = wsResult.ok ? 0 : 1;
-    } else {
-      const result = validateResult.result;
-      const counts = countDiagnostics(result.diagnostics);
-      console.log(`files scanned: ${result.filesScanned}`);
-      console.log(`diagnostics: ${result.diagnostics.length}`);
-      console.log(`errors: ${counts.errors}, warnings: ${counts.warnings}, suggestions: ${counts.suggestions}`);
-      for (const d of result.diagnostics) {
-        console.log(`[${d.severity}] ${d.code}: ${d.message} (${d.file})`);
-      }
-      emitBoundaryGuidance("validate", counts);
-      process.exitCode = result.ok ? 0 : 1;
-    }
-  });
-  program.command("report").argument("[target]", "file or directory to report on", ".").option("--json", "emit machine-readable JSON report", false).option("--format <format>", "report format: markdown | json | html", "markdown").option("--config <path>", "explicit config file path (repotype.yaml)", "").option("--output <file>", "write report to file").action(async (target, options) => {
-    const format = options.json ? "json" : options.format;
-    if (!["markdown", "json", "html"].includes(format)) {
-      throw new Error(`Unsupported report format '${format}'. Use markdown, json, or html.`);
-    }
-    const output = await generateComplianceReport(
-      target,
-      format,
-      options.config || void 0
-    );
-    if (options.output) {
-      const outPath = path23.resolve(options.output);
-      const parent = path23.dirname(outPath);
-      if (!fs21.existsSync(parent)) {
-        fs21.mkdirSync(parent, { recursive: true });
-      }
-      fs21.writeFileSync(outPath, output.rendered);
-      console.log(`report written: ${outPath}`);
-    } else {
-      console.log(output.rendered);
-    }
-    emitBoundaryGuidance("report", output.report.totals);
-    process.exitCode = output.ok ? 0 : 1;
-  });
-  program.command("fix").argument("[target]", "file or directory to validate/fix", ".").option("--config <path>", "explicit config file path (repotype.yaml)", "").option("--workspace", "enable workspace mode (auto-detected by default)", true).option("--no-workspace", "disable workspace mode, fix as flat single config").option("--no-cache", "skip workspace cache read/write", false).action(async (target, options) => {
-    const output = await fixPath(target, options.config || void 0, {
-      workspace: options.workspace,
-      noCache: options.noCache
-    });
-    console.log(`applied fixes: ${output.fix.applied}`);
-    if (output.validation.mode === "workspace") {
-      const wsResult = output.validation.result;
-      console.log(`mode: workspace (${wsResult.workspaces.length} child workspace(s))`);
-      const wsFixes = output.workspaceFixes;
-      const rootCounts = countDiagnostics(wsResult.rootResult.diagnostics);
-      console.log(`
-[root]`);
-      console.log(`  fixes applied: ${wsFixes?.root.applied ?? 0}`);
-      console.log(`  remaining: errors: ${rootCounts.errors}, warnings: ${rootCounts.warnings}, suggestions: ${rootCounts.suggestions}`);
-      for (const d of wsResult.rootResult.diagnostics) {
-        console.log(`  [${d.severity}] ${d.code}: ${d.message} (${d.file})`);
-      }
-      for (const ws of wsResult.workspaces) {
-        const childFix = wsFixes?.children.find((c) => c.subtreeRoot === ws.subtreeRoot);
-        const wsCounts = countDiagnostics(ws.result.diagnostics);
-        console.log(`
-[${ws.subtreeRoot}]`);
-        console.log(`  fixes applied: ${childFix?.fix.applied ?? 0}`);
-        console.log(`  remaining: errors: ${wsCounts.errors}, warnings: ${wsCounts.warnings}, suggestions: ${wsCounts.suggestions}`);
-      }
-      const allDiagnostics = [
-        ...wsResult.rootResult.diagnostics,
-        ...wsResult.workspaces.flatMap((ws) => ws.result.diagnostics)
-      ];
-      const counts = countDiagnostics(allDiagnostics);
-      emitBoundaryGuidance("fix", counts);
-    } else {
-      const result = output.validation.result;
-      const counts = countDiagnostics(result.diagnostics);
-      console.log(`remaining diagnostics: ${result.diagnostics.length}`);
-      emitBoundaryGuidance("fix", counts);
-    }
-    process.exitCode = output.validation.result.ok ? 0 : 1;
-  });
-  program.command("cleanup-run").argument("[target]", "file or directory to validate/cleanup", ".").option("--queue <dir>", "sort queue directory", "sort_queue").option("--min-errors <n>", "minimum error count before moving file", "3").option("--dry-run", "show what would be moved without moving files", false).option("--json", "emit machine-readable JSON", false).action(async (target, options) => {
-    const absoluteTarget = path23.resolve(target);
-    const queueDir = path23.isAbsolute(options.queue) ? options.queue : path23.resolve(absoluteTarget, options.queue);
-    const result = await runCleanup({
-      target: absoluteTarget,
-      queueDir,
-      minErrors: Number.parseInt(options.minErrors, 10),
-      dryRun: options.dryRun
-    });
-    if (options.json) {
-      console.log(JSON.stringify(result, null, 2));
-    } else {
-      console.log(`scanned: ${result.scanned}`);
-      console.log(`cleanup candidates: ${result.candidates}`);
-      console.log(`moved: ${result.moved}`);
-    }
-  });
-  program.command("install-checks").option("--hook <hook>", "pre-commit | pre-push | both", "both").option("--target <dir>", "repository path", ".").action((options) => {
-    const output = installChecks({
-      hook: options.hook,
-      target: options.target
-    });
-    console.log(`git root: ${output.repoRoot}`);
-    for (const hook of output.hooks) {
-      console.log(`${hook.hook}: ${hook.status} (${hook.path})`);
-    }
-  });
-  program.command("install-watcher").option("--target <dir>", "repository path", ".").option("--schedule <cron>", "cron schedule expression", "*/15 * * * *").option("--queue <dir>", "sort queue directory", "sort_queue").option("--min-errors <n>", "minimum errors before moving file", "3").option("--log-file <file>", "watcher stdout/stderr log file", ".repotype/logs/watcher.log").option("--dry-run", "print cron line without writing crontab", false).action((options) => {
-    const target = path23.resolve(options.target);
-    const queueDir = path23.isAbsolute(options.queue) ? options.queue : path23.resolve(target, options.queue);
-    const logFile = path23.isAbsolute(options.logFile) ? options.logFile : path23.resolve(target, options.logFile);
-    const output = installWatcher({
-      target,
-      schedule: options.schedule,
-      queueDir,
-      minErrors: Number.parseInt(options.minErrors, 10),
-      logFile,
-      dryRun: options.dryRun
-    });
-    console.log(`watcher marker: ${output.marker}`);
-    console.log(`schedule: ${output.schedule}`);
-    console.log(`command: ${output.command}`);
-    console.log(`changed: ${output.changed ? "yes" : "no"}`);
-    if (options.dryRun) {
-      console.log("dry-run: crontab not modified");
-    }
-  });
-  program.command("status").argument("[target]", "repository path", ".").option("--json", "emit machine-readable JSON", false).action((target, options) => {
-    const status = getOperationsStatus(target);
-    const repoRoot = status.repoRoot;
-    const sharedIgnoreMatcher = createIgnoreMatcher(repoRoot);
-    const workspaces = discoverWorkspaces(repoRoot, sharedIgnoreMatcher);
-    const allConfigPaths = [status.configPath, ...workspaces.map((ws) => ws.configPath)];
-    const currentHash = workspaces.length > 0 ? hashConfigFiles(allConfigPaths) : null;
-    const cached = workspaces.length > 0 ? loadWorkspaceCache(repoRoot) : null;
-    const cacheStatus = currentHash === null ? "n/a" : cached && cached.hash === currentHash ? "fresh" : "stale or missing";
-    const workspaceStatus = {
-      mode: workspaces.length > 0 ? "workspace" : "flat",
-      childCount: workspaces.length,
-      subtreeRoots: workspaces.map((ws) => ws.subtreeRoot),
-      cacheStatus
-    };
-    if (options.json) {
-      console.log(JSON.stringify({ ...status, workspace: workspaceStatus }, null, 2));
-      return;
-    }
-    console.log(`repo root: ${status.repoRoot}`);
-    console.log(`config: ${status.configPath}`);
-    console.log("hooks:");
-    for (const hook of status.hooks.hooks) {
-      console.log(`  - ${hook.hook}: ${hook.managed ? "managed" : hook.exists ? "exists (not managed)" : "missing"}`);
-    }
-    console.log(`watcher: ${status.watcher.installed ? "installed" : "not installed"}`);
-    if (status.watcher.line) {
-      console.log(`watcher line: ${status.watcher.line}`);
-    }
-    console.log(`cleanup queue: ${status.cleanup.queueDir}`);
-    console.log(`last cleanup: ${status.cleanup.lastRun.found ? "found" : "none"}`);
-    console.log(`
-workspace mode: ${workspaceStatus.mode}`);
-    if (workspaces.length > 0) {
-      console.log(`child configs: ${workspaces.length}`);
-      console.log(`cache status: ${cacheStatus}`);
-      for (const ws of workspaces) {
-        console.log(`  - ${ws.subtreeRoot} (${ws.configPath})`);
-      }
-    }
-  });
-  program.command("apply").argument("[target]", "repository path", ".").option("--json", "emit machine-readable JSON", false).action((target, options) => {
-    const output = applyOperationsConfig(target);
-    if (options.json) {
-      console.log(JSON.stringify(output, null, 2));
-      return;
-    }
-    console.log(`applied operations from ${output.configPath}`);
-    console.log(`repo root: ${output.repoRoot}`);
-    console.log("hooks operation completed");
-    console.log("watcher operation completed");
-  });
-  program.command("explain").argument("<file>", "file path").option("--json", "emit machine-readable JSON", false).option("--config <path>", "explicit config file path (repotype.yaml)", "").action((file, options) => {
-    const output = explainPath(file, options.config || void 0);
-    if (options.json) {
-      console.log(JSON.stringify(output, null, 2));
-    } else {
-      for (const line of output.reason) {
-        console.log(`- ${line}`);
-      }
-    }
-  });
-  program.command("scaffold").argument("<templateId>", "template id from repotype.yaml").argument("<output>", "output file path").option("--set <kv>", "template variable key=value", (value, prev) => {
-    prev.push(value);
-    return prev;
-  }, []).action((templateId, output, options) => {
-    const variables = parseSetFlags(options.set);
-    const created = scaffoldFromTemplate(templateId, output, variables);
-    console.log(`created ${created}`);
-  });
-  program.command("init").description("Initialize repotype.yaml from generic preset or external source").argument("[target]", "target directory for repotype.yaml", ".").option("--type <type>", "preset type: default|strict", "default").option("--from <path>", "external YAML config to copy as repotype.yaml").option("--force", "overwrite existing repotype.yaml if present", false).action((target, options) => {
-    const metadata = getRepotypePresetMetadata();
-    if (!metadata.types.includes(options.type)) {
-      throw new Error(`Unsupported --type '${options.type}'. Use one of: ${metadata.types.join(", ")}`);
-    }
-    const created = initRepotypeConfig(target, {
-      type: options.type,
-      from: options.from,
-      force: options.force
-    });
-    console.log(`initialized ${created.outputPath}`);
-    console.log(`source: ${created.source}`);
-  });
-  program.command("generate").description("Generate helper artifacts from repository content").command("schema").argument("<target>", "file or directory to infer frontmatter schema from").argument("<output>", "output JSON schema path").option("--pattern <glob>", "glob pattern when target is a directory", "**/*.md").action((target, output, options) => {
-    const summary = generateSchemaFromContent(target, output, options.pattern);
-    console.log(`schema written: ${summary.output}`);
-    console.log(`files considered: ${summary.filesConsidered}`);
-    console.log(`files parsed: ${summary.filesParsed}`);
-    console.log(`files failed: ${summary.filesFailed}`);
-    console.log(`properties: ${summary.properties.length}`);
-    console.log(`required: ${summary.required.length}`);
-  });
-  const pluginsCommand = program.command("plugins").description("Manage configured plugin requirements");
-  pluginsCommand.command("status").argument("[target]", "repository path", ".").option("--json", "emit machine-readable JSON", false).action((target, options) => {
-    const status = pluginStatus(target);
-    if (options.json) {
-      console.log(JSON.stringify(status, null, 2));
-      return;
-    }
-    console.log(`repo root: ${status.repoRoot}`);
-    console.log(`config: ${status.configPath}`);
-    if (status.plugins.length === 0) {
-      console.log("plugins: none configured");
-      return;
-    }
-    for (const plugin of status.plugins) {
-      console.log(
-        `- ${plugin.id}: ${plugin.enabled ? "enabled" : "disabled"} (install=${plugin.hasInstall}, validate=${plugin.hasValidate}, fix=${plugin.hasFix})`
-      );
-    }
-  });
-  pluginsCommand.command("install").argument("[target]", "repository path", ".").option("--json", "emit machine-readable JSON", false).action((target, options) => {
-    const output = installPluginRequirements(target);
-    if (options.json) {
-      console.log(JSON.stringify(output, null, 2));
-      process.exitCode = output.ok ? 0 : 1;
-      return;
-    }
-    console.log(`repo root: ${output.repoRoot}`);
-    console.log(`config: ${output.configPath}`);
-    if (output.installs.length === 0) {
-      console.log("no plugin install commands configured");
-    }
-    for (const entry of output.installs) {
-      console.log(
-        `- ${entry.id}: ${entry.ok ? "ok" : "failed"} (exit=${entry.code}) command=${entry.command}`
-      );
-    }
-    if (!output.ok) {
-      console.error(
-        `[repotype] plugins install: one or more plugin install commands failed. Please file an issue if this is unexpected: ${ISSUE_URL}`
-      );
-    }
-    process.exitCode = output.ok ? 0 : 1;
-  });
+  registerUniversalCommands(program);
   program.command("serve").option("--port <port>", "service port", "4310").option("--cwd <cwd>", "service working directory", process.cwd()).action(async (options) => {
     const port = Number.parseInt(options.port, 10);
     await startService({ port, cwd: options.cwd });
@@ -3564,7 +3904,9 @@ workspace mode: ${workspaceStatus.mode}`);
   } catch (error) {
     const message = typeof error?.message === "string" ? error.message : String(error);
     console.error(`[repotype] unexpected failure: ${message}`);
-    console.error(`[repotype] Please file an issue with command/context: ${ISSUE_URL}`);
+    console.error(
+      `[repotype] Please file an issue with command/context: ${ISSUE_URL}`
+    );
     maybeEmitCommunityPrompt();
     process.exitCode = 1;
   }

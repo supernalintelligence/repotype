@@ -1,8 +1,9 @@
-import { UniversalCommand } from '@supernal/universal-command';
-import path from 'node:path';
-import { installChecks } from './cli/git-hooks.js';
-import { runCleanup } from './cli/cleanup.js';
-import { installWatcher } from './cli/watcher.js';
+import { UniversalCommand } from "@supernal/universal-command";
+import fs from "node:fs";
+import path from "node:path";
+import { installChecks } from "./cli/git-hooks.js";
+import { runCleanup } from "./cli/cleanup.js";
+import { installWatcher } from "./cli/watcher.js";
 import {
   explainPath,
   fixPath,
@@ -14,13 +15,16 @@ import {
   pluginStatus,
   scaffoldFromTemplate,
   validatePath,
-} from './cli/use-cases.js';
-import { applyOperationsConfig, getOperationsStatus } from './cli/operations.js';
+} from "./cli/use-cases.js";
+import {
+  applyOperationsConfig,
+  getOperationsStatus,
+} from "./cli/operations.js";
 
 function parseSetFlags(values: string[] = []): Record<string, unknown> {
   const output: Record<string, unknown> = {};
   for (const entry of values) {
-    const idx = entry.indexOf('=');
+    const idx = entry.indexOf("=");
     if (idx <= 0) continue;
     const key = entry.slice(0, idx);
     const value = entry.slice(idx + 1);
@@ -33,34 +37,42 @@ export const repotypeValidateCommand = new UniversalCommand<
   { target?: string; config?: string },
   { ok: boolean; filesScanned: number; diagnostics: unknown[] }
 >({
-  name: 'repotype validate',
-  description: 'Validate repository structure and markdown/frontmatter rules against repotype.yaml',
-  scope: 'project',
-  keywords: ['repo', 'schema', 'lint', 'markdown', 'frontmatter', 'validation'],
+  name: "repotype validate",
+  description:
+    "Validate repository structure and markdown/frontmatter rules against repotype.yaml",
+  scope: "project",
+  keywords: ["repo", "schema", "lint", "markdown", "frontmatter", "validation"],
   input: {
     parameters: [
       {
-        name: 'target',
-        type: 'string',
-        description: 'Target file/directory to validate',
+        name: "target",
+        type: "string",
+        description: "Target file/directory to validate",
         positional: true,
         required: false,
       },
       {
-        name: 'config',
-        type: 'string',
-        description: 'Explicit config path',
+        name: "config",
+        type: "string",
+        description: "Explicit config path",
         positional: false,
         required: false,
       },
     ],
   },
   output: {
-    type: 'json',
+    type: "json",
   },
-  async handler({ target = '.', config }) {
+  cli: {
+    format(result: { ok: boolean }) {
+      // Exit 1 when validation found errors, matching old CLI behaviour.
+      if (!result.ok) process.exitCode = 1;
+      return JSON.stringify(result, null, 2);
+    },
+  },
+  async handler({ target = ".", config }) {
     const validateResult = await validatePath(target, config);
-    if (validateResult.mode === 'workspace') {
+    if (validateResult.mode === "workspace") {
       const wsResult = validateResult.result;
       const allDiagnostics = [
         ...wsResult.rootResult.diagnostics,
@@ -70,7 +82,7 @@ export const repotypeValidateCommand = new UniversalCommand<
         ok: wsResult.ok,
         filesScanned: wsResult.filesScanned,
         diagnostics: allDiagnostics,
-        mode: 'workspace',
+        mode: "workspace",
         workspaces: wsResult.workspaces.map((ws) => ws.subtreeRoot),
       };
     }
@@ -78,7 +90,7 @@ export const repotypeValidateCommand = new UniversalCommand<
       ok: validateResult.result.ok,
       filesScanned: validateResult.result.filesScanned,
       diagnostics: validateResult.result.diagnostics,
-      mode: 'flat',
+      mode: "flat",
     };
   },
 });
@@ -87,30 +99,30 @@ export const repotypeExplainCommand = new UniversalCommand<
   { file: string; config?: string },
   { reason: string[]; effective: unknown }
 >({
-  name: 'repotype explain',
-  description: 'Explain which schema rules apply to a specific file',
-  scope: 'project',
-  keywords: ['repo', 'schema', 'explain', 'rules'],
+  name: "repotype explain",
+  description: "Explain which schema rules apply to a specific file",
+  scope: "project",
+  keywords: ["repo", "schema", "explain", "rules"],
   input: {
     parameters: [
       {
-        name: 'file',
-        type: 'string',
-        description: 'File path to explain',
+        name: "file",
+        type: "string",
+        description: "File path to explain",
         positional: true,
         required: true,
       },
       {
-        name: 'config',
-        type: 'string',
-        description: 'Explicit config path',
+        name: "config",
+        type: "string",
+        description: "Explicit config path",
         positional: false,
         required: false,
       },
     ],
   },
   output: {
-    type: 'json',
+    type: "json",
   },
   async handler({ file, config }) {
     const output = explainPath(file, config);
@@ -125,25 +137,26 @@ export const repotypeStatusCommand = new UniversalCommand<
   { target?: string },
   ReturnType<typeof getOperationsStatus>
 >({
-  name: 'repotype status',
-  description: 'Show repotype-managed hooks, watcher state, and cleanup log status',
-  scope: 'project',
-  keywords: ['repotype', 'status', 'hooks', 'watcher', 'cleanup'],
+  name: "repotype status",
+  description:
+    "Show repotype-managed hooks, watcher state, and cleanup log status",
+  scope: "project",
+  keywords: ["repotype", "status", "hooks", "watcher", "cleanup"],
   input: {
     parameters: [
       {
-        name: 'target',
-        type: 'string',
-        description: 'Repository path',
+        name: "target",
+        type: "string",
+        description: "Repository path",
         positional: true,
         required: false,
       },
     ],
   },
   output: {
-    type: 'json',
+    type: "json",
   },
-  async handler({ target = '.' }) {
+  async handler({ target = "." }) {
     return getOperationsStatus(target);
   },
 });
@@ -152,67 +165,110 @@ export const repotypeApplyCommand = new UniversalCommand<
   { target?: string },
   ReturnType<typeof applyOperationsConfig>
 >({
-  name: 'repotype apply',
-  description: 'Apply operations config from repotype.yaml (hooks and watcher)',
-  scope: 'project',
-  keywords: ['repotype', 'apply', 'operations', 'hooks', 'watcher'],
+  name: "repotype apply",
+  description: "Apply operations config from repotype.yaml (hooks and watcher)",
+  scope: "project",
+  keywords: ["repotype", "apply", "operations", "hooks", "watcher"],
   input: {
     parameters: [
       {
-        name: 'target',
-        type: 'string',
-        description: 'Repository path',
+        name: "target",
+        type: "string",
+        description: "Repository path",
         positional: true,
         required: false,
       },
     ],
   },
   output: {
-    type: 'json',
+    type: "json",
   },
-  async handler({ target = '.' }) {
+  async handler({ target = "." }) {
     return applyOperationsConfig(target);
   },
 });
 
 export const repotypeReportCommand = new UniversalCommand<
-  { target?: string; format?: 'markdown' | 'json' | 'html'; config?: string },
+  {
+    target?: string;
+    format?: "markdown" | "json" | "html";
+    config?: string;
+    output?: string;
+  },
   Awaited<ReturnType<typeof generateComplianceReport>>
 >({
-  name: 'repotype report',
-  description: 'Generate compliance evidence report for a target path',
-  scope: 'project',
-  keywords: ['repotype', 'report', 'evidence', 'compliance'],
+  name: "repotype report",
+  description: "Generate compliance evidence report for a target path",
+  scope: "project",
+  keywords: ["repotype", "report", "evidence", "compliance"],
   input: {
     parameters: [
       {
-        name: 'target',
-        type: 'string',
-        description: 'Target file/directory to report on',
+        name: "target",
+        type: "string",
+        description: "Target file/directory to report on",
         positional: true,
         required: false,
       },
       {
-        name: 'format',
-        type: 'string',
-        description: 'Report format (markdown|json|html)',
+        name: "format",
+        type: "string",
+        description: "Report format (markdown|json|html)",
         positional: false,
         required: false,
       },
       {
-        name: 'config',
-        type: 'string',
-        description: 'Explicit config path',
+        name: "config",
+        type: "string",
+        description: "Explicit config path",
+        positional: false,
+        required: false,
+      },
+      {
+        name: "output",
+        type: "string",
+        description: "Write rendered report to this file path",
         positional: false,
         required: false,
       },
     ],
   },
   output: {
-    type: 'json',
+    type: "json",
   },
-  async handler({ target = '.', format = 'markdown', config }) {
-    return generateComplianceReport(target, format, config);
+  cli: {
+    // The installed @supernal/universal-command@0.1.0 calls format(result) with
+    // no args, so all arg-dependent logic lives in the handler instead.
+    // This format function only controls what gets printed to stdout.
+    format(
+      result: Awaited<ReturnType<typeof generateComplianceReport>> & {
+        _writtenTo?: string;
+      },
+    ) {
+      // Exit 1 when the report contains errors, matching old CLI behaviour.
+      if (!result.ok) process.exitCode = 1;
+      // When handler wrote to a file, emit a short confirmation.
+      if (result._writtenTo) {
+        return JSON.stringify(
+          { ok: result.ok, output: result._writtenTo },
+          null,
+          2,
+        );
+      }
+      return result.rendered;
+    },
+  },
+  async handler({ target = ".", format = "markdown", config, output }) {
+    const result = await generateComplianceReport(target, format, config);
+    if (output) {
+      // Write rendered content to the requested path; signal the path back via
+      // a hidden _writtenTo field so cli.format can emit a confirmation.
+      const outPath = path.resolve(output);
+      fs.mkdirSync(path.dirname(outPath), { recursive: true });
+      fs.writeFileSync(outPath, result.rendered);
+      return { ...result, _writtenTo: outPath };
+    }
+    return result;
   },
 });
 
@@ -220,30 +276,30 @@ export const repotypeFixCommand = new UniversalCommand<
   { target?: string; config?: string },
   Awaited<ReturnType<typeof fixPath>>
 >({
-  name: 'repotype fix',
-  description: 'Apply safe autofixes and return remaining diagnostics',
-  scope: 'project',
-  keywords: ['repotype', 'fix', 'autofix', 'validation'],
+  name: "repotype fix",
+  description: "Apply safe autofixes and return remaining diagnostics",
+  scope: "project",
+  keywords: ["repotype", "fix", "autofix", "validation"],
   input: {
     parameters: [
       {
-        name: 'target',
-        type: 'string',
-        description: 'Target file or directory',
+        name: "target",
+        type: "string",
+        description: "Target file or directory",
         positional: true,
         required: false,
       },
       {
-        name: 'config',
-        type: 'string',
-        description: 'Explicit config path',
+        name: "config",
+        type: "string",
+        description: "Explicit config path",
         positional: false,
         required: false,
       },
     ],
   },
-  output: { type: 'json' },
-  async handler({ target = '.', config }) {
+  output: { type: "json" },
+  async handler({ target = ".", config }) {
     return fixPath(target, config);
   },
 });
@@ -252,76 +308,166 @@ export const repotypeCleanupRunCommand = new UniversalCommand<
   { target?: string; queue?: string; minErrors?: number; dryRun?: boolean },
   Awaited<ReturnType<typeof runCleanup>>
 >({
-  name: 'repotype cleanup-run',
-  description: 'Move severely invalid files into a triage queue',
-  scope: 'project',
-  keywords: ['repotype', 'cleanup', 'triage', 'sort_queue'],
+  name: "repotype cleanup-run",
+  description: "Move severely invalid files into a triage queue",
+  scope: "project",
+  keywords: ["repotype", "cleanup", "triage", "sort_queue"],
   input: {
     parameters: [
-      { name: 'target', type: 'string', description: 'Target path', positional: true, required: false },
-      { name: 'queue', type: 'string', description: 'Queue directory', positional: false, required: false },
-      { name: 'minErrors', type: 'number', description: 'Minimum error count before moving', positional: false, required: false },
-      { name: 'dryRun', type: 'boolean', description: 'Dry run only', positional: false, required: false },
+      {
+        name: "target",
+        type: "string",
+        description: "Target path",
+        positional: true,
+        required: false,
+      },
+      {
+        name: "queue",
+        type: "string",
+        description: "Queue directory",
+        positional: false,
+        required: false,
+      },
+      {
+        name: "minErrors",
+        type: "number",
+        description: "Minimum error count before moving",
+        positional: false,
+        required: false,
+      },
+      {
+        name: "dryRun",
+        type: "boolean",
+        description: "Dry run only",
+        positional: false,
+        required: false,
+      },
     ],
   },
-  output: { type: 'json' },
-  async handler({ target = '.', queue = 'sort_queue', minErrors = 3, dryRun = false }) {
+  output: { type: "json" },
+  async handler({
+    target = ".",
+    queue = "sort_queue",
+    minErrors = 3,
+    dryRun = false,
+  }) {
     const absoluteTarget = path.resolve(target);
-    const queueDir = path.isAbsolute(queue) ? queue : path.resolve(absoluteTarget, queue);
+    const queueDir = path.isAbsolute(queue)
+      ? queue
+      : path.resolve(absoluteTarget, queue);
     return runCleanup({ target: absoluteTarget, queueDir, minErrors, dryRun });
   },
 });
 
 export const repotypeInstallChecksCommand = new UniversalCommand<
-  { target?: string; hook?: 'pre-commit' | 'pre-push' | 'both' },
+  { target?: string; hook?: "pre-commit" | "pre-push" | "both" },
   ReturnType<typeof installChecks>
 >({
-  name: 'repotype install-checks',
-  description: 'Install repotype git hooks (pre-commit/pre-push)',
-  scope: 'project',
-  keywords: ['repotype', 'git', 'hooks', 'pre-commit', 'pre-push'],
+  name: "repotype install-checks",
+  description: "Install repotype git hooks (pre-commit/pre-push)",
+  scope: "project",
+  keywords: ["repotype", "git", "hooks", "pre-commit", "pre-push"],
   input: {
     parameters: [
-      { name: 'target', type: 'string', description: 'Repository path', positional: false, required: false },
-      { name: 'hook', type: 'string', description: 'Hook mode: pre-commit|pre-push|both', positional: false, required: false },
+      {
+        name: "target",
+        type: "string",
+        description: "Repository path",
+        positional: false,
+        required: false,
+      },
+      {
+        name: "hook",
+        type: "string",
+        description: "Hook mode: pre-commit|pre-push|both",
+        positional: false,
+        required: false,
+      },
     ],
   },
-  output: { type: 'json' },
-  async handler({ target = '.', hook = 'both' }) {
+  output: { type: "json" },
+  async handler({ target = ".", hook = "both" }) {
     return installChecks({ target, hook });
   },
 });
 
 export const repotypeInstallWatcherCommand = new UniversalCommand<
-  { target?: string; schedule?: string; queue?: string; minErrors?: number; logFile?: string; dryRun?: boolean },
+  {
+    target?: string;
+    schedule?: string;
+    queue?: string;
+    minErrors?: number;
+    logFile?: string;
+    dryRun?: boolean;
+  },
   ReturnType<typeof installWatcher>
 >({
-  name: 'repotype install-watcher',
-  description: 'Install cron watcher for repotype cleanup automation',
-  scope: 'project',
-  keywords: ['repotype', 'watcher', 'cron', 'cleanup'],
+  name: "repotype install-watcher",
+  description: "Install cron watcher for repotype cleanup automation",
+  scope: "project",
+  keywords: ["repotype", "watcher", "cron", "cleanup"],
   input: {
     parameters: [
-      { name: 'target', type: 'string', description: 'Repository path', positional: false, required: false },
-      { name: 'schedule', type: 'string', description: 'Cron schedule', positional: false, required: false },
-      { name: 'queue', type: 'string', description: 'Queue directory', positional: false, required: false },
-      { name: 'minErrors', type: 'number', description: 'Minimum errors threshold', positional: false, required: false },
-      { name: 'logFile', type: 'string', description: 'Watcher log file path', positional: false, required: false },
-      { name: 'dryRun', type: 'boolean', description: 'Dry-run installation', positional: false, required: false },
+      {
+        name: "target",
+        type: "string",
+        description: "Repository path",
+        positional: false,
+        required: false,
+      },
+      {
+        name: "schedule",
+        type: "string",
+        description: "Cron schedule",
+        positional: false,
+        required: false,
+      },
+      {
+        name: "queue",
+        type: "string",
+        description: "Queue directory",
+        positional: false,
+        required: false,
+      },
+      {
+        name: "minErrors",
+        type: "number",
+        description: "Minimum errors threshold",
+        positional: false,
+        required: false,
+      },
+      {
+        name: "logFile",
+        type: "string",
+        description: "Watcher log file path",
+        positional: false,
+        required: false,
+      },
+      {
+        name: "dryRun",
+        type: "boolean",
+        description: "Dry-run installation",
+        positional: false,
+        required: false,
+      },
     ],
   },
-  output: { type: 'json' },
+  output: { type: "json" },
   async handler({
-    target = '.',
-    schedule = '*/15 * * * *',
-    queue = 'sort_queue',
+    target = ".",
+    schedule = "*/15 * * * *",
+    queue = "sort_queue",
     minErrors = 3,
-    logFile = '.repotype/logs/watcher.log',
+    logFile = ".repotype/logs/watcher.log",
     dryRun = true,
   }) {
     const resolvedTarget = path.resolve(target);
-    const queueDir = path.isAbsolute(queue) ? queue : path.resolve(resolvedTarget, queue);
-    const resolvedLogFile = path.isAbsolute(logFile) ? logFile : path.resolve(resolvedTarget, logFile);
+    const queueDir = path.isAbsolute(queue)
+      ? queue
+      : path.resolve(resolvedTarget, queue);
+    const resolvedLogFile = path.isAbsolute(logFile)
+      ? logFile
+      : path.resolve(resolvedTarget, logFile);
     return installWatcher({
       target: resolvedTarget,
       schedule,
@@ -337,20 +483,42 @@ export const repotypeScaffoldCommand = new UniversalCommand<
   { templateId: string; output: string; set?: string[] },
   { created: string }
 >({
-  name: 'repotype scaffold',
-  description: 'Create a file from a configured template',
-  scope: 'project',
-  keywords: ['repotype', 'scaffold', 'template', 'generate'],
+  name: "repotype scaffold",
+  description: "Create a file from a configured template",
+  scope: "project",
+  keywords: ["repotype", "scaffold", "template", "generate"],
   input: {
     parameters: [
-      { name: 'templateId', type: 'string', description: 'Template id', positional: true, required: true },
-      { name: 'output', type: 'string', description: 'Output path', positional: true, required: true },
-      { name: 'set', type: 'string', description: 'Template variable key=value (repeatable)', positional: false, required: false },
+      {
+        name: "templateId",
+        type: "string",
+        description: "Template id",
+        positional: true,
+        required: true,
+      },
+      {
+        name: "output",
+        type: "string",
+        description: "Output path",
+        positional: true,
+        required: true,
+      },
+      {
+        name: "set",
+        type: "string",
+        description: "Template variable key=value (repeatable)",
+        positional: false,
+        required: false,
+      },
     ],
   },
-  output: { type: 'json' },
+  output: { type: "json" },
   async handler({ templateId, output, set = [] }) {
-    const created = scaffoldFromTemplate(templateId, output, parseSetFlags(Array.isArray(set) ? set : [set]));
+    const created = scaffoldFromTemplate(
+      templateId,
+      output,
+      parseSetFlags(Array.isArray(set) ? set : [set]),
+    );
     return { created };
   },
 });
@@ -359,41 +527,95 @@ export const repotypeGenerateSchemaCommand = new UniversalCommand<
   { target: string; output: string; pattern?: string },
   ReturnType<typeof generateSchemaFromContent>
 >({
-  name: 'repotype generate schema',
-  description: 'Generate frontmatter JSON schema from markdown content',
-  scope: 'project',
-  keywords: ['repotype', 'generate', 'schema', 'frontmatter'],
+  name: "repotype generate schema",
+  description: "Generate frontmatter JSON schema from markdown content",
+  scope: "project",
+  keywords: ["repotype", "generate", "schema", "frontmatter"],
   input: {
     parameters: [
-      { name: 'target', type: 'string', description: 'File or directory target', positional: true, required: true },
-      { name: 'output', type: 'string', description: 'Output schema path', positional: true, required: true },
-      { name: 'pattern', type: 'string', description: 'Glob pattern when target is directory', positional: false, required: false },
+      {
+        name: "target",
+        type: "string",
+        description: "File or directory target",
+        positional: true,
+        required: true,
+      },
+      {
+        name: "output",
+        type: "string",
+        description: "Output schema path",
+        positional: true,
+        required: true,
+      },
+      {
+        name: "pattern",
+        type: "string",
+        description: "Glob pattern when target is directory",
+        positional: false,
+        required: false,
+      },
     ],
   },
-  output: { type: 'json' },
-  async handler({ target, output, pattern = '**/*.md' }) {
+  output: { type: "json" },
+  cli: {
+    format(result: ReturnType<typeof generateSchemaFromContent>) {
+      // Emit human-readable confirmation matching old CLI behaviour.
+      return `schema written: ${result.output}\n${JSON.stringify(result, null, 2)}`;
+    },
+  },
+  async handler({ target, output, pattern = "**/*.md" }) {
     return generateSchemaFromContent(target, output, pattern);
   },
 });
 
 export const repotypeInitCommand = new UniversalCommand<
-  { target?: string; type?: 'default' | 'strict'; from?: string; force?: boolean },
+  {
+    target?: string;
+    type?: "default" | "strict";
+    from?: string;
+    force?: boolean;
+  },
   ReturnType<typeof initRepotypeConfig>
 >({
-  name: 'repotype init',
-  description: 'Initialize repotype.yaml from generic preset or external source',
-  scope: 'project',
-  keywords: ['repotype', 'init', 'profile', 'bootstrap'],
+  name: "repotype init",
+  description:
+    "Initialize repotype.yaml from generic preset or external source",
+  scope: "project",
+  keywords: ["repotype", "init", "profile", "bootstrap"],
   input: {
     parameters: [
-      { name: 'target', type: 'string', description: 'Target directory', positional: true, required: false },
-      { name: 'type', type: 'string', description: 'Profile type (default)', positional: false, required: false },
-      { name: 'from', type: 'string', description: 'External config path', positional: false, required: false },
-      { name: 'force', type: 'boolean', description: 'Overwrite existing config', positional: false, required: false },
+      {
+        name: "target",
+        type: "string",
+        description: "Target directory",
+        positional: true,
+        required: false,
+      },
+      {
+        name: "type",
+        type: "string",
+        description: "Profile type (default)",
+        positional: false,
+        required: false,
+      },
+      {
+        name: "from",
+        type: "string",
+        description: "External config path",
+        positional: false,
+        required: false,
+      },
+      {
+        name: "force",
+        type: "boolean",
+        description: "Overwrite existing config",
+        positional: false,
+        required: false,
+      },
     ],
   },
-  output: { type: 'json' },
-  async handler({ target = '.', type = 'default', from, force = false }) {
+  output: { type: "json" },
+  async handler({ target = ".", type = "default", from, force = false }) {
     const metadata = getRepotypePresetMetadata();
     if (!metadata.types.includes(type)) {
       throw new Error(`Unsupported preset type '${type}'.`);
@@ -406,17 +628,23 @@ export const repotypePluginsStatusCommand = new UniversalCommand<
   { target?: string },
   ReturnType<typeof pluginStatus>
 >({
-  name: 'repotype plugins status',
-  description: 'Show configured plugin requirement status',
-  scope: 'project',
-  keywords: ['repotype', 'plugins', 'status'],
+  name: "repotype plugins status",
+  description: "Show configured plugin requirement status",
+  scope: "project",
+  keywords: ["repotype", "plugins", "status"],
   input: {
     parameters: [
-      { name: 'target', type: 'string', description: 'Repository path', positional: true, required: false },
+      {
+        name: "target",
+        type: "string",
+        description: "Repository path",
+        positional: true,
+        required: false,
+      },
     ],
   },
-  output: { type: 'json' },
-  async handler({ target = '.' }) {
+  output: { type: "json" },
+  async handler({ target = "." }) {
     return pluginStatus(target);
   },
 });
@@ -425,17 +653,23 @@ export const repotypePluginsInstallCommand = new UniversalCommand<
   { target?: string },
   ReturnType<typeof installPluginRequirements>
 >({
-  name: 'repotype plugins install',
-  description: 'Run configured plugin installation commands',
-  scope: 'project',
-  keywords: ['repotype', 'plugins', 'install'],
+  name: "repotype plugins install",
+  description: "Run configured plugin installation commands",
+  scope: "project",
+  keywords: ["repotype", "plugins", "install"],
   input: {
     parameters: [
-      { name: 'target', type: 'string', description: 'Repository path', positional: true, required: false },
+      {
+        name: "target",
+        type: "string",
+        description: "Repository path",
+        positional: true,
+        required: false,
+      },
     ],
   },
-  output: { type: 'json' },
-  async handler({ target = '.' }) {
+  output: { type: "json" },
+  async handler({ target = "." }) {
     return installPluginRequirements(target);
   },
 });
