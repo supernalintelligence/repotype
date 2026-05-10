@@ -1,5 +1,6 @@
 // src/cli/main.ts
 import { Command } from "commander";
+import { UniversalCommand as UniversalCommand2 } from "@supernal/universal-command";
 
 // src/service/server.ts
 import express from "express";
@@ -3836,18 +3837,14 @@ function maybeEmitCommunityPrompt() {
     );
   }
 }
-function registerUniversalCommands(program) {
-  const CLI_PREFIX = "repotype";
-  const groups = /* @__PURE__ */ new Map();
-  function getOrCreateGroup(parent, groupName) {
-    const existing = parent.commands.find(
-      (c) => c.name() === groupName
-    );
-    if (existing) return existing;
-    const group = new Command(groupName);
-    parent.addCommand(group);
-    return group;
-  }
+async function runCLI(argv) {
+  const program = new Command();
+  program.name("repotype").description(
+    "Repository schema validation, scaffolding, fix, and service runtime"
+  ).version("0.1.0");
+  program.hook("postAction", () => {
+    maybeEmitCommunityPrompt();
+  });
   const universalCommands = [
     repotypeValidateCommand,
     repotypeExplainCommand,
@@ -3864,36 +3861,10 @@ function registerUniversalCommands(program) {
     repotypePluginsStatusCommand,
     repotypePluginsInstallCommand
   ];
-  for (const cmd of universalCommands) {
-    const rawName = cmd.schema?.name ?? "";
-    const tokens = rawName.split(" ");
-    const parts = tokens[0] === CLI_PREFIX ? tokens.slice(1) : tokens;
-    if (parts.length <= 1) {
-      program.addCommand(cmd.toCLI());
-    } else {
-      let parent = program;
-      const groupKey = parts.slice(0, -1).join(".");
-      if (!groups.has(groupKey)) {
-        for (const part of parts.slice(0, -1)) {
-          parent = getOrCreateGroup(parent, part);
-        }
-        groups.set(groupKey, parent);
-      } else {
-        parent = groups.get(groupKey);
-      }
-      parent.addCommand(cmd.toCLI());
-    }
+  const [repotypeGroup] = UniversalCommand2.buildCommandTree(universalCommands);
+  for (const sub of repotypeGroup.commands) {
+    program.addCommand(sub);
   }
-}
-async function runCLI(argv) {
-  const program = new Command();
-  program.name("repotype").description(
-    "Repository schema validation, scaffolding, fix, and service runtime"
-  ).version("0.1.0");
-  program.hook("postAction", () => {
-    maybeEmitCommunityPrompt();
-  });
-  registerUniversalCommands(program);
   program.command("serve").option("--port <port>", "service port", "4310").option("--cwd <cwd>", "service working directory", process.cwd()).action(async (options) => {
     const port = Number.parseInt(options.port, 10);
     await startService({ port, cwd: options.cwd });

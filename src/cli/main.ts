@@ -1,4 +1,5 @@
 import { Command } from "commander";
+import { UniversalCommand } from "@supernal/universal-command";
 import { startService } from "../service/server.js";
 import {
   repotypeValidateCommand,
@@ -29,29 +30,23 @@ function maybeEmitCommunityPrompt(): void {
   }
 }
 
-/**
- * Build and register all UniversalCommand instances into a Commander program.
- * Handles nested command groups (e.g. "repotype generate schema" → generate → schema).
- */
-function registerUniversalCommands(
-  program: InstanceType<typeof Command>,
-): void {
-  const CLI_PREFIX = "repotype";
-  const groups = new Map<string, InstanceType<typeof Command>>();
+export async function runCLI(argv: string[]): Promise<number> {
+  const program = new Command();
 
-  function getOrCreateGroup(
-    parent: InstanceType<typeof Command>,
-    groupName: string,
-  ): InstanceType<typeof Command> {
-    const existing = parent.commands.find(
-      (c: InstanceType<typeof Command>) => c.name() === groupName,
-    );
-    if (existing) return existing;
-    const group = new Command(groupName);
-    parent.addCommand(group);
-    return group;
-  }
+  program
+    .name("repotype")
+    .description(
+      "Repository schema validation, scaffolding, fix, and service runtime",
+    )
+    .version("0.1.0");
 
+  program.hook("postAction", () => {
+    maybeEmitCommunityPrompt();
+  });
+
+  // Register all UniversalCommand-backed subcommands via the built-in tree builder.
+  // buildCommandTree returns a single 'repotype' parent; its .commands are the leaf
+  // subcommands (validate, explain, generate → schema, plugins → status/install, etc.).
   const universalCommands = [
     repotypeValidateCommand,
     repotypeExplainCommand,
@@ -68,48 +63,10 @@ function registerUniversalCommands(
     repotypePluginsStatusCommand,
     repotypePluginsInstallCommand,
   ];
-
-  for (const cmd of universalCommands) {
-    const rawName: string = (cmd as any).schema?.name ?? "";
-    // Strip leading "repotype" prefix token
-    const tokens = rawName.split(" ");
-    const parts = tokens[0] === CLI_PREFIX ? tokens.slice(1) : tokens;
-
-    if (parts.length <= 1) {
-      program.addCommand(cmd.toCLI());
-    } else {
-      // Nested: walk/create group chain, attach leaf
-      let parent: InstanceType<typeof Command> = program;
-      const groupKey = parts.slice(0, -1).join(".");
-      if (!groups.has(groupKey)) {
-        for (const part of parts.slice(0, -1)) {
-          parent = getOrCreateGroup(parent, part);
-        }
-        groups.set(groupKey, parent);
-      } else {
-        parent = groups.get(groupKey)!;
-      }
-      parent.addCommand(cmd.toCLI());
-    }
+  const [repotypeGroup] = UniversalCommand.buildCommandTree(universalCommands);
+  for (const sub of repotypeGroup.commands) {
+    program.addCommand(sub);
   }
-}
-
-export async function runCLI(argv: string[]): Promise<number> {
-  const program = new Command();
-
-  program
-    .name("repotype")
-    .description(
-      "Repository schema validation, scaffolding, fix, and service runtime",
-    )
-    .version("0.1.0");
-
-  program.hook("postAction", () => {
-    maybeEmitCommunityPrompt();
-  });
-
-  // Register all UniversalCommand-backed subcommands
-  registerUniversalCommands(program);
 
   // `serve` is intentionally not a UniversalCommand — it starts a long-lived Express
   // process and has a different lifecycle than a one-shot handler.
