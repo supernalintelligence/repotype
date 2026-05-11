@@ -47,7 +47,7 @@
     "badge:validation": "node scripts/generate-validation-badge.mjs"
   },
   "dependencies": {
-    "@supernal/universal-command": "^0.1.0",
+    "@supernal/universal-command": "workspace:*",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",
     "chalk": "^5.3.0",
