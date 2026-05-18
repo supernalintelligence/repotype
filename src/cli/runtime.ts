@@ -10,6 +10,7 @@ import { MarkdownTemplateAdapter } from '../adapters/markdown-template-adapter.j
 import { PathPolicyAdapter } from '../adapters/path-policy-adapter.js';
 import { BoardYamlCompletenessAdapter } from '../adapters/board-yaml-completeness-adapter.js';
 import { BoardStoryCompletenessAdapter } from '../adapters/board-story-completeness-adapter.js';
+import { CompanyYamlAdapter } from '../adapters/company-yaml-adapter.js';
 import { ValidationEngine } from '../core/validator-framework.js';
 
 export function createDefaultEngine(): ValidationEngine {
@@ -26,5 +27,6 @@ export function createDefaultEngine(): ValidationEngine {
     new GuidanceAdapter(),
     new BoardYamlCompletenessAdapter(),
     new BoardStoryCompletenessAdapter(),
+    new CompanyYamlAdapter(),
   ]);
 }

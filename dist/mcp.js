@@ -9088,7 +9088,7 @@ import { createMCPServer } from "@supernal/universal-command/mcp";
 
 // src/universal-commands.ts
 import { UniversalCommand } from "@supernal/universal-command";
-import fs22 from "fs";
+import fs23 from "fs";
 import path24 from "path";
 
 // src/cli/git-hooks.ts
@@ -9236,11 +9236,11 @@ function uninstallChecks(options) {
 }
 
 // src/cli/cleanup.ts
-import fs19 from "fs";
+import fs20 from "fs";
 import path21 from "path";
 
 // src/cli/use-cases.ts
-import fs18 from "fs";
+import fs19 from "fs";
 import path20 from "path";
 
 // src/core/autofix.ts
@@ -11193,15 +11193,173 @@ var BoardStoryCompletenessAdapter = class {
   }
 };
 
-// src/core/validator-framework.ts
+// src/adapters/company-yaml-adapter.ts
 import fs17 from "fs";
+import yaml5 from "js-yaml";
+var VALID_STAGES = /* @__PURE__ */ new Set(["pre-seed", "seed", "series-a", "series-b", "growth"]);
+function isValidUrl(value) {
+  if (typeof value !== "string") return false;
+  try {
+    new URL(value);
+    return true;
+  } catch {
+    return false;
+  }
+}
+function is4DigitInt(value) {
+  if (typeof value !== "number" || !Number.isInteger(value)) return false;
+  return value >= 1e3 && value <= 9999;
+}
+var CompanyYamlAdapter = class {
+  id = "company-yaml";
+  supports(filePath, _context) {
+    const normalized = filePath.replace(/\\/g, "/");
+    return normalized.endsWith(".supernal/company.yaml");
+  }
+  async validate(filePath, _context) {
+    const diagnostics = [];
+    let raw;
+    try {
+      raw = fs17.readFileSync(filePath, "utf8");
+    } catch (err) {
+      return [
+        {
+          code: "company_yaml_unreadable",
+          message: `company.yaml could not be read: ${err.message}`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id
+        }
+      ];
+    }
+    let doc;
+    try {
+      doc = yaml5.load(raw);
+    } catch (err) {
+      return [
+        {
+          code: "company_yaml_invalid_syntax",
+          message: `company.yaml has invalid YAML syntax: ${err.message}`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id
+        }
+      ];
+    }
+    if (typeof doc !== "object" || doc === null) {
+      return [
+        {
+          code: "company_yaml_not_object",
+          message: "company.yaml must be a YAML mapping at the top level.",
+          severity: "error",
+          file: filePath,
+          ruleId: this.id
+        }
+      ];
+    }
+    const root = doc;
+    const identity = root.identity;
+    if (typeof identity !== "object" || identity === null) {
+      diagnostics.push({
+        code: "company_yaml_missing_identity",
+        message: "company.yaml is missing the required `identity` section.",
+        severity: "error",
+        file: filePath,
+        ruleId: this.id
+      });
+    } else {
+      const id = identity;
+      const oneLiner = id.one_liner;
+      if (typeof oneLiner !== "string" || oneLiner.trim().length === 0) {
+        diagnostics.push({
+          code: "company_yaml_missing_one_liner",
+          message: "identity.one_liner must be a non-empty string.",
+          severity: "error",
+          file: filePath,
+          ruleId: this.id
+        });
+      } else if (oneLiner.length > 140) {
+        diagnostics.push({
+          code: "company_yaml_one_liner_too_long",
+          message: `identity.one_liner is ${oneLiner.length} chars \u2014 must be <= 140.`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id,
+          details: { hint: "Shorten the one-liner to 140 characters or fewer." }
+        });
+      }
+      if (!isValidUrl(id.website)) {
+        diagnostics.push({
+          code: "company_yaml_invalid_website",
+          message: `identity.website must be a valid URL (got: ${String(id.website)}).`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id,
+          details: { hint: "Use a full URL including scheme, e.g. https://example.com" }
+        });
+      }
+      if (!is4DigitInt(id.founded_year)) {
+        diagnostics.push({
+          code: "company_yaml_invalid_founded_year",
+          message: `identity.founded_year must be a 4-digit integer (got: ${String(id.founded_year)}).`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id
+        });
+      }
+      if (typeof id.stage !== "string" || !VALID_STAGES.has(id.stage)) {
+        diagnostics.push({
+          code: "company_yaml_invalid_stage",
+          message: `identity.stage must be one of: ${[...VALID_STAGES].join(", ")} (got: ${String(id.stage)}).`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id
+        });
+      }
+    }
+    const eligibility = root.eligibility;
+    if (typeof eligibility !== "object" || eligibility === null) {
+      diagnostics.push({
+        code: "company_yaml_missing_eligibility",
+        message: "company.yaml is missing the required `eligibility` section.",
+        severity: "error",
+        file: filePath,
+        ruleId: this.id
+      });
+    } else {
+      const elig = eligibility;
+      if (typeof elig.us_entity !== "boolean") {
+        diagnostics.push({
+          code: "company_yaml_invalid_us_entity",
+          message: `eligibility.us_entity must be a boolean (got: ${String(elig.us_entity)}).`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id
+        });
+      }
+      if (typeof elig.accepts_equity !== "boolean") {
+        diagnostics.push({
+          code: "company_yaml_invalid_accepts_equity",
+          message: `eligibility.accepts_equity must be a boolean (got: ${String(elig.accepts_equity)}).`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id
+        });
+      }
+    }
+    return diagnostics;
+  }
+};
+
+// src/core/validator-framework.ts
+import fs18 from "fs";
 import os from "os";
 import path19 from "path";
 import { globSync as globSync6 } from "glob";
 var CONFIG_FILE_NAMES = /* @__PURE__ */ new Set(["repotype.yaml", "repo-schema.yaml"]);
 function scanFiles(targetPath, repoRoot, sharedIgnoreMatcher) {
   const ignoreMatcher = sharedIgnoreMatcher ?? createIgnoreMatcher(repoRoot);
-  const stats = fs17.statSync(targetPath);
+  const stats = fs18.statSync(targetPath);
   if (stats.isFile()) {
     const absoluteFile = path19.resolve(targetPath);
     if (CONFIG_FILE_NAMES.has(path19.basename(absoluteFile))) return [];
@@ -11340,7 +11498,7 @@ var ValidationEngine = class {
   }
   async validate(targetPath, options) {
     const absoluteTarget = path19.resolve(targetPath);
-    const targetRoot = fs17.existsSync(absoluteTarget) && fs17.statSync(absoluteTarget).isDirectory() ? absoluteTarget : path19.dirname(absoluteTarget);
+    const targetRoot = fs18.existsSync(absoluteTarget) && fs18.statSync(absoluteTarget).isDirectory() ? absoluteTarget : path19.dirname(absoluteTarget);
     const configPath = options?.configPath ? path19.resolve(options.configPath) : findConfig(absoluteTarget);
     const repoRoot = options?.configPath ? targetRoot : path19.dirname(configPath);
     const config2 = loadConfig(configPath);
@@ -11585,7 +11743,8 @@ function createDefaultEngine() {
     new ContentPolicyAdapter(),
     new GuidanceAdapter(),
     new BoardYamlCompletenessAdapter(),
-    new BoardStoryCompletenessAdapter()
+    new BoardStoryCompletenessAdapter(),
+    new CompanyYamlAdapter()
   ]);
 }
 
@@ -11789,9 +11948,9 @@ function renderComplianceReport(report, format = "markdown") {
 }
 
 // src/cli/use-cases.ts
-import yaml5 from "js-yaml";
+import yaml6 from "js-yaml";
 function deriveTargetRoot(targetPath) {
-  if (fs18.existsSync(targetPath) && fs18.statSync(targetPath).isDirectory()) {
+  if (fs19.existsSync(targetPath) && fs19.statSync(targetPath).isDirectory()) {
     return targetPath;
   }
   return path20.dirname(targetPath);
@@ -11803,7 +11962,7 @@ async function validatePath(target, configOverridePath, opts = {}) {
   const repoRoot = configOverridePath ? targetRoot : path20.dirname(configPath);
   const config2 = loadConfig(configPath);
   const engine = createDefaultEngine();
-  const isDirectory = fs18.existsSync(absolute) && fs18.statSync(absolute).isDirectory();
+  const isDirectory = fs19.existsSync(absolute) && fs19.statSync(absolute).isDirectory();
   const workspaceEnabled = opts.workspace !== false;
   if (isDirectory && workspaceEnabled && !configOverridePath) {
     const wsResult = await engine.validateWorkspace(absolute, { noCache: opts.noCache });
@@ -11901,10 +12060,10 @@ function scaffoldFromTemplate(templateId, outputPath, variables) {
   const config2 = loadConfig(configPath);
   const content = renderTemplate(config2, repoRoot, templateId, variables);
   const parent = path20.dirname(absolute);
-  if (!fs18.existsSync(parent)) {
-    fs18.mkdirSync(parent, { recursive: true });
+  if (!fs19.existsSync(parent)) {
+    fs19.mkdirSync(parent, { recursive: true });
   }
-  fs18.writeFileSync(absolute, content);
+  fs19.writeFileSync(absolute, content);
   return absolute;
 }
 function generateSchemaFromContent(target, output, pattern = "**/*.md") {
@@ -11915,16 +12074,16 @@ function initRepotypeConfig(targetDir, options = {}) {
   const force = options.force ?? false;
   const absoluteTarget = path20.resolve(targetDir);
   const outputPath = path20.join(absoluteTarget, "repotype.yaml");
-  if (fs18.existsSync(outputPath) && !force) {
+  if (fs19.existsSync(outputPath) && !force) {
     throw new Error(`repotype.yaml already exists at ${outputPath}. Use --force to overwrite.`);
   }
-  const config2 = options.from ? yaml5.load(fs18.readFileSync(path20.resolve(options.from), "utf8")) : createPresetConfig(type);
+  const config2 = options.from ? yaml6.load(fs19.readFileSync(path20.resolve(options.from), "utf8")) : createPresetConfig(type);
   if (!config2 || typeof config2 !== "object" || !config2.version) {
     throw new Error('Source config is invalid. Expected YAML with top-level "version".');
   }
-  const rendered = yaml5.dump(config2, { lineWidth: 120 });
-  fs18.mkdirSync(absoluteTarget, { recursive: true });
-  fs18.writeFileSync(outputPath, rendered);
+  const rendered = yaml6.dump(config2, { lineWidth: 120 });
+  fs19.mkdirSync(absoluteTarget, { recursive: true });
+  fs19.writeFileSync(outputPath, rendered);
   return {
     outputPath,
     source: options.from ? `file:${path20.resolve(options.from)}` : `preset:${type}`
@@ -12032,8 +12191,8 @@ async function generateComplianceReport(target, format = "markdown", configOverr
 
 // src/cli/cleanup.ts
 function ensureDir(dir) {
-  if (!fs19.existsSync(dir)) {
-    fs19.mkdirSync(dir, { recursive: true });
+  if (!fs20.existsSync(dir)) {
+    fs20.mkdirSync(dir, { recursive: true });
   }
 }
 function getTimestamp() {
@@ -12046,7 +12205,7 @@ function safeDestination(baseQueue, targetRoot, sourceFile) {
   const relative = path21.relative(targetRoot, sourceFile);
   const clamped = relative.startsWith("..") ? path21.basename(sourceFile) : relative;
   const destination = path21.join(baseQueue, clamped);
-  if (!fs19.existsSync(destination)) {
+  if (!fs20.existsSync(destination)) {
     return destination;
   }
   const ext = path21.extname(destination);
@@ -12058,7 +12217,7 @@ function writeAuditLogs(queueDir, entries) {
   const jsonlPath = path21.join(queueDir, "cleanup-log.jsonl");
   const textPath = path21.join(queueDir, "cleanup-log.md");
   for (const entry of entries) {
-    fs19.appendFileSync(jsonlPath, `${JSON.stringify(entry)}
+    fs20.appendFileSync(jsonlPath, `${JSON.stringify(entry)}
 `);
     const summary = [
       `- ${entry.timestamp}`,
@@ -12069,7 +12228,7 @@ function writeAuditLogs(queueDir, entries) {
       ...entry.diagnostics.map((d) => `  - ${d.code}: ${d.message}`),
       ""
     ].join("\n");
-    fs19.appendFileSync(textPath, summary);
+    fs20.appendFileSync(textPath, summary);
   }
 }
 async function runCleanup(options) {
@@ -12090,7 +12249,7 @@ async function runCleanup(options) {
   const entries = [];
   let moved = 0;
   for (const file2 of files) {
-    if (!fs19.existsSync(file2)) {
+    if (!fs20.existsSync(file2)) {
       continue;
     }
     const diagnostics = errorDiagnostics.filter((d) => d.file === file2);
@@ -12100,7 +12259,7 @@ async function runCleanup(options) {
     const destination = safeDestination(queueDir, targetRoot, file2);
     ensureDir(path21.dirname(destination));
     if (!options.dryRun) {
-      fs19.renameSync(file2, destination);
+      fs20.renameSync(file2, destination);
       moved += 1;
     }
     entries.push({
@@ -12129,7 +12288,7 @@ async function runCleanup(options) {
 }
 
 // src/cli/watcher.ts
-import fs20 from "fs";
+import fs21 from "fs";
 import path22 from "path";
 import { spawnSync } from "child_process";
 function shQuote(input) {
@@ -12152,8 +12311,8 @@ function installWatcher(options) {
   const target = path22.resolve(options.target);
   const queueDir = path22.resolve(options.queueDir);
   const logFile = path22.resolve(options.logFile);
-  fs20.mkdirSync(path22.dirname(logFile), { recursive: true });
-  fs20.mkdirSync(queueDir, { recursive: true });
+  fs21.mkdirSync(path22.dirname(logFile), { recursive: true });
+  fs21.mkdirSync(queueDir, { recursive: true });
   const marker = `# REPOTYPE_WATCHER:${target}`;
   const command = [
     `cd ${shQuote(target)}`,
@@ -12213,7 +12372,7 @@ function uninstallWatcher(target, dryRun = false) {
 }
 
 // src/cli/operations.ts
-import fs21 from "fs";
+import fs22 from "fs";
 import path23 from "path";
 function resolveRepoRoot(target) {
   const absolute = path23.resolve(target);
@@ -12245,10 +12404,10 @@ function normalizeOperations(target) {
 }
 function readLastCleanupEntry(queueDir) {
   const logPath = path23.join(queueDir, "cleanup-log.jsonl");
-  if (!fs21.existsSync(logPath)) {
+  if (!fs22.existsSync(logPath)) {
     return { found: false };
   }
-  const lines = fs21.readFileSync(logPath, "utf8").split("\n").map((line) => line.trim()).filter(Boolean);
+  const lines = fs22.readFileSync(logPath, "utf8").split("\n").map((line) => line.trim()).filter(Boolean);
   if (lines.length === 0) {
     return { found: false };
   }
@@ -12512,8 +12671,8 @@ var repotypeReportCommand = new UniversalCommand({
     const result = await generateComplianceReport(target, format, config2);
     if (output) {
       const outPath = path24.resolve(output);
-      fs22.mkdirSync(path24.dirname(outPath), { recursive: true });
-      fs22.writeFileSync(outPath, result.rendered);
+      fs23.mkdirSync(path24.dirname(outPath), { recursive: true });
+      fs23.writeFileSync(outPath, result.rendered);
       return { ...result, _writtenTo: outPath };
     }
     return result;
