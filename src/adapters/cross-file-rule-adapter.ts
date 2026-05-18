@@ -1,4 +1,3 @@
-import fs from 'node:fs';
 import path from 'node:path';
 import { globSync } from 'glob';
 import { minimatch } from 'minimatch';

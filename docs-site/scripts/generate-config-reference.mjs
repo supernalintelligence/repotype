@@ -4,7 +4,7 @@
  * Run: node scripts/generate-config-reference.mjs
  */
 
-import { writeFileSync, readFileSync, mkdirSync } from 'fs';
+import { writeFileSync, mkdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 
