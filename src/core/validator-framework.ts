@@ -29,6 +29,9 @@ import type {
 /** Config filenames excluded from scanning — they govern, not are governed. */
 const CONFIG_FILE_NAMES = new Set(['repotype.yaml', 'repo-schema.yaml']);
 
+/** Hard cap on files scanned per run — prevents OOM from misconfigured globs or large trees. */
+const MAX_SCAN_FILES = 50_000;
+
 export function scanFiles(targetPath: string, repoRoot: string, sharedIgnoreMatcher?: IgnoreMatcher): string[] {
   const ignoreMatcher = sharedIgnoreMatcher ?? createIgnoreMatcher(repoRoot);
   const stats = fs.statSync(targetPath);
@@ -44,10 +47,21 @@ export function scanFiles(targetPath: string, repoRoot: string, sharedIgnoreMatc
     nodir: true,
     ignore: getStaticIgnoreGlobs(),
   });
-  return files.filter((filePath) => {
+
+  const filtered = files.filter((filePath) => {
     if (CONFIG_FILE_NAMES.has(path.basename(filePath))) return false;
     return !ignoreMatcher.isIgnored(filePath);
   });
+
+  if (filtered.length > MAX_SCAN_FILES) {
+    process.stderr.write(
+      `[repotype] WARNING: scan found ${filtered.length} files (limit ${MAX_SCAN_FILES}). ` +
+      `Truncating to prevent OOM. Check your repotype.yaml glob rules or .gitignore coverage.\n`,
+    );
+    return filtered.slice(0, MAX_SCAN_FILES);
+  }
+
+  return filtered;
 }
 
 /** Simple semaphore for capping concurrency without adding a dependency. */

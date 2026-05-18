@@ -11452,6 +11452,7 @@ import os from "os";
 import path20 from "path";
 import { globSync as globSync6 } from "glob";
 var CONFIG_FILE_NAMES = /* @__PURE__ */ new Set(["repotype.yaml", "repo-schema.yaml"]);
+var MAX_SCAN_FILES = 5e4;
 function scanFiles(targetPath, repoRoot, sharedIgnoreMatcher) {
   const ignoreMatcher = sharedIgnoreMatcher ?? createIgnoreMatcher(repoRoot);
   const stats = fs19.statSync(targetPath);
@@ -11466,10 +11467,18 @@ function scanFiles(targetPath, repoRoot, sharedIgnoreMatcher) {
     nodir: true,
     ignore: getStaticIgnoreGlobs()
   });
-  return files.filter((filePath) => {
+  const filtered = files.filter((filePath) => {
     if (CONFIG_FILE_NAMES.has(path20.basename(filePath))) return false;
     return !ignoreMatcher.isIgnored(filePath);
   });
+  if (filtered.length > MAX_SCAN_FILES) {
+    process.stderr.write(
+      `[repotype] WARNING: scan found ${filtered.length} files (limit ${MAX_SCAN_FILES}). Truncating to prevent OOM. Check your repotype.yaml glob rules or .gitignore coverage.
+`
+    );
+    return filtered.slice(0, MAX_SCAN_FILES);
+  }
+  return filtered;
 }
 function createSemaphore(concurrency) {
   let active = 0;
