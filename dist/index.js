@@ -2611,11 +2611,6 @@ var DANGEROUS_PATTERNS = [
     regex: /^[/*]*\*\.complete$/,
     reason: "Broad *.complete glob is hiding all completion marker files.",
     fix: "Delete completion markers after use instead of ignoring them. If only ralph markers are intended, use a narrower pattern like *-ralph.complete."
-  },
-  {
-    regex: /^[/*]*test-repos\/?$/,
-    reason: "Stray test-repos/ directory at the repo root is being hidden.",
-    fix: "Delete test-repos/ after test runs instead of ignoring it. Test output should not accumulate at the repo root."
   }
 ];
 var GitignorePolicyAdapter = class {
