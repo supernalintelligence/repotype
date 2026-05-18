@@ -42,7 +42,6 @@ export function scanFiles(targetPath: string, repoRoot: string, sharedIgnoreMatc
     cwd: targetPath,
     absolute: true,
     nodir: true,
-    dot: true,
     ignore: getStaticIgnoreGlobs(),
   });
   return files.filter((filePath) => {
@@ -209,6 +208,18 @@ export class ValidationEngine {
     const repoRoot = options?.configPath ? targetRoot : path.dirname(configPath);
     const config = loadConfig(configPath);
     const files = options?.fileList ?? scanFiles(absoluteTarget, repoRoot, options?.sharedIgnoreMatcher);
+
+    // Inject .gitignore files — the main scanner uses dot:false so dotfiles are excluded.
+    // We add only .gitignore specifically; injecting all dotfiles would OOM large repos.
+    const gitignoreFiles = globSync('**/.gitignore', {
+      cwd: repoRoot,
+      absolute: true,
+      ignore: ['**/node_modules/**'],
+    });
+    for (const gi of gitignoreFiles) {
+      if (!files.includes(gi)) files.push(gi);
+    }
+
     const diagnostics: Diagnostic[] = [...lintConfigGlobs(config, configPath)];
 
     for (const filePath of files) {

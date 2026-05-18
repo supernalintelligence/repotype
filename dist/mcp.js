@@ -11464,7 +11464,6 @@ function scanFiles(targetPath, repoRoot, sharedIgnoreMatcher) {
     cwd: targetPath,
     absolute: true,
     nodir: true,
-    dot: true,
     ignore: getStaticIgnoreGlobs()
   });
   return files.filter((filePath) => {
@@ -11599,6 +11598,14 @@ var ValidationEngine = class {
     const repoRoot = options?.configPath ? targetRoot : path20.dirname(configPath);
     const config2 = loadConfig(configPath);
     const files = options?.fileList ?? scanFiles(absoluteTarget, repoRoot, options?.sharedIgnoreMatcher);
+    const gitignoreFiles = globSync6("**/.gitignore", {
+      cwd: repoRoot,
+      absolute: true,
+      ignore: ["**/node_modules/**"]
+    });
+    for (const gi of gitignoreFiles) {
+      if (!files.includes(gi)) files.push(gi);
+    }
     const diagnostics = [...lintConfigGlobs(config2, configPath)];
     for (const filePath of files) {
       const ruleSet = resolveEffectiveRules(config2, repoRoot, filePath);
