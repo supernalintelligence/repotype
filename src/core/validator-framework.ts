@@ -225,13 +225,16 @@ export class ValidationEngine {
 
     // Inject .gitignore files — the main scanner uses dot:false so dotfiles are excluded.
     // We add only .gitignore specifically; injecting all dotfiles would OOM large repos.
+    // Use the same ignore matcher that governs scanFiles so repotype.yaml `ignore:` patterns
+    // (e.g. `_build_output/**`) are respected and don't leak through as unmatched-file errors.
+    const giIgnoreMatcher = options?.sharedIgnoreMatcher ?? createIgnoreMatcher(repoRoot);
     const gitignoreFiles = globSync('**/.gitignore', {
       cwd: repoRoot,
       absolute: true,
       ignore: ['**/node_modules/**'],
     });
     for (const gi of gitignoreFiles) {
-      if (!files.includes(gi)) files.push(gi);
+      if (!files.includes(gi) && !giIgnoreMatcher.isIgnored(gi)) files.push(gi);
     }
 
     const diagnostics: Diagnostic[] = [...lintConfigGlobs(config, configPath)];

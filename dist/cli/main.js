@@ -2368,13 +2368,14 @@ var ValidationEngine = class {
     const repoRoot = options?.configPath ? targetRoot : path19.dirname(configPath);
     const config = loadConfig(configPath);
     const files = options?.fileList ?? scanFiles(absoluteTarget, repoRoot, options?.sharedIgnoreMatcher);
+    const giIgnoreMatcher = options?.sharedIgnoreMatcher ?? createIgnoreMatcher(repoRoot);
     const gitignoreFiles = globSync6("**/.gitignore", {
       cwd: repoRoot,
       absolute: true,
       ignore: ["**/node_modules/**"]
     });
     for (const gi of gitignoreFiles) {
-      if (!files.includes(gi)) files.push(gi);
+      if (!files.includes(gi) && !giIgnoreMatcher.isIgnored(gi)) files.push(gi);
     }
     const diagnostics = [...lintConfigGlobs(config, configPath)];
     for (const filePath of files) {
