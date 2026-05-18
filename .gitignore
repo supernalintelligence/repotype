@@ -7,3 +7,5 @@ coverage/
 *.log
 *.tsbuildinfo
 .supernal/.metadata_never_index
+.repotype/cache/
+.director/
