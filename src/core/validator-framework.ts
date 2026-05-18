@@ -42,6 +42,7 @@ export function scanFiles(targetPath: string, repoRoot: string, sharedIgnoreMatc
     cwd: targetPath,
     absolute: true,
     nodir: true,
+    dot: true,
     ignore: getStaticIgnoreGlobs(),
   });
   return files.filter((filePath) => {

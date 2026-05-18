@@ -11,6 +11,7 @@ import { PathPolicyAdapter } from '../adapters/path-policy-adapter.js';
 import { BoardYamlCompletenessAdapter } from '../adapters/board-yaml-completeness-adapter.js';
 import { BoardStoryCompletenessAdapter } from '../adapters/board-story-completeness-adapter.js';
 import { CompanyYamlAdapter } from '../adapters/company-yaml-adapter.js';
+import { GitignorePolicyAdapter } from '../adapters/gitignore-policy-adapter.js';
 import { ValidationEngine } from '../core/validator-framework.js';
 
 export function createDefaultEngine(): ValidationEngine {
@@ -28,5 +29,6 @@ export function createDefaultEngine(): ValidationEngine {
     new BoardYamlCompletenessAdapter(),
     new BoardStoryCompletenessAdapter(),
     new CompanyYamlAdapter(),
+    new GitignorePolicyAdapter(),
   ]);
 }
