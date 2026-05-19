@@ -47,7 +47,6 @@ folders:
       - "*.md"
       - ".env"
       - ".gitignore"
-      - ".rate-limits.json"
       - "repotype.yaml"
 
   - id: memory-folder
@@ -186,10 +185,6 @@ files:
 
   - id: gitignore
     glob: ".gitignore"
-
-  - id: rate-limits
-    glob: ".rate-limits.json"
-    description: "Rate limit configuration"
 
   - id: repotype-config
     glob: "repotype.yaml"
