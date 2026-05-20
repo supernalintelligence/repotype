@@ -1,5 +1,7 @@
 # Repotype - Repository Structure Validation
 
+> **Growth Gate:** Does this compound self-sustaining growth? If not, stop. See root CLAUDE.md.
+
 Repo-level linting and structure validation engine. Validates filenames, paths, folder structure, markdown templates, frontmatter schemas, file schemas, cross-references, content policies, and guidance rules -- NOT code linting. v0.1.1, MIT, open source.
 
 ## Tech Stack
