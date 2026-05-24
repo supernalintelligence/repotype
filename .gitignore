@@ -9,3 +9,7 @@ coverage/
 .supernal/.metadata_never_index
 .repotype/cache/
 .director/
+.claude/
+.supernal-local/
+dist/**/*.d.ts
+dist/**/*.d.ts.map
