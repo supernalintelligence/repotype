@@ -12,6 +12,7 @@ import { BoardYamlCompletenessAdapter } from '../adapters/board-yaml-completenes
 import { BoardStoryCompletenessAdapter } from '../adapters/board-story-completeness-adapter.js';
 import { CompanyYamlAdapter } from '../adapters/company-yaml-adapter.js';
 import { GitignorePolicyAdapter } from '../adapters/gitignore-policy-adapter.js';
+import { CronRegistryDriftAdapter } from '../adapters/cron-registry-drift-adapter.js';
 import { ValidationEngine } from '../core/validator-framework.js';
 
 export function createDefaultEngine(): ValidationEngine {
@@ -30,5 +31,6 @@ export function createDefaultEngine(): ValidationEngine {
     new BoardStoryCompletenessAdapter(),
     new CompanyYamlAdapter(),
     new GitignorePolicyAdapter(),
+    new CronRegistryDriftAdapter(),
   ]);
 }
