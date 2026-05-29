@@ -9,9 +9,25 @@ import yaml from "js-yaml";
 import fs from "fs";
 import path from "path";
 import { globSync } from "glob";
-import { minimatch } from "minimatch";
+import { Minimatch } from "minimatch";
 var MATCH_OPTS = { dot: true, nocase: false, nocomment: true };
-var STATIC_IGNORES = ["**/node_modules/**", "**/.git/**", "**/dist/**", "**/build/**"];
+var MATCH_OPTS_BASE = { ...MATCH_OPTS, matchBase: true };
+var STATIC_IGNORES = [
+  "**/node_modules/**",
+  "**/.git/**",
+  "**/dist/**",
+  "**/build/**"
+];
+var compiledIgnoreCache = /* @__PURE__ */ new Map();
+function ignoreMatch(value, pattern, matchBase = false) {
+  const key = (matchBase ? "b:" : "n:") + pattern;
+  let mm = compiledIgnoreCache.get(key);
+  if (!mm) {
+    mm = new Minimatch(pattern, matchBase ? MATCH_OPTS_BASE : MATCH_OPTS);
+    compiledIgnoreCache.set(key, mm);
+  }
+  return mm.match(value);
+}
 function normalize(value) {
   return value.replace(/\\/g, "/").replace(/^\.\/+/, "").replace(/\/+$/, "");
 }
@@ -61,12 +77,12 @@ function matchesRule(localPath, rule) {
     if (!directoryPattern) {
       return false;
     }
-    return localPath === directoryPattern || minimatch(localPath, `${directoryPattern}/**`, MATCH_OPTS);
+    return localPath === directoryPattern || ignoreMatch(localPath, `${directoryPattern}/**`);
   }
   if (rule.hasSlash) {
-    return minimatch(localPath, rule.pattern, MATCH_OPTS);
+    return ignoreMatch(localPath, rule.pattern);
   }
-  return minimatch(localPath, rule.pattern, { ...MATCH_OPTS, matchBase: true }) || minimatch(localPath, `**/${rule.pattern}`, MATCH_OPTS);
+  return ignoreMatch(localPath, rule.pattern, true) || ignoreMatch(localPath, `**/${rule.pattern}`);
 }
 function collectIgnoreRules(repoRoot) {
   const root = path.resolve(repoRoot);
@@ -390,9 +406,19 @@ function listPresetTypes() {
 import path3 from "path";
 
 // src/core/glob.ts
-import { minimatch as minimatch2 } from "minimatch";
+import { Minimatch as Minimatch2 } from "minimatch";
+var MATCH_OPTS2 = { dot: true, nocase: false, nocomment: true };
+var compiledCache = /* @__PURE__ */ new Map();
+function getCompiled(glob) {
+  let mm = compiledCache.get(glob);
+  if (!mm) {
+    mm = new Minimatch2(glob, MATCH_OPTS2);
+    compiledCache.set(glob, mm);
+  }
+  return mm;
+}
 function matchesGlob(pathValue, glob) {
-  return minimatch2(pathValue, glob, { dot: true, nocase: false, nocomment: true });
+  return getCompiled(glob).match(pathValue);
 }
 
 // src/core/rule-engine.ts
@@ -1282,13 +1308,13 @@ var CrossReferenceAdapter = class {
 // src/adapters/cross-file-rule-adapter.ts
 import path9 from "path";
 import { globSync as globSync5 } from "glob";
-import { minimatch as minimatch3 } from "minimatch";
+import { minimatch } from "minimatch";
 var CrossFileRuleAdapter = class {
   id = "cross-file-rule";
   supports(filePath, context) {
     const rules = context.config.rules ?? [];
     return rules.some(
-      (r) => r.kind === "cross_reference" && r.field && r.target && minimatch3(path9.relative(context.repoRoot, filePath).replace(/\\/g, "/"), r.sourceGlob, { dot: true })
+      (r) => r.kind === "cross_reference" && r.field && r.target && minimatch(path9.relative(context.repoRoot, filePath).replace(/\\/g, "/"), r.sourceGlob, { dot: true })
     );
   }
   async validate(filePath, context) {
@@ -1298,7 +1324,7 @@ var CrossFileRuleAdapter = class {
     for (const rule of rules) {
       if (rule.kind !== "cross_reference") continue;
       if (!rule.field || !rule.target) continue;
-      if (!minimatch3(relPath, rule.sourceGlob, { dot: true })) continue;
+      if (!minimatch(relPath, rule.sourceGlob, { dot: true })) continue;
       const severity = rule.severity ?? "error";
       let parsed;
       try {
@@ -1326,7 +1352,7 @@ var CrossFileRuleAdapter = class {
         const normalizedGlob = absoluteGlob.replace(/\\/g, "/");
         matches = [];
         for (const entry of context.globalFileIndex) {
-          if (minimatch3(entry.replace(/\\/g, "/"), normalizedGlob, { dot: true })) {
+          if (minimatch(entry.replace(/\\/g, "/"), normalizedGlob, { dot: true })) {
             matches.push(entry);
             break;
           }
@@ -1780,7 +1806,7 @@ var FrontmatterSchemaAdapter = class {
 // src/adapters/guidance-adapter.ts
 import path14 from "path";
 import fs13 from "fs";
-import { minimatch as minimatch4 } from "minimatch";
+import { minimatch as minimatch2 } from "minimatch";
 function isInManagedFolderScope(relativePath, context) {
   const folders = context.config.folders || [];
   if (folders.length === 0) {
@@ -1791,7 +1817,7 @@ function isInManagedFolderScope(relativePath, context) {
       return relativePath === folder.path || relativePath.startsWith(`${folder.path}/`);
     }
     if (folder.glob) {
-      return minimatch4(relativePath, folder.glob, { dot: true });
+      return minimatch2(relativePath, folder.glob, { dot: true });
     }
     return false;
   });
@@ -3566,6 +3592,20 @@ var repotypeValidateCommand = new UniversalCommand({
         description: "Explicit config path",
         positional: false,
         required: false
+      },
+      {
+        name: "noWorkspace",
+        type: "boolean",
+        description: "Validate only the target subtree; do not discover or recurse into child workspaces (sibling/nested repotype.yaml). Use for bounded full-tree runs in CI/hooks.",
+        positional: false,
+        required: false
+      },
+      {
+        name: "noCache",
+        type: "boolean",
+        description: "Bypass the workspace discovery cache and recompute child workspaces from disk.",
+        positional: false,
+        required: false
       }
     ]
   },
@@ -3578,8 +3618,11 @@ var repotypeValidateCommand = new UniversalCommand({
       return JSON.stringify(result, null, 2);
     }
   },
-  async handler({ target = ".", config }) {
-    const validateResult = await validatePath(target, config);
+  async handler({ target = ".", config, noWorkspace, noCache }) {
+    const validateResult = await validatePath(target, config, {
+      workspace: noWorkspace ? false : void 0,
+      noCache
+    });
     if (validateResult.mode === "workspace") {
       const wsResult = validateResult.result;
       const allDiagnostics = [

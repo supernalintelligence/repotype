@@ -34,7 +34,12 @@ function parseSetFlags(values: string[] = []): Record<string, unknown> {
 }
 
 export const repotypeValidateCommand = new UniversalCommand<
-  { target?: string; config?: string },
+  {
+    target?: string;
+    config?: string;
+    noWorkspace?: boolean;
+    noCache?: boolean;
+  },
   { ok: boolean; filesScanned: number; diagnostics: unknown[] }
 >({
   name: "repotype validate",
@@ -58,6 +63,22 @@ export const repotypeValidateCommand = new UniversalCommand<
         positional: false,
         required: false,
       },
+      {
+        name: "noWorkspace",
+        type: "boolean",
+        description:
+          "Validate only the target subtree; do not discover or recurse into child workspaces (sibling/nested repotype.yaml). Use for bounded full-tree runs in CI/hooks.",
+        positional: false,
+        required: false,
+      },
+      {
+        name: "noCache",
+        type: "boolean",
+        description:
+          "Bypass the workspace discovery cache and recompute child workspaces from disk.",
+        positional: false,
+        required: false,
+      },
     ],
   },
   output: {
@@ -70,8 +91,11 @@ export const repotypeValidateCommand = new UniversalCommand<
       return JSON.stringify(result, null, 2);
     },
   },
-  async handler({ target = ".", config }) {
-    const validateResult = await validatePath(target, config);
+  async handler({ target = ".", config, noWorkspace, noCache }) {
+    const validateResult = await validatePath(target, config, {
+      workspace: noWorkspace ? false : undefined,
+      noCache,
+    });
     if (validateResult.mode === "workspace") {
       const wsResult = validateResult.result;
       const allDiagnostics = [
