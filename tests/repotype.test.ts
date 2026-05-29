@@ -18,6 +18,7 @@ import {
   renderComplianceReportFromJson,
 } from "../src/sdk/report-sdk.js";
 import { resolveRepoRoot } from "../src/core/validator-framework.js";
+import { hashConfigFiles, loadConfig } from "../src/core/config-loader.js";
 import { repotypeValidateCommand } from "../src/universal-commands.js";
 
 /** Flatten a ValidateResult to a single {ok, diagnostics, filesScanned} for tests that don't care about workspace grouping. */
@@ -967,5 +968,113 @@ describe("validate CLI output filtering", () => {
     format({ ...sampleResult, ok: false }, {});
     expect(process.exitCode).toBe(1);
     process.exitCode = 0;
+  });
+});
+
+describe("glob extends", () => {
+  function makeGlobExtendsRepo(): string {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "repotype-glob-extends-"));
+    fs.mkdirSync(path.join(root, "fragments"), { recursive: true });
+    // Two fragments + a non-matching .txt to confirm only *.yaml are pulled in.
+    fs.writeFileSync(
+      path.join(root, "fragments", "b-second.yaml"),
+      `version: "1"
+files:
+  - id: frag-b
+    glob: "b/**/*.md"
+`,
+    );
+    fs.writeFileSync(
+      path.join(root, "fragments", "a-first.yaml"),
+      `version: "1"
+files:
+  - id: frag-a
+    glob: "a/**/*.md"
+`,
+    );
+    fs.writeFileSync(path.join(root, "fragments", "ignore.txt"), "not yaml\n");
+    fs.writeFileSync(
+      path.join(root, "repotype.yaml"),
+      `version: "1"
+extends:
+  - "fragments/*.yaml"
+`,
+    );
+    return root;
+  }
+
+  it("loads and merges all glob matches in sorted order", () => {
+    const root = makeGlobExtendsRepo();
+    const config = loadConfig(path.join(root, "repotype.yaml"));
+    const ids = (config.files || []).map((f) => f.id);
+    // Sorted by absolute path: a-first.yaml before b-second.yaml.
+    expect(ids).toEqual(["frag-a", "frag-b"]);
+  });
+
+  it("treats a glob matching zero files as a no-op (not an error)", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "repotype-glob-empty-"));
+    fs.writeFileSync(
+      path.join(root, "repotype.yaml"),
+      `version: "1"
+extends:
+  - "boards/*/repotype.yaml"
+files:
+  - id: local
+    glob: "**/*.md"
+`,
+    );
+    const config = loadConfig(path.join(root, "repotype.yaml"));
+    expect((config.files || []).map((f) => f.id)).toEqual(["local"]);
+  });
+
+  it("still hard-errors on a missing literal (non-glob) extends target", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "repotype-lit-missing-"));
+    fs.writeFileSync(
+      path.join(root, "repotype.yaml"),
+      `version: "1"
+extends: "profiles/does-not-exist.yaml"
+`,
+    );
+    expect(() => loadConfig(path.join(root, "repotype.yaml"))).toThrow(
+      /Extended config not found/,
+    );
+  });
+
+  it("change-hash differs when a new matching fragment is added", () => {
+    const root = makeGlobExtendsRepo();
+    const cfg = path.join(root, "repotype.yaml");
+    const before = hashConfigFiles([cfg]);
+    fs.writeFileSync(
+      path.join(root, "fragments", "c-third.yaml"),
+      `version: "1"
+files:
+  - id: frag-c
+    glob: "c/**/*.md"
+`,
+    );
+    const after = hashConfigFiles([cfg]);
+    expect(after).not.toBe(before);
+  });
+
+  it("detects circular extends reached via a glob", () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "repotype-glob-cycle-"));
+    fs.mkdirSync(path.join(root, "frags"), { recursive: true });
+    // frags/cycle.yaml extends the root config by literal path → cycle.
+    fs.writeFileSync(
+      path.join(root, "frags", "cycle.yaml"),
+      `version: "1"
+extends: "../repotype.yaml"
+`,
+    );
+    fs.writeFileSync(
+      path.join(root, "repotype.yaml"),
+      `version: "1"
+extends:
+  - "frags/*.yaml"
+`,
+    );
+    expect(() => loadConfig(path.join(root, "repotype.yaml"))).toThrow(
+      /Circular config extends detected/,
+    );
   });
 });

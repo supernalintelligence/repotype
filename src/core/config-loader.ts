@@ -1,23 +1,29 @@
-import crypto from 'node:crypto';
-import fs from 'node:fs';
-import path from 'node:path';
-import { globSync } from 'glob';
-import yaml from 'js-yaml';
-import type { RepoSchemaConfig, WorkspaceCache, WorkspaceEntry } from './types.js';
-import { getStaticIgnoreGlobs } from './path-ignore.js';
-import type { IgnoreMatcher } from './path-ignore.js';
+import crypto from "node:crypto";
+import fs from "node:fs";
+import path from "node:path";
+import { globSync } from "glob";
+import yaml from "js-yaml";
+import type {
+  RepoSchemaConfig,
+  WorkspaceCache,
+  WorkspaceEntry,
+} from "./types.js";
+import { getStaticIgnoreGlobs } from "./path-ignore.js";
+import type { IgnoreMatcher } from "./path-ignore.js";
 
 export function findConfig(startPath: string): string {
   const resolved = path.resolve(startPath);
   const exists = fs.existsSync(resolved);
   const initial = exists
-    ? (fs.statSync(resolved).isDirectory() ? resolved : path.dirname(resolved))
+    ? fs.statSync(resolved).isDirectory()
+      ? resolved
+      : path.dirname(resolved)
     : path.dirname(resolved);
 
   let dir = initial;
 
   while (true) {
-    const candidates = ['repotype.yaml', 'repo-schema.yaml'];
+    const candidates = ["repotype.yaml", "repo-schema.yaml"];
     for (const name of candidates) {
       const candidate = path.join(dir, name);
       if (fs.existsSync(candidate)) {
@@ -27,17 +33,19 @@ export function findConfig(startPath: string): string {
 
     const parent = path.dirname(dir);
     if (parent === dir) {
-      throw new Error('No schema config found. Expected repotype.yaml or repo-schema.yaml');
+      throw new Error(
+        "No schema config found. Expected repotype.yaml or repo-schema.yaml",
+      );
     }
     dir = parent;
   }
 }
 
 function parseConfigFile(configPath: string): RepoSchemaConfig {
-  const raw = fs.readFileSync(configPath, 'utf8');
+  const raw = fs.readFileSync(configPath, "utf8");
   const parsed = yaml.load(raw) as RepoSchemaConfig;
 
-  if (!parsed || typeof parsed !== 'object') {
+  if (!parsed || typeof parsed !== "object") {
     throw new Error(`Invalid schema configuration in ${configPath}`);
   }
 
@@ -49,7 +57,42 @@ function asArray(input?: string | string[]): string[] {
   return Array.isArray(input) ? input : [input];
 }
 
-function mergeConfig(base: RepoSchemaConfig, override: RepoSchemaConfig): RepoSchemaConfig {
+const GLOB_CHARS = /[*?[\]{}()!+@]/;
+
+function hasGlobChars(value: string): boolean {
+  return GLOB_CHARS.test(value);
+}
+
+/**
+ * Resolve the absolute paths an `extends` entry refers to, relative to the
+ * config's own directory.
+ *
+ * - A glob entry (e.g. "packages/boards/*\/repotype.yaml") expands into the
+ *   SORTED list of matching files. Sorting makes merge order deterministic
+ *   across runs and machines. A glob matching zero files is a no-op (empty
+ *   list), never an error — so the root config stays valid before any board
+ *   ships a fragment.
+ * - A literal (non-glob) entry resolves to its single path unconditionally;
+ *   existence is checked by the caller, preserving the current hard-error
+ *   behavior for a missing literal extends target.
+ */
+function resolveExtendsEntry(entry: string, configDir: string): string[] {
+  if (hasGlobChars(entry)) {
+    const matched = globSync(entry, {
+      cwd: configDir,
+      absolute: true,
+      nodir: true,
+      dot: true,
+    });
+    return matched.map((p) => path.resolve(p)).sort();
+  }
+  return [path.resolve(configDir, entry)];
+}
+
+function mergeConfig(
+  base: RepoSchemaConfig,
+  override: RepoSchemaConfig,
+): RepoSchemaConfig {
   const merged: RepoSchemaConfig = {
     version: override.version || base.version,
     defaults: {
@@ -78,8 +121,10 @@ function mergeConfig(base: RepoSchemaConfig, override: RepoSchemaConfig): RepoSc
   }
   if (
     !merged.operations ||
-    ((!merged.operations.hooks || Object.keys(merged.operations.hooks).length === 0) &&
-      (!merged.operations.watcher || Object.keys(merged.operations.watcher).length === 0))
+    ((!merged.operations.hooks ||
+      Object.keys(merged.operations.hooks).length === 0) &&
+      (!merged.operations.watcher ||
+        Object.keys(merged.operations.watcher).length === 0))
   ) {
     delete merged.operations;
   }
@@ -93,7 +138,10 @@ function mergeConfig(base: RepoSchemaConfig, override: RepoSchemaConfig): RepoSc
   return merged;
 }
 
-function loadConfigRecursive(configPath: string, loading: Set<string>): RepoSchemaConfig {
+function loadConfigRecursive(
+  configPath: string,
+  loading: Set<string>,
+): RepoSchemaConfig {
   const absolutePath = path.resolve(configPath);
   if (loading.has(absolutePath)) {
     throw new Error(`Circular config extends detected at ${absolutePath}`);
@@ -101,16 +149,23 @@ function loadConfigRecursive(configPath: string, loading: Set<string>): RepoSche
 
   loading.add(absolutePath);
   const parsed = parseConfigFile(absolutePath);
-  const parents = asArray(parsed.extends);
+  const configDir = path.dirname(absolutePath);
+  // Expand each extends entry: globs → sorted matches, literals → single path.
+  const parents = asArray(parsed.extends).flatMap((ref) =>
+    resolveExtendsEntry(ref, configDir),
+  );
 
   let merged: RepoSchemaConfig = {
-    version: '',
+    version: "",
   };
 
-  for (const parentRef of parents) {
-    const parentPath = path.resolve(path.dirname(absolutePath), parentRef);
+  for (const parentPath of parents) {
     if (!fs.existsSync(parentPath)) {
-      throw new Error(`Extended config not found: ${parentPath} (from ${absolutePath})`);
+      // Globs only ever yield existing files, so a missing path here is a
+      // literal extends target — keep the hard-error behavior.
+      throw new Error(
+        `Extended config not found: ${parentPath} (from ${absolutePath})`,
+      );
     }
     const parentConfig = loadConfigRecursive(parentPath, loading);
     merged = mergeConfig(merged, parentConfig);
@@ -125,7 +180,9 @@ function loadConfigRecursive(configPath: string, loading: Set<string>): RepoSche
   loading.delete(absolutePath);
 
   if (!merged.version) {
-    throw new Error(`Missing required field: version in ${absolutePath} (or inherited configs)`);
+    throw new Error(
+      `Missing required field: version in ${absolutePath} (or inherited configs)`,
+    );
   }
 
   return merged;
@@ -141,7 +198,10 @@ export function loadConfig(configPath: string): RepoSchemaConfig {
  * Collect the transitive set of config files referenced via `extends`.
  * Returns all files in the extends chain starting from configPath.
  */
-export function collectExtendsDeps(configPath: string, seen = new Set<string>()): string[] {
+export function collectExtendsDeps(
+  configPath: string,
+  seen = new Set<string>(),
+): string[] {
   const absolutePath = path.resolve(configPath);
   if (seen.has(absolutePath)) return [];
   seen.add(absolutePath);
@@ -153,7 +213,12 @@ export function collectExtendsDeps(configPath: string, seen = new Set<string>())
     return [absolutePath];
   }
 
-  const parents = asArray(raw.extends).map((p) => path.resolve(path.dirname(absolutePath), p));
+  // Same glob expansion as loadConfigRecursive so the change-hash covers every
+  // globbed fragment — dropping a new board fragment invalidates the cache.
+  const configDir = path.dirname(absolutePath);
+  const parents = asArray(raw.extends).flatMap((p) =>
+    resolveExtendsEntry(p, configDir),
+  );
   return [absolutePath, ...parents.flatMap((p) => collectExtendsDeps(p, seen))];
 }
 
@@ -165,21 +230,21 @@ export function hashConfigFiles(configPaths: string[]): string {
   const allDeps = configPaths.flatMap((p) => collectExtendsDeps(p));
   const unique = [...new Set(allDeps)].sort();
 
-  const hasher = crypto.createHash('sha256');
+  const hasher = crypto.createHash("sha256");
   for (const filePath of unique) {
     hasher.update(filePath);
-    hasher.update('\0');
+    hasher.update("\0");
     try {
-      hasher.update(fs.readFileSync(filePath, 'utf8'));
+      hasher.update(fs.readFileSync(filePath, "utf8"));
     } catch {
       // file may not exist (bad extends ref); still include path so hash changes when it appears
     }
-    hasher.update('\0');
+    hasher.update("\0");
   }
-  return hasher.digest('hex');
+  return hasher.digest("hex");
 }
 
-const CONFIG_NAMES = ['repotype.yaml', 'repo-schema.yaml'];
+const CONFIG_NAMES = ["repotype.yaml", "repo-schema.yaml"];
 const WORKSPACE_CACHE_VERSION = 2 as const;
 
 /**
@@ -187,10 +252,13 @@ const WORKSPACE_CACHE_VERSION = 2 as const;
  * Returns WorkspaceEntry[] sorted deepest-first (then alphabetically for ties).
  * The root config itself is excluded.
  */
-export function discoverWorkspaces(rootDir: string, ignoreMatcher: IgnoreMatcher): WorkspaceEntry[] {
+export function discoverWorkspaces(
+  rootDir: string,
+  ignoreMatcher: IgnoreMatcher,
+): WorkspaceEntry[] {
   const root = path.resolve(rootDir);
 
-  const allPaths = globSync(['**/repotype.yaml', '**/repo-schema.yaml'], {
+  const allPaths = globSync(["**/repotype.yaml", "**/repo-schema.yaml"], {
     cwd: root,
     absolute: true,
     nodir: true,
@@ -228,7 +296,7 @@ export function discoverWorkspaces(rootDir: string, ignoreMatcher: IgnoreMatcher
 export function resolveOwningWorkspace(
   absoluteFilePath: string,
   workspaces: WorkspaceEntry[],
-): WorkspaceEntry | 'root' {
+): WorkspaceEntry | "root" {
   for (const ws of workspaces) {
     if (
       absoluteFilePath === ws.subtreeRoot ||
@@ -237,19 +305,19 @@ export function resolveOwningWorkspace(
       return ws;
     }
   }
-  return 'root';
+  return "root";
 }
 
 // ── Cache read/write ─────────────────────────────────────────────────────────
 
 function getCacheFilePath(repoRoot: string): string {
-  return path.join(repoRoot, '.repotype', 'cache', 'workspace.json');
+  return path.join(repoRoot, ".repotype", "cache", "workspace.json");
 }
 
 export function loadWorkspaceCache(repoRoot: string): WorkspaceCache | null {
   const cachePath = getCacheFilePath(repoRoot);
   try {
-    const raw = fs.readFileSync(cachePath, 'utf8');
+    const raw = fs.readFileSync(cachePath, "utf8");
     const parsed = JSON.parse(raw) as WorkspaceCache;
     if (parsed.version !== WORKSPACE_CACHE_VERSION) return null;
     if (parsed.repoRoot !== path.resolve(repoRoot)) return null;
@@ -259,16 +327,23 @@ export function loadWorkspaceCache(repoRoot: string): WorkspaceCache | null {
   }
 }
 
-export function writeWorkspaceCache(repoRoot: string, cache: WorkspaceCache): void {
+export function writeWorkspaceCache(
+  repoRoot: string,
+  cache: WorkspaceCache,
+): void {
   const cachePath = getCacheFilePath(repoRoot);
   const cacheDir = path.dirname(cachePath);
   fs.mkdirSync(cacheDir, { recursive: true });
   const tmpPath = `${cachePath}.${process.pid}.tmp`;
   try {
-    fs.writeFileSync(tmpPath, JSON.stringify(cache, null, 2), 'utf8');
+    fs.writeFileSync(tmpPath, JSON.stringify(cache, null, 2), "utf8");
     fs.renameSync(tmpPath, cachePath);
   } catch {
     // best-effort; don't fail validation if cache write fails
-    try { fs.unlinkSync(tmpPath); } catch { /* ignore */ }
+    try {
+      fs.unlinkSync(tmpPath);
+    } catch {
+      /* ignore */
+    }
   }
 }

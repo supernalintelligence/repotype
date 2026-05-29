@@ -156,7 +156,9 @@ function findConfig(startPath) {
     }
     const parent = path2.dirname(dir);
     if (parent === dir) {
-      throw new Error("No schema config found. Expected repotype.yaml or repo-schema.yaml");
+      throw new Error(
+        "No schema config found. Expected repotype.yaml or repo-schema.yaml"
+      );
     }
     dir = parent;
   }
@@ -172,6 +174,22 @@ function parseConfigFile(configPath) {
 function asArray(input) {
   if (!input) return [];
   return Array.isArray(input) ? input : [input];
+}
+var GLOB_CHARS = /[*?[\]{}()!+@]/;
+function hasGlobChars(value) {
+  return GLOB_CHARS.test(value);
+}
+function resolveExtendsEntry(entry, configDir) {
+  if (hasGlobChars(entry)) {
+    const matched = globSync2(entry, {
+      cwd: configDir,
+      absolute: true,
+      nodir: true,
+      dot: true
+    });
+    return matched.map((p) => path2.resolve(p)).sort();
+  }
+  return [path2.resolve(configDir, entry)];
 }
 function mergeConfig(base, override) {
   const merged = {
@@ -216,14 +234,18 @@ function loadConfigRecursive(configPath, loading) {
   }
   loading.add(absolutePath);
   const parsed = parseConfigFile(absolutePath);
-  const parents = asArray(parsed.extends);
+  const configDir = path2.dirname(absolutePath);
+  const parents = asArray(parsed.extends).flatMap(
+    (ref) => resolveExtendsEntry(ref, configDir)
+  );
   let merged = {
     version: ""
   };
-  for (const parentRef of parents) {
-    const parentPath = path2.resolve(path2.dirname(absolutePath), parentRef);
+  for (const parentPath of parents) {
     if (!fs2.existsSync(parentPath)) {
-      throw new Error(`Extended config not found: ${parentPath} (from ${absolutePath})`);
+      throw new Error(
+        `Extended config not found: ${parentPath} (from ${absolutePath})`
+      );
     }
     const parentConfig = loadConfigRecursive(parentPath, loading);
     merged = mergeConfig(merged, parentConfig);
@@ -235,7 +257,9 @@ function loadConfigRecursive(configPath, loading) {
   merged = mergeConfig(merged, current);
   loading.delete(absolutePath);
   if (!merged.version) {
-    throw new Error(`Missing required field: version in ${absolutePath} (or inherited configs)`);
+    throw new Error(
+      `Missing required field: version in ${absolutePath} (or inherited configs)`
+    );
   }
   return merged;
 }
@@ -252,7 +276,10 @@ function collectExtendsDeps(configPath, seen = /* @__PURE__ */ new Set()) {
   } catch {
     return [absolutePath];
   }
-  const parents = asArray(raw.extends).map((p) => path2.resolve(path2.dirname(absolutePath), p));
+  const configDir = path2.dirname(absolutePath);
+  const parents = asArray(raw.extends).flatMap(
+    (p) => resolveExtendsEntry(p, configDir)
+  );
   return [absolutePath, ...parents.flatMap((p) => collectExtendsDeps(p, seen))];
 }
 function hashConfigFiles(configPaths) {
@@ -1582,7 +1609,7 @@ var FilenameAdapter = class {
 import fs11 from "fs";
 import path12 from "path";
 import { globSync as globSync6 } from "glob";
-function hasGlobChars(value) {
+function hasGlobChars2(value) {
   return /[*?[\]{}()!+@]/.test(value);
 }
 function matchesAny(name, patterns) {
@@ -1609,7 +1636,7 @@ function collectTargetDirectories(rule, repoRoot, ignoreMatcher) {
 }
 function checkRequiredFolders(dirPath, rule, childFolders, diagnostics) {
   for (const required of rule.requiredFolders || []) {
-    if (hasGlobChars(required)) {
+    if (hasGlobChars2(required)) {
       if (!childFolders.some((child) => matchesGlob(child, required))) {
         diagnostics.push({
           code: "required_folder_missing",
@@ -1640,7 +1667,7 @@ function checkRequiredFolders(dirPath, rule, childFolders, diagnostics) {
 }
 function checkRequiredFiles(dirPath, rule, childFiles, diagnostics) {
   for (const required of rule.requiredFiles || []) {
-    if (hasGlobChars(required)) {
+    if (hasGlobChars2(required)) {
       if (!childFiles.some((child) => matchesGlob(child, required))) {
         diagnostics.push({
           code: "required_file_missing",
