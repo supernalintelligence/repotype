@@ -1,18 +1,26 @@
-import path from 'node:path';
-import type { Diagnostic, FileRule, ValidatorAdapter, ValidatorContext } from '../core/types.js';
+import path from "node:path";
+import type {
+  Diagnostic,
+  FileRule,
+  ValidatorAdapter,
+  ValidatorContext,
+} from "../core/types.js";
 
 function normalize(p: string): string {
-  return p.replace(/\\/g, '/');
+  return p.replace(/\\/g, "/");
 }
 
-function matchesCase(value: string, mode: NonNullable<FileRule['pathCase']>): boolean {
-  if (mode === 'kebab') {
+function matchesCase(
+  value: string,
+  mode: NonNullable<FileRule["pathCase"]>,
+): boolean {
+  if (mode === "kebab") {
     return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
   }
-  if (mode === 'snake') {
+  if (mode === "snake") {
     return /^[a-z0-9]+(?:_[a-z0-9]+)*$/.test(value);
   }
-  if (mode === 'camel') {
+  if (mode === "camel") {
     return /^[a-z][A-Za-z0-9]*$/.test(value);
   }
   return /^[a-z0-9]+$/.test(value);
@@ -20,7 +28,7 @@ function matchesCase(value: string, mode: NonNullable<FileRule['pathCase']>): bo
 
 function segmentsForCase(relativePath: string): string[] {
   const normalized = normalize(relativePath);
-  const parts = normalized.split('/').filter(Boolean);
+  const parts = normalized.split("/").filter(Boolean);
   if (parts.length === 0) {
     return [];
   }
@@ -34,13 +42,18 @@ function segmentsForCase(relativePath: string): string[] {
 }
 
 export class PathPolicyAdapter implements ValidatorAdapter {
-  id = 'path-policy';
+  id = "path-policy";
 
   supports(_filePath: string, context: ValidatorContext): boolean {
-    return context.ruleSet.fileRules.some((rule) => Boolean(rule.pathPattern || rule.pathCase));
+    return context.ruleSet.fileRules.some((rule) =>
+      Boolean(rule.pathPattern || rule.pathCase),
+    );
   }
 
-  async validate(filePath: string, context: ValidatorContext): Promise<Diagnostic[]> {
+  async validate(
+    filePath: string,
+    context: ValidatorContext,
+  ): Promise<Diagnostic[]> {
     const diagnostics: Diagnostic[] = [];
     const relativePath = context.ruleSet.filePath;
 
@@ -51,26 +64,26 @@ export class PathPolicyAdapter implements ValidatorAdapter {
           regex = new RegExp(rule.pathPattern);
         } catch (error) {
           diagnostics.push({
-            code: 'invalid_path_pattern',
+            code: "invalid_path_pattern",
             message: `Invalid pathPattern regex '${rule.pathPattern}': ${(error as Error).message}`,
-            severity: 'warning',
+            severity: "warning",
             file: filePath,
             ruleId: rule.id,
             details: {
-              hint: 'Fix this regex in repotype.yaml.',
+              hint: "Fix this regex in repotype.yaml.",
             },
           });
         }
 
         if (regex && !regex.test(relativePath)) {
           diagnostics.push({
-            code: 'path_pattern_mismatch',
+            code: "path_pattern_mismatch",
             message: `Path '${relativePath}' does not match pattern ${rule.pathPattern}`,
-            severity: 'error',
+            severity: rule.severity ?? "error",
             file: filePath,
             ruleId: rule.id,
             details: {
-              hint: 'Rename/move file or adjust pathPattern in repotype.yaml.',
+              hint: "Rename/move file or adjust pathPattern in repotype.yaml.",
             },
           });
         }
@@ -79,20 +92,20 @@ export class PathPolicyAdapter implements ValidatorAdapter {
       if (rule.pathCase) {
         const segments = segmentsForCase(relativePath);
         for (const segment of segments) {
-          if (segment.startsWith('.')) {
+          if (segment.startsWith(".")) {
             continue;
           }
           if (!matchesCase(segment, rule.pathCase)) {
             diagnostics.push({
-              code: 'path_case_mismatch',
+              code: "path_case_mismatch",
               message: `Path segment '${segment}' is not ${rule.pathCase}-case in '${relativePath}'`,
-              severity: 'error',
+              severity: "error",
               file: filePath,
               ruleId: rule.id,
               details: {
                 expected: rule.pathCase,
                 segment,
-                hint: 'Rename this file/folder segment or relax pathCase in repotype.yaml.',
+                hint: "Rename this file/folder segment or relax pathCase in repotype.yaml.",
               },
             });
           }

@@ -1582,7 +1582,9 @@ import path11 from "path";
 var FilenameAdapter = class {
   id = "filename";
   supports(_filePath, context) {
-    return context.ruleSet.fileRules.some((rule) => Boolean(rule.filenamePattern));
+    return context.ruleSet.fileRules.some(
+      (rule) => Boolean(rule.filenamePattern)
+    );
   }
   async validate(filePath, context) {
     const name = path11.basename(filePath);
@@ -1596,7 +1598,7 @@ var FilenameAdapter = class {
         diagnostics.push({
           code: "filename_pattern_mismatch",
           message: `Filename '${name}' does not match pattern ${rule.filenamePattern}`,
-          severity: "error",
+          severity: rule.severity ?? "error",
           file: filePath,
           ruleId: rule.id
         });
@@ -2203,7 +2205,9 @@ function segmentsForCase(relativePath) {
 var PathPolicyAdapter = class {
   id = "path-policy";
   supports(_filePath, context) {
-    return context.ruleSet.fileRules.some((rule) => Boolean(rule.pathPattern || rule.pathCase));
+    return context.ruleSet.fileRules.some(
+      (rule) => Boolean(rule.pathPattern || rule.pathCase)
+    );
   }
   async validate(filePath, context) {
     const diagnostics = [];
@@ -2229,7 +2233,7 @@ var PathPolicyAdapter = class {
           diagnostics.push({
             code: "path_pattern_mismatch",
             message: `Path '${relativePath}' does not match pattern ${rule.pathPattern}`,
-            severity: "error",
+            severity: rule.severity ?? "error",
             file: filePath,
             ruleId: rule.id,
             details: {

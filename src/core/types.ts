@@ -62,6 +62,12 @@ export interface FileRule {
   forbidContentPatterns?: string[];
   /** Override the severity of forbidden content pattern violations. Defaults to 'error'. */
   forbidContentSeverity?: DiagnosticSeverity;
+  /**
+   * Override the severity of filenamePattern / pathPattern violations for this
+   * rule. Defaults to 'error'. Use 'warning' for advisory rules with known
+   * pre-existing offenders that should surface without blocking pushes.
+   */
+  severity?: DiagnosticSeverity;
   schema?: SchemaBinding;
   requiredSections?: string[];
   companionFiles?: string[];
