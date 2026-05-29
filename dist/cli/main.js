@@ -2239,6 +2239,12 @@ import os from "os";
 import path19 from "path";
 import { globSync as globSync6 } from "glob";
 var CONFIG_FILE_NAMES = /* @__PURE__ */ new Set(["repotype.yaml", "repo-schema.yaml"]);
+function resolveRepoRoot(targetRoot, configPath) {
+  const configDir = path19.dirname(configPath);
+  const rel = path19.relative(configDir, targetRoot);
+  const targetInsideConfigDir = rel === "" || !rel.startsWith("..") && !path19.isAbsolute(rel);
+  return targetInsideConfigDir ? configDir : targetRoot;
+}
 var MAX_SCAN_FILES = 5e4;
 function scanFiles(targetPath, repoRoot, sharedIgnoreMatcher) {
   const ignoreMatcher = sharedIgnoreMatcher ?? createIgnoreMatcher(repoRoot);
@@ -2374,9 +2380,12 @@ function rootGlobCouldMatchSubtree(rootGlob, relSubtreeFromRoot) {
 function fileRulesConflict(rootRule, childRule) {
   const rootSections = [...rootRule.requiredSections ?? []].sort().join(",");
   const childSections = [...childRule.requiredSections ?? []].sort().join(",");
-  if (rootSections !== childSections && (rootSections || childSections)) return true;
-  if ((rootRule.schema?.schema ?? null) !== (childRule.schema?.schema ?? null)) return true;
-  if ((rootRule.filenamePattern ?? null) !== (childRule.filenamePattern ?? null)) return true;
+  if (rootSections !== childSections && (rootSections || childSections))
+    return true;
+  if ((rootRule.schema?.schema ?? null) !== (childRule.schema?.schema ?? null))
+    return true;
+  if ((rootRule.filenamePattern ?? null) !== (childRule.filenamePattern ?? null))
+    return true;
   if ((rootRule.pathCase ?? null) !== (childRule.pathCase ?? null)) return true;
   const rootForbid = [...rootRule.forbidContentPatterns ?? []].sort().join(",");
   const childForbid = [...childRule.forbidContentPatterns ?? []].sort().join(",");
@@ -2391,7 +2400,7 @@ var ValidationEngine = class {
     const absoluteTarget = path19.resolve(targetPath);
     const targetRoot = fs18.existsSync(absoluteTarget) && fs18.statSync(absoluteTarget).isDirectory() ? absoluteTarget : path19.dirname(absoluteTarget);
     const configPath = options?.configPath ? path19.resolve(options.configPath) : findConfig(absoluteTarget);
-    const repoRoot = options?.configPath ? targetRoot : path19.dirname(configPath);
+    const repoRoot = resolveRepoRoot(targetRoot, configPath);
     const config = loadConfig(configPath);
     const files = options?.fileList ?? scanFiles(absoluteTarget, repoRoot, options?.sharedIgnoreMatcher);
     const giIgnoreMatcher = options?.sharedIgnoreMatcher ?? createIgnoreMatcher(repoRoot);
@@ -2456,10 +2465,16 @@ var ValidationEngine = class {
     const sharedIgnoreMatcher = createIgnoreMatcher(repoRoot);
     const workspaces = discoverWorkspaces(repoRoot, sharedIgnoreMatcher);
     if (workspaces.length === 0) {
-      const result = await this.validate(rootDir, { configPath: rootConfigPath, sharedIgnoreMatcher });
+      const result = await this.validate(rootDir, {
+        configPath: rootConfigPath,
+        sharedIgnoreMatcher
+      });
       return { mode: "flat", result };
     }
-    const allConfigPaths = [rootConfigPath, ...workspaces.map((ws) => ws.configPath)];
+    const allConfigPaths = [
+      rootConfigPath,
+      ...workspaces.map((ws) => ws.configPath)
+    ];
     const currentHash = hashConfigFiles(allConfigPaths);
     let cachedWorkspaces = null;
     let cachedResolvedConfigs = null;
@@ -2510,7 +2525,11 @@ var ValidationEngine = class {
       (ws) => scanFiles(ws.subtreeRoot, repoRoot, sharedIgnoreMatcher)
     );
     const globalFileIndex = /* @__PURE__ */ new Set([...rootFiles, ...childFiles]);
-    const concurrency = Math.min(activeWorkspaces.length + 1, 8, os.cpus().length);
+    const concurrency = Math.min(
+      activeWorkspaces.length + 1,
+      8,
+      os.cpus().length
+    );
     const semaphore = createSemaphore(concurrency);
     const childValidations = await Promise.all(
       activeWorkspaces.map(
@@ -2520,7 +2539,11 @@ var ValidationEngine = class {
             sharedIgnoreMatcher,
             globalFileIndex,
             workspaceTag: ws.configPath
-          }).then((result) => ({ configPath: ws.configPath, subtreeRoot: ws.subtreeRoot, result }))
+          }).then((result) => ({
+            configPath: ws.configPath,
+            subtreeRoot: ws.subtreeRoot,
+            result
+          }))
         )
       )
     );
@@ -2556,7 +2579,9 @@ var ValidationEngine = class {
           const absReqFile = path19.resolve(repoRoot, reqFile);
           if (absReqFile.startsWith(ws.subtreeRoot + path19.sep) || absReqFile === ws.subtreeRoot) {
             const childRequires = (childConfig.folders ?? []).some(
-              (cf) => (cf.requiredFiles ?? []).some((rf) => path19.resolve(ws.subtreeRoot, rf) === absReqFile)
+              (cf) => (cf.requiredFiles ?? []).some(
+                (rf) => path19.resolve(ws.subtreeRoot, rf) === absReqFile
+              )
             );
             if (!childRequires) {
               conflicts.push({
@@ -2583,7 +2608,11 @@ var ValidationEngine = class {
               message: `Root rule glob '${rootRule.glob}' and child rule glob '${childRule.glob}' in '${ws.subtreeRoot}' may match the same files with different constraints.`,
               parentConfigPath: rootConfigPath,
               childConfigPath: ws.configPath,
-              details: { rootGlob: rootRule.glob, childGlob: childRule.glob, subtreeRoot: ws.subtreeRoot }
+              details: {
+                rootGlob: rootRule.glob,
+                childGlob: childRule.glob,
+                subtreeRoot: ws.subtreeRoot
+              }
             });
             break;
           }
@@ -2850,6 +2879,7 @@ function renderComplianceReport(report, format = "markdown") {
 
 // src/cli/use-cases.ts
 import yaml6 from "js-yaml";
+var deriveRepoRoot = resolveRepoRoot;
 function deriveTargetRoot(targetPath) {
   if (fs19.existsSync(targetPath) && fs19.statSync(targetPath).isDirectory()) {
     return targetPath;
@@ -2858,19 +2888,21 @@ function deriveTargetRoot(targetPath) {
 }
 async function validatePath(target, configOverridePath, opts = {}) {
   const absolute = path20.resolve(target);
-  const targetRoot = deriveTargetRoot(absolute);
   const configPath = configOverridePath ? path20.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path20.dirname(configPath);
+  const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const config = loadConfig(configPath);
   const engine = createDefaultEngine();
+  const pluginsEnabled = opts.plugins === true;
+  const pluginDiagnostics = pluginsEnabled ? runPluginPhase(config, repoRoot, "validate") : [];
   const isDirectory = fs19.existsSync(absolute) && fs19.statSync(absolute).isDirectory();
   const workspaceEnabled = opts.workspace !== false;
   if (isDirectory && workspaceEnabled && !configOverridePath) {
-    const wsResult = await engine.validateWorkspace(absolute, { noCache: opts.noCache });
+    const wsResult = await engine.validateWorkspace(absolute, {
+      noCache: opts.noCache
+    });
     if (wsResult.mode === "workspace") {
-      const pluginDiagnostics3 = runPluginPhase(config, repoRoot, "validate");
-      if (pluginDiagnostics3.length > 0) {
-        wsResult.result.rootResult.diagnostics.push(...pluginDiagnostics3);
+      if (pluginDiagnostics.length > 0) {
+        wsResult.result.rootResult.diagnostics.push(...pluginDiagnostics);
         wsResult.result.rootResult.ok = wsResult.result.rootResult.diagnostics.every(
           (d) => d.severity !== "error"
         );
@@ -2878,8 +2910,7 @@ async function validatePath(target, configOverridePath, opts = {}) {
       }
       return wsResult;
     }
-    const pluginDiagnostics2 = runPluginPhase(config, repoRoot, "validate");
-    const diagnostics2 = [...wsResult.result.diagnostics, ...pluginDiagnostics2];
+    const diagnostics2 = [...wsResult.result.diagnostics, ...pluginDiagnostics];
     return {
       mode: "flat",
       result: {
@@ -2890,7 +2921,6 @@ async function validatePath(target, configOverridePath, opts = {}) {
     };
   }
   const result = await engine.validate(target, { configPath });
-  const pluginDiagnostics = runPluginPhase(config, repoRoot, "validate");
   const diagnostics = [...result.diagnostics, ...pluginDiagnostics];
   return {
     mode: "flat",
@@ -2903,18 +2933,17 @@ async function validatePath(target, configOverridePath, opts = {}) {
 }
 function explainPath(target, configOverridePath) {
   const absolute = path20.resolve(target);
-  const targetRoot = deriveTargetRoot(absolute);
   const configPath = configOverridePath ? path20.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path20.dirname(configPath);
+  const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const config = loadConfig(configPath);
   return explainRules(config, repoRoot, absolute);
 }
 async function fixPath(target, configOverridePath, opts = {}) {
   const absolute = path20.resolve(target);
-  const targetRoot = deriveTargetRoot(absolute);
   const configPath = configOverridePath ? path20.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path20.dirname(configPath);
+  const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const config = loadConfig(configPath);
+  const pluginsEnabled = opts.plugins === true;
   const validateResult = await validatePath(target, configOverridePath, opts);
   if (validateResult.mode === "workspace") {
     const wsResult = validateResult.result;
@@ -2925,9 +2954,11 @@ async function fixPath(target, configOverridePath, opts = {}) {
       const fix = applyAutofixes(actions2);
       return { configPath: ws.configPath, subtreeRoot: ws.subtreeRoot, fix };
     });
-    const pluginDiagnostics2 = runPluginPhase(config, repoRoot, "fix");
+    const pluginDiagnostics2 = pluginsEnabled ? runPluginPhase(config, repoRoot, "fix") : [];
     wsResult.rootResult.diagnostics.push(...pluginDiagnostics2);
-    wsResult.rootResult.ok = wsResult.rootResult.diagnostics.every((d) => d.severity !== "error");
+    wsResult.rootResult.ok = wsResult.rootResult.diagnostics.every(
+      (d) => d.severity !== "error"
+    );
     wsResult.ok = wsResult.ok && wsResult.rootResult.ok;
     const totalApplied = rootFix.applied + childFixes.reduce((acc, cf) => acc + cf.fix.applied, 0);
     return {
@@ -2939,7 +2970,7 @@ async function fixPath(target, configOverridePath, opts = {}) {
   const result = validateResult.result;
   const actions = result.diagnostics.map((d) => d.autofix).filter((action) => Boolean(action));
   const fixResult = applyAutofixes(actions);
-  const pluginDiagnostics = runPluginPhase(config, repoRoot, "fix");
+  const pluginDiagnostics = pluginsEnabled ? runPluginPhase(config, repoRoot, "fix") : [];
   const diagnostics = [...result.diagnostics, ...pluginDiagnostics];
   const validation = {
     mode: "flat",
@@ -2976,11 +3007,15 @@ function initRepotypeConfig(targetDir, options = {}) {
   const absoluteTarget = path20.resolve(targetDir);
   const outputPath = path20.join(absoluteTarget, "repotype.yaml");
   if (fs19.existsSync(outputPath) && !force) {
-    throw new Error(`repotype.yaml already exists at ${outputPath}. Use --force to overwrite.`);
+    throw new Error(
+      `repotype.yaml already exists at ${outputPath}. Use --force to overwrite.`
+    );
   }
   const config = options.from ? yaml6.load(fs19.readFileSync(path20.resolve(options.from), "utf8")) : createPresetConfig(type);
   if (!config || typeof config !== "object" || !config.version) {
-    throw new Error('Source config is invalid. Expected YAML with top-level "version".');
+    throw new Error(
+      'Source config is invalid. Expected YAML with top-level "version".'
+    );
   }
   const rendered = yaml6.dump(config, { lineWidth: 120 });
   fs19.mkdirSync(absoluteTarget, { recursive: true });
@@ -3022,13 +3057,14 @@ function pluginStatus(target) {
 }
 async function generateComplianceReport(target, format = "markdown", configOverridePath) {
   const absolute = path20.resolve(target);
-  const targetRoot = deriveTargetRoot(absolute);
   const configPath = configOverridePath ? path20.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path20.dirname(configPath);
+  const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const validateResult = await validatePath(target, configOverridePath);
   const allDiagnostics = validateResult.mode === "workspace" ? [
     ...validateResult.result.rootResult.diagnostics,
-    ...validateResult.result.workspaces.flatMap((ws) => ws.result.diagnostics)
+    ...validateResult.result.workspaces.flatMap(
+      (ws) => ws.result.diagnostics
+    )
   ] : validateResult.result.diagnostics;
   const ok = validateResult.result.ok;
   const filesScanned = validateResult.result.filesScanned;
@@ -3059,7 +3095,11 @@ async function generateComplianceReport(target, format = "markdown", configOverr
     warning: 1,
     suggestion: 2
   };
-  const byCode = [...byCodeMap.entries()].map(([code, value]) => ({ code, severity: value.severity, count: value.count })).sort((a, b) => {
+  const byCode = [...byCodeMap.entries()].map(([code, value]) => ({
+    code,
+    severity: value.severity,
+    count: value.count
+  })).sort((a, b) => {
     const severityDiff = severityRank[a.severity] - severityRank[b.severity];
     if (severityDiff !== 0) {
       return severityDiff;
@@ -3469,14 +3509,14 @@ function uninstallWatcher(target, dryRun = false) {
 // src/cli/operations.ts
 import fs23 from "fs";
 import path24 from "path";
-function resolveRepoRoot(target) {
+function resolveRepoRoot2(target) {
   const absolute = path24.resolve(target);
   const configPath = findConfig(absolute);
   const repoRoot = path24.dirname(configPath);
   return { repoRoot, configPath };
 }
 function normalizeOperations(target) {
-  const { repoRoot, configPath } = resolveRepoRoot(target);
+  const { repoRoot, configPath } = resolveRepoRoot2(target);
   const config = loadConfig(configPath);
   const normalized = {
     hooks: {
@@ -3604,6 +3644,20 @@ var repotypeValidateCommand = new UniversalCommand({
         description: "Bypass the workspace discovery cache and recompute child workspaces from disk.",
         positional: false,
         required: false
+      },
+      {
+        name: "guidance",
+        type: "boolean",
+        description: "Include suggestion-severity guidance diagnostics (missing schema bindings, empty requiredSections) in CLI output. Off by default \u2014 these are advisory and never gate. JSON consumers always receive the full diagnostic set.",
+        positional: false,
+        required: false
+      },
+      {
+        name: "plugins",
+        type: "boolean",
+        description: "Run external plugin checks (mermaid, bundle-size, etc.). Off by default \u2014 plugins shell out to whole-repo scans that are slow and orthogonal to structure validation.",
+        positional: false,
+        required: false
       }
     ]
   },
@@ -3611,15 +3665,26 @@ var repotypeValidateCommand = new UniversalCommand({
     type: "json"
   },
   cli: {
-    format(result) {
+    format(result, args) {
       if (!result.ok) process.exitCode = 1;
-      return JSON.stringify(result, null, 2);
+      const showGuidance = args?.guidance === true;
+      if (showGuidance || !Array.isArray(result.diagnostics)) {
+        return JSON.stringify(result, null, 2);
+      }
+      const filtered = {
+        ...result,
+        diagnostics: result.diagnostics.filter(
+          (d) => d.severity !== "suggestion"
+        )
+      };
+      return JSON.stringify(filtered, null, 2);
     }
   },
-  async handler({ target = ".", config, noWorkspace, noCache }) {
+  async handler({ target = ".", config, noWorkspace, noCache, plugins }) {
     const validateResult = await validatePath(target, config, {
       workspace: noWorkspace ? false : void 0,
-      noCache
+      noCache,
+      plugins
     });
     if (validateResult.mode === "workspace") {
       const wsResult = validateResult.result;

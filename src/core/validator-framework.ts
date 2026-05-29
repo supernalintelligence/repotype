@@ -1,7 +1,7 @@
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { globSync } from 'glob';
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { globSync } from "glob";
 import {
   findConfig,
   loadConfig,
@@ -10,10 +10,10 @@ import {
   loadWorkspaceCache,
   writeWorkspaceCache,
   resolveOwningWorkspace,
-} from './config-loader.js';
-import { createIgnoreMatcher, getStaticIgnoreGlobs } from './path-ignore.js';
-import type { IgnoreMatcher } from './path-ignore.js';
-import { resolveEffectiveRules } from './rule-engine.js';
+} from "./config-loader.js";
+import { createIgnoreMatcher, getStaticIgnoreGlobs } from "./path-ignore.js";
+import type { IgnoreMatcher } from "./path-ignore.js";
+import { resolveEffectiveRules } from "./rule-engine.js";
 import type {
   Diagnostic,
   RepoSchemaConfig,
@@ -24,15 +24,37 @@ import type {
   WorkspaceConflict,
   WorkspaceEntry,
   WorkspaceValidationResult,
-} from './types.js';
+} from "./types.js";
 
 /** Config filenames excluded from scanning — they govern, not are governed. */
-const CONFIG_FILE_NAMES = new Set(['repotype.yaml', 'repo-schema.yaml']);
+const CONFIG_FILE_NAMES = new Set(["repotype.yaml", "repo-schema.yaml"]);
+
+/**
+ * Resolve the repo root (the base that rule paths / folder rules / plugins /
+ * gitignore injection resolve against) from a validation target and a config
+ * path. The config's directory wins when it is an ancestor of (or equal to) the
+ * target — the in-tree case. Otherwise the target's own root is the repo root —
+ * the out-of-tree/shared-profile case. Kept in sync with use-cases.deriveRepoRoot.
+ */
+export function resolveRepoRoot(
+  targetRoot: string,
+  configPath: string,
+): string {
+  const configDir = path.dirname(configPath);
+  const rel = path.relative(configDir, targetRoot);
+  const targetInsideConfigDir =
+    rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel));
+  return targetInsideConfigDir ? configDir : targetRoot;
+}
 
 /** Hard cap on files scanned per run — prevents OOM from misconfigured globs or large trees. */
 const MAX_SCAN_FILES = 50_000;
 
-export function scanFiles(targetPath: string, repoRoot: string, sharedIgnoreMatcher?: IgnoreMatcher): string[] {
+export function scanFiles(
+  targetPath: string,
+  repoRoot: string,
+  sharedIgnoreMatcher?: IgnoreMatcher,
+): string[] {
   const ignoreMatcher = sharedIgnoreMatcher ?? createIgnoreMatcher(repoRoot);
   const stats = fs.statSync(targetPath);
   if (stats.isFile()) {
@@ -41,7 +63,7 @@ export function scanFiles(targetPath: string, repoRoot: string, sharedIgnoreMatc
     return ignoreMatcher.isIgnored(absoluteFile) ? [] : [absoluteFile];
   }
 
-  const files = globSync('**/*', {
+  const files = globSync("**/*", {
     cwd: targetPath,
     absolute: true,
     nodir: true,
@@ -56,7 +78,7 @@ export function scanFiles(targetPath: string, repoRoot: string, sharedIgnoreMatc
   if (filtered.length > MAX_SCAN_FILES) {
     process.stderr.write(
       `[repotype] WARNING: scan found ${filtered.length} files (limit ${MAX_SCAN_FILES}). ` +
-      `Truncating to prevent OOM. Check your repotype.yaml glob rules or .gitignore coverage.\n`,
+        `Truncating to prevent OOM. Check your repotype.yaml glob rules or .gitignore coverage.\n`,
     );
     return filtered.slice(0, MAX_SCAN_FILES);
   }
@@ -81,8 +103,16 @@ function createSemaphore(concurrency: number) {
     return new Promise<T>((resolve, reject) => {
       queue.push(() => {
         fn().then(
-          (value) => { active--; next(); resolve(value); },
-          (err) => { active--; next(); reject(err); },
+          (value) => {
+            active--;
+            next();
+            resolve(value);
+          },
+          (err) => {
+            active--;
+            next();
+            reject(err);
+          },
         );
       });
       next();
@@ -90,28 +120,37 @@ function createSemaphore(concurrency: number) {
   };
 }
 
-function classifyOverbroadGlob(glob: string): { level: 'high' | 'medium' | 'low'; depth: number } | null {
-  const normalized = glob.replace(/\\+/g, '/');
+function classifyOverbroadGlob(
+  glob: string,
+): { level: "high" | "medium" | "low"; depth: number } | null {
+  const normalized = glob.replace(/\\+/g, "/");
 
   // High: unconstrained catch-alls (repo-wide or directory-wide with any extension)
-  if (normalized === '**/*' || normalized.endsWith('/**') || normalized.endsWith('/**/*')) {
-    return { level: 'high', depth: 3 };
+  if (
+    normalized === "**/*" ||
+    normalized.endsWith("/**") ||
+    normalized.endsWith("/**/*")
+  ) {
+    return { level: "high", depth: 3 };
   }
 
   // Medium: recursive with wildcard filename + extension set (e.g. dist/**/*.{js,ts,map})
-  if (normalized.includes('/**/*.{')) {
-    return { level: 'medium', depth: 2 };
+  if (normalized.includes("/**/*.{")) {
+    return { level: "medium", depth: 2 };
   }
 
   // Low: recursive with single extension (e.g. src/**/*.ts)
-  if (normalized.includes('/**/*.')) {
-    return { level: 'low', depth: 1 };
+  if (normalized.includes("/**/*.")) {
+    return { level: "low", depth: 1 };
   }
 
   return null;
 }
 
-function lintConfigGlobs(config: RepoSchemaConfig, configPath: string): Diagnostic[] {
+function lintConfigGlobs(
+  config: RepoSchemaConfig,
+  configPath: string,
+): Diagnostic[] {
   const diagnostics: Diagnostic[] = [];
 
   for (const rule of config.files || []) {
@@ -120,16 +159,17 @@ function lintConfigGlobs(config: RepoSchemaConfig, configPath: string): Diagnost
     const classification = classifyOverbroadGlob(rule.glob);
     if (classification) {
       diagnostics.push({
-        code: 'overbroad_glob_pattern',
-        message: `Overbroad file glob '${rule.glob}' in rule '${rule.id || 'unnamed'}' (level: ${classification.level}, depth: ${classification.depth}). Prefer explicit allowlist paths.`,
-        severity: 'warning',
+        code: "overbroad_glob_pattern",
+        message: `Overbroad file glob '${rule.glob}' in rule '${rule.id || "unnamed"}' (level: ${classification.level}, depth: ${classification.depth}). Prefer explicit allowlist paths.`,
+        severity: "warning",
         file: configPath,
         ruleId: rule.id,
         details: {
           glob: rule.glob,
           level: classification.level,
           depth: classification.depth,
-          recommendation: 'Replace broad globs with explicit folder/file rules where possible.',
+          recommendation:
+            "Replace broad globs with explicit folder/file rules where possible.",
         },
       });
     }
@@ -140,16 +180,17 @@ function lintConfigGlobs(config: RepoSchemaConfig, configPath: string): Diagnost
     const classification = classifyOverbroadGlob(rule.glob);
     if (classification) {
       diagnostics.push({
-        code: 'overbroad_glob_pattern',
-        message: `Overbroad folder glob '${rule.glob}' in rule '${rule.id || 'unnamed'}' (level: ${classification.level}, depth: ${classification.depth}).`,
-        severity: 'warning',
+        code: "overbroad_glob_pattern",
+        message: `Overbroad folder glob '${rule.glob}' in rule '${rule.id || "unnamed"}' (level: ${classification.level}, depth: ${classification.depth}).`,
+        severity: "warning",
         file: configPath,
         ruleId: rule.id,
         details: {
           glob: rule.glob,
           level: classification.level,
           depth: classification.depth,
-          recommendation: 'Use explicit folder paths in allowedFolders/requiredFolders.',
+          recommendation:
+            "Use explicit folder paths in allowedFolders/requiredFolders.",
         },
       });
     }
@@ -157,7 +198,6 @@ function lintConfigGlobs(config: RepoSchemaConfig, configPath: string): Diagnost
 
   return diagnostics;
 }
-
 
 function getGlobExtension(glob: string): string | null {
   const match = glob.match(/\*\.([a-zA-Z0-9]+)$/);
@@ -172,28 +212,52 @@ function globsCouldOverlap(globA: string, globB: string): boolean {
   return true;
 }
 
-function rootGlobCouldMatchSubtree(rootGlob: string, relSubtreeFromRoot: string): boolean {
-  const normalized = rootGlob.replace(/\\/g, '/');
+function rootGlobCouldMatchSubtree(
+  rootGlob: string,
+  relSubtreeFromRoot: string,
+): boolean {
+  const normalized = rootGlob.replace(/\\/g, "/");
   // Unconstrained globs (starting with ** or no path separator) match anywhere
-  if (normalized.startsWith('**/') || !normalized.includes('/')) return true;
-  const firstWild = normalized.indexOf('*');
-  const literalPrefix = firstWild >= 0 ? normalized.slice(0, firstWild) : normalized + '/';
-  const relNorm = relSubtreeFromRoot.replace(/\\/g, '/') + '/';
+  if (normalized.startsWith("**/") || !normalized.includes("/")) return true;
+  const firstWild = normalized.indexOf("*");
+  const literalPrefix =
+    firstWild >= 0 ? normalized.slice(0, firstWild) : normalized + "/";
+  const relNorm = relSubtreeFromRoot.replace(/\\/g, "/") + "/";
   // Overlap if literal prefix is a prefix of the subtree path or vice versa
   return relNorm.startsWith(literalPrefix) || literalPrefix.startsWith(relNorm);
 }
 
-type FileRuleForConflict = { requiredSections?: string[]; schema?: { schema?: string }; filenamePattern?: string; pathCase?: string; forbidContentPatterns?: string[] };
+type FileRuleForConflict = {
+  requiredSections?: string[];
+  schema?: { schema?: string };
+  filenamePattern?: string;
+  pathCase?: string;
+  forbidContentPatterns?: string[];
+};
 
-function fileRulesConflict(rootRule: FileRuleForConflict, childRule: FileRuleForConflict): boolean {
-  const rootSections = [...(rootRule.requiredSections ?? [])].sort().join(',');
-  const childSections = [...(childRule.requiredSections ?? [])].sort().join(',');
-  if (rootSections !== childSections && (rootSections || childSections)) return true;
-  if ((rootRule.schema?.schema ?? null) !== (childRule.schema?.schema ?? null)) return true;
-  if ((rootRule.filenamePattern ?? null) !== (childRule.filenamePattern ?? null)) return true;
+function fileRulesConflict(
+  rootRule: FileRuleForConflict,
+  childRule: FileRuleForConflict,
+): boolean {
+  const rootSections = [...(rootRule.requiredSections ?? [])].sort().join(",");
+  const childSections = [...(childRule.requiredSections ?? [])]
+    .sort()
+    .join(",");
+  if (rootSections !== childSections && (rootSections || childSections))
+    return true;
+  if ((rootRule.schema?.schema ?? null) !== (childRule.schema?.schema ?? null))
+    return true;
+  if (
+    (rootRule.filenamePattern ?? null) !== (childRule.filenamePattern ?? null)
+  )
+    return true;
   if ((rootRule.pathCase ?? null) !== (childRule.pathCase ?? null)) return true;
-  const rootForbid = [...(rootRule.forbidContentPatterns ?? [])].sort().join(',');
-  const childForbid = [...(childRule.forbidContentPatterns ?? [])].sort().join(',');
+  const rootForbid = [...(rootRule.forbidContentPatterns ?? [])]
+    .sort()
+    .join(",");
+  const childForbid = [...(childRule.forbidContentPatterns ?? [])]
+    .sort()
+    .join(",");
   if (rootForbid !== childForbid && (rootForbid || childForbid)) return true;
   return false;
 }
@@ -213,25 +277,39 @@ export class ValidationEngine {
     },
   ): Promise<ValidationResult> {
     const absoluteTarget = path.resolve(targetPath);
-    const targetRoot = fs.existsSync(absoluteTarget) && fs.statSync(absoluteTarget).isDirectory()
-      ? absoluteTarget
-      : path.dirname(absoluteTarget);
+    const targetRoot =
+      fs.existsSync(absoluteTarget) && fs.statSync(absoluteTarget).isDirectory()
+        ? absoluteTarget
+        : path.dirname(absoluteTarget);
     const configPath = options?.configPath
       ? path.resolve(options.configPath)
       : findConfig(absoluteTarget);
-    const repoRoot = options?.configPath ? targetRoot : path.dirname(configPath);
+    // repoRoot is the root that rule paths, folder rules, plugins, and gitignore
+    // injection resolve against — distinct from the scan target (scanFiles takes
+    // both, scanning the target while matching ignore rules relative to repoRoot).
+    // The config's directory is the repo root when it is an ancestor of (or equal
+    // to) the target (the common in-tree case: repotype.yaml at the repo root,
+    // target a subtree like .supernal/docs). When the config lives outside the
+    // target's tree (a shared profile), rules are authored relative to the
+    // validated repo, so the repo root is the target's own root. Conflating these
+    // (the old `options.configPath ? targetRoot : configDir`) broke every
+    // repo-root-relative rule on a scoped in-tree run with --config.
+    const repoRoot = resolveRepoRoot(targetRoot, configPath);
     const config = loadConfig(configPath);
-    const files = options?.fileList ?? scanFiles(absoluteTarget, repoRoot, options?.sharedIgnoreMatcher);
+    const files =
+      options?.fileList ??
+      scanFiles(absoluteTarget, repoRoot, options?.sharedIgnoreMatcher);
 
     // Inject .gitignore files — the main scanner uses dot:false so dotfiles are excluded.
     // We add only .gitignore specifically; injecting all dotfiles would OOM large repos.
     // Use the same ignore matcher that governs scanFiles so repotype.yaml `ignore:` patterns
     // (e.g. `_build_output/**`) are respected and don't leak through as unmatched-file errors.
-    const giIgnoreMatcher = options?.sharedIgnoreMatcher ?? createIgnoreMatcher(repoRoot);
-    const gitignoreFiles = globSync('**/.gitignore', {
+    const giIgnoreMatcher =
+      options?.sharedIgnoreMatcher ?? createIgnoreMatcher(repoRoot);
+    const gitignoreFiles = globSync("**/.gitignore", {
       cwd: repoRoot,
       absolute: true,
-      ignore: ['**/node_modules/**'],
+      ignore: ["**/node_modules/**"],
     });
     for (const gi of gitignoreFiles) {
       if (!files.includes(gi) && !giIgnoreMatcher.isIgnored(gi)) files.push(gi);
@@ -264,9 +342,9 @@ export class ValidationEngine {
           diagnostics.push(...adapterDiagnostics);
         } catch (error) {
           diagnostics.push({
-            code: 'validator_adapter_failure',
+            code: "validator_adapter_failure",
             message: `${adapter.id} failed for ${context.ruleSet.filePath}: ${(error as Error).message}`,
-            severity: 'error',
+            severity: "error",
             file: filePath,
             details: {
               adapter: adapter.id,
@@ -278,7 +356,7 @@ export class ValidationEngine {
     }
 
     return {
-      ok: diagnostics.every((d) => d.severity !== 'error'),
+      ok: diagnostics.every((d) => d.severity !== "error"),
       diagnostics,
       filesScanned: files.length,
     };
@@ -307,12 +385,18 @@ export class ValidationEngine {
 
     if (workspaces.length === 0) {
       // Flat mode — no child configs found
-      const result = await this.validate(rootDir, { configPath: rootConfigPath, sharedIgnoreMatcher });
-      return { mode: 'flat', result };
+      const result = await this.validate(rootDir, {
+        configPath: rootConfigPath,
+        sharedIgnoreMatcher,
+      });
+      return { mode: "flat", result };
     }
 
     // ── Cache handling ────────────────────────────────────────────────────
-    const allConfigPaths = [rootConfigPath, ...workspaces.map((ws) => ws.configPath)];
+    const allConfigPaths = [
+      rootConfigPath,
+      ...workspaces.map((ws) => ws.configPath),
+    ];
     const currentHash = hashConfigFiles(allConfigPaths);
 
     let cachedWorkspaces: WorkspaceEntry[] | null = null;
@@ -324,12 +408,13 @@ export class ValidationEngine {
       if (cached && cached.hash === currentHash) {
         cachedWorkspaces = cached.workspaces;
         cachedResolvedConfigs = cached.resolvedConfigs;
-      } else if (cached && process.env.CI === 'true') {
+      } else if (cached && process.env.CI === "true") {
         // Stale cache in CI — warn but continue without rebuilding cache
         staleCIDiag = {
-          code: 'workspace_cache_stale',
-          severity: 'warning',
-          message: 'workspace cache is stale — regenerate locally with `repotype validate .`',
+          code: "workspace_cache_stale",
+          severity: "warning",
+          message:
+            "workspace cache is stale — regenerate locally with `repotype validate .`",
           parentConfigPath: rootConfigPath,
           childConfigPath: rootConfigPath,
         };
@@ -341,13 +426,21 @@ export class ValidationEngine {
     let activeWorkspaces = workspaces;
     if (cachedWorkspaces) {
       activeWorkspaces = cachedWorkspaces;
-    } else if (!options.noCache && process.env.CI !== 'true') {
+    } else if (!options.noCache && process.env.CI !== "true") {
       // Write fresh cache (not in CI)
       const resolvedConfigs: Record<string, RepoSchemaConfig> = {};
       for (const ws of workspaces) {
-        try { resolvedConfigs[ws.configPath] = loadConfig(ws.configPath); } catch { /* skip */ }
+        try {
+          resolvedConfigs[ws.configPath] = loadConfig(ws.configPath);
+        } catch {
+          /* skip */
+        }
       }
-      try { resolvedConfigs[rootConfigPath] = loadConfig(rootConfigPath); } catch { /* skip */ }
+      try {
+        resolvedConfigs[rootConfigPath] = loadConfig(rootConfigPath);
+      } catch {
+        /* skip */
+      }
       writeWorkspaceCache(repoRoot, {
         version: 2,
         hash: currentHash,
@@ -372,7 +465,11 @@ export class ValidationEngine {
     // build rootResult by filtering root diagnostics to root-owned files only.
     // Simpler: validate subtrees only, then validate root-owned files directly.
 
-    const concurrency = Math.min(activeWorkspaces.length + 1, 8, os.cpus().length);
+    const concurrency = Math.min(
+      activeWorkspaces.length + 1,
+      8,
+      os.cpus().length,
+    );
     const semaphore = createSemaphore(concurrency);
 
     // Validate each child workspace
@@ -384,7 +481,11 @@ export class ValidationEngine {
             sharedIgnoreMatcher,
             globalFileIndex,
             workspaceTag: ws.configPath,
-          }).then((result) => ({ configPath: ws.configPath, subtreeRoot: ws.subtreeRoot, result })),
+          }).then((result) => ({
+            configPath: ws.configPath,
+            subtreeRoot: ws.subtreeRoot,
+            result,
+          })),
         ),
       ),
     );
@@ -392,7 +493,7 @@ export class ValidationEngine {
     // Validate the root — only files not owned by any child
     const allRootFiles = scanFiles(repoRoot, repoRoot, sharedIgnoreMatcher);
     const rootOwnedFiles = allRootFiles.filter(
-      (f) => resolveOwningWorkspace(f, activeWorkspaces) === 'root',
+      (f) => resolveOwningWorkspace(f, activeWorkspaces) === "root",
     );
 
     // Validate root using only root-owned files — no post-filter needed
@@ -407,7 +508,7 @@ export class ValidationEngine {
     );
 
     const rootResult: ValidationResult = {
-      ok: rawRootResult.diagnostics.every((d) => d.severity !== 'error'),
+      ok: rawRootResult.diagnostics.every((d) => d.severity !== "error"),
       diagnostics: rawRootResult.diagnostics,
       filesScanned: rootOwnedFiles.length,
     };
@@ -419,7 +520,8 @@ export class ValidationEngine {
     for (const ws of activeWorkspaces) {
       let childConfig: RepoSchemaConfig;
       try {
-        childConfig = cachedResolvedConfigs?.[ws.configPath] ?? loadConfig(ws.configPath);
+        childConfig =
+          cachedResolvedConfigs?.[ws.configPath] ?? loadConfig(ws.configPath);
       } catch {
         continue;
       }
@@ -428,14 +530,19 @@ export class ValidationEngine {
       for (const folder of rootConfig.folders ?? []) {
         for (const reqFile of folder.requiredFiles ?? []) {
           const absReqFile = path.resolve(repoRoot, reqFile);
-          if (absReqFile.startsWith(ws.subtreeRoot + path.sep) || absReqFile === ws.subtreeRoot) {
+          if (
+            absReqFile.startsWith(ws.subtreeRoot + path.sep) ||
+            absReqFile === ws.subtreeRoot
+          ) {
             const childRequires = (childConfig.folders ?? []).some((cf) =>
-              (cf.requiredFiles ?? []).some((rf) => path.resolve(ws.subtreeRoot, rf) === absReqFile),
+              (cf.requiredFiles ?? []).some(
+                (rf) => path.resolve(ws.subtreeRoot, rf) === absReqFile,
+              ),
             );
             if (!childRequires) {
               conflicts.push({
-                code: 'workspace_required_file_gap',
-                severity: 'error',
+                code: "workspace_required_file_gap",
+                severity: "error",
                 message: `Root config requires '${reqFile}' which is inside child subtree '${ws.subtreeRoot}'. Child config does not require it — enforcement gap.`,
                 parentConfigPath: rootConfigPath,
                 childConfigPath: ws.configPath,
@@ -454,12 +561,16 @@ export class ValidationEngine {
           if (!globsCouldOverlap(rootRule.glob, childRule.glob)) continue;
           if (fileRulesConflict(rootRule, childRule)) {
             conflicts.push({
-              code: 'workspace_pattern_conflict',
-              severity: 'warning',
+              code: "workspace_pattern_conflict",
+              severity: "warning",
               message: `Root rule glob '${rootRule.glob}' and child rule glob '${childRule.glob}' in '${ws.subtreeRoot}' may match the same files with different constraints.`,
               parentConfigPath: rootConfigPath,
               childConfigPath: ws.configPath,
-              details: { rootGlob: rootRule.glob, childGlob: childRule.glob, subtreeRoot: ws.subtreeRoot },
+              details: {
+                rootGlob: rootRule.glob,
+                childGlob: childRule.glob,
+                subtreeRoot: ws.subtreeRoot,
+              },
             });
             break; // one conflict per root rule per workspace
           }
@@ -471,8 +582,8 @@ export class ValidationEngine {
       const childUnmatched = childConfig.defaults?.unmatchedFiles;
       if (rootUnmatched && childUnmatched && rootUnmatched !== childUnmatched) {
         conflicts.push({
-          code: 'workspace_unmatched_files_asymmetry',
-          severity: 'warning',
+          code: "workspace_unmatched_files_asymmetry",
+          severity: "warning",
           message: `Root config has unmatchedFiles='${rootUnmatched}' but child config '${ws.subtreeRoot}' has unmatchedFiles='${childUnmatched}'. Files in child subtree are subject to different rules.`,
           parentConfigPath: rootConfigPath,
           childConfigPath: ws.configPath,
@@ -489,8 +600,8 @@ export class ValidationEngine {
     // Emit activation suggestion only on cache-miss (first discovery or config change)
     if (!cachedWorkspaces) {
       const activationDiag: Diagnostic = {
-        code: 'workspace_mode_active',
-        severity: 'suggestion',
+        code: "workspace_mode_active",
+        severity: "suggestion",
         message: `workspace mode active — ${activeWorkspaces.length} child config(s) found. Files in child subtrees are now governed by their own repotype.yaml. Root rules no longer apply to those subtrees. Run \`repotype status\` to review workspace boundaries.`,
         file: rootConfigPath,
         workspace: rootConfigPath,
@@ -499,20 +610,23 @@ export class ValidationEngine {
     }
 
     const totalFilesScanned =
-      rootResult.filesScanned + childValidations.reduce((acc, cv) => acc + cv.result.filesScanned, 0);
+      rootResult.filesScanned +
+      childValidations.reduce((acc, cv) => acc + cv.result.filesScanned, 0);
 
     const allOk =
-      rootResult.ok && childValidations.every((cv) => cv.result.ok) && !conflicts.some((c) => c.severity === 'error');
+      rootResult.ok &&
+      childValidations.every((cv) => cv.result.ok) &&
+      !conflicts.some((c) => c.severity === "error");
 
     const workspaceResult: WorkspaceValidationResult = {
       ok: allOk,
-      mode: 'workspace',
+      mode: "workspace",
       filesScanned: totalFilesScanned,
       workspaces: childValidations,
       conflicts,
       rootResult,
     };
 
-    return { mode: 'workspace', result: workspaceResult };
+    return { mode: "workspace", result: workspaceResult };
   }
 }

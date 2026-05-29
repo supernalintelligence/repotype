@@ -39,6 +39,8 @@ export const repotypeValidateCommand = new UniversalCommand<
     config?: string;
     noWorkspace?: boolean;
     noCache?: boolean;
+    guidance?: boolean;
+    plugins?: boolean;
   },
   { ok: boolean; filesScanned: number; diagnostics: unknown[] }
 >({
@@ -79,22 +81,60 @@ export const repotypeValidateCommand = new UniversalCommand<
         positional: false,
         required: false,
       },
+      {
+        name: "guidance",
+        type: "boolean",
+        description:
+          "Include suggestion-severity guidance diagnostics (missing schema bindings, empty requiredSections) in CLI output. Off by default — these are advisory and never gate. JSON consumers always receive the full diagnostic set.",
+        positional: false,
+        required: false,
+      },
+      {
+        name: "plugins",
+        type: "boolean",
+        description:
+          "Run external plugin checks (mermaid, bundle-size, etc.). Off by default — plugins shell out to whole-repo scans that are slow and orthogonal to structure validation.",
+        positional: false,
+        required: false,
+      },
     ],
   },
   output: {
     type: "json",
   },
   cli: {
-    format(result: { ok: boolean }) {
+    format(
+      result: { ok: boolean; diagnostics?: Array<{ severity?: string }> },
+      args?: { guidance?: boolean },
+    ) {
       // Exit 1 when validation found errors, matching old CLI behaviour.
+      // Gating is computed in the handler from the FULL diagnostic set; the
+      // filtering below only affects what the human-readable CLI prints.
       if (!result.ok) process.exitCode = 1;
-      return JSON.stringify(result, null, 2);
+
+      // By default, suppress suggestion-severity diagnostics from CLI output —
+      // they are per-file advisory guidance (one per file) that buries real
+      // errors/warnings in noise. `--guidance` opts back in. The unfiltered
+      // result (all severities) is what JSON/MCP/report consumers receive via
+      // the handler return value; this formatter is CLI-presentation only.
+      const showGuidance = args?.guidance === true;
+      if (showGuidance || !Array.isArray(result.diagnostics)) {
+        return JSON.stringify(result, null, 2);
+      }
+      const filtered = {
+        ...result,
+        diagnostics: result.diagnostics.filter(
+          (d) => d.severity !== "suggestion",
+        ),
+      };
+      return JSON.stringify(filtered, null, 2);
     },
   },
-  async handler({ target = ".", config, noWorkspace, noCache }) {
+  async handler({ target = ".", config, noWorkspace, noCache, plugins }) {
     const validateResult = await validatePath(target, config, {
       workspace: noWorkspace ? false : undefined,
       noCache,
+      plugins,
     });
     if (validateResult.mode === "workspace") {
       const wsResult = validateResult.result;

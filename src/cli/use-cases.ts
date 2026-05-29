@@ -1,27 +1,37 @@
-import fs from 'node:fs';
-import path from 'node:path';
-import { applyAutofixes } from '../core/autofix.js';
-import { findConfig, loadConfig } from '../core/config-loader.js';
-import { describePlugins, installPlugins, runPluginPhase } from '../core/plugin-runner.js';
-import { generateFrontmatterSchemaFromContent } from '../core/schema-generator.js';
-import { explainRules } from '../core/rule-engine.js';
-import { renderTemplate } from '../core/template-engine.js';
-import type { AutofixAction, ValidateResult } from '../core/types.js';
-import { createDefaultEngine } from './runtime.js';
-import type { DiagnosticSeverity } from '../core/types.js';
+import fs from "node:fs";
+import path from "node:path";
+import { applyAutofixes } from "../core/autofix.js";
+import { findConfig, loadConfig } from "../core/config-loader.js";
+import {
+  describePlugins,
+  installPlugins,
+  runPluginPhase,
+} from "../core/plugin-runner.js";
+import { generateFrontmatterSchemaFromContent } from "../core/schema-generator.js";
+import { explainRules } from "../core/rule-engine.js";
+import { renderTemplate } from "../core/template-engine.js";
+import type { AutofixAction, ValidateResult } from "../core/types.js";
+import { createDefaultEngine } from "./runtime.js";
+import { resolveRepoRoot } from "../core/validator-framework.js";
+import type { DiagnosticSeverity } from "../core/types.js";
 import {
   createPresetConfig,
   listPresetTypes,
   type RepotypePresetType,
-} from '../core/presets.js';
+} from "../core/presets.js";
 import type {
   ComplianceReportFormat,
   ComplianceReport,
   ReportCodeSummary,
   ReportFinding,
-} from '../sdk/report-sdk.js';
-import { renderComplianceReport } from '../sdk/report-sdk.js';
-import yaml from 'js-yaml';
+} from "../sdk/report-sdk.js";
+import { renderComplianceReport } from "../sdk/report-sdk.js";
+import yaml from "js-yaml";
+
+// repoRoot resolution lives in validator-framework (resolveRepoRoot) so the
+// engine and the CLI orchestration layer share one definition. Re-aliased here
+// as deriveRepoRoot for the use-case call sites.
+const deriveRepoRoot = resolveRepoRoot;
 
 function deriveTargetRoot(targetPath: string): string {
   if (fs.existsSync(targetPath) && fs.statSync(targetPath).isDirectory()) {
@@ -33,67 +43,80 @@ function deriveTargetRoot(targetPath: string): string {
 export async function validatePath(
   target: string,
   configOverridePath?: string,
-  opts: { workspace?: boolean; noCache?: boolean } = {},
+  opts: { workspace?: boolean; noCache?: boolean; plugins?: boolean } = {},
 ): Promise<ValidateResult> {
   const absolute = path.resolve(target);
-  const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path.dirname(configPath);
+  const configPath = configOverridePath
+    ? path.resolve(configOverridePath)
+    : findConfig(absolute);
+  const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const config = loadConfig(configPath);
   const engine = createDefaultEngine();
 
+  // Plugins (mermaid, bundle-size, etc.) shell out to external scripts that scan
+  // the whole repo — expensive and orthogonal to structure/taxonomy validation.
+  // They run only when explicitly opted in (`--plugins`), so the common scoped
+  // docs run stays fast and is not gated by unrelated tooling failures.
+  const pluginsEnabled = opts.plugins === true;
+  const pluginDiagnostics = pluginsEnabled
+    ? runPluginPhase(config, repoRoot, "validate")
+    : [];
+
   // If target is a directory and workspace mode is not explicitly disabled,
   // try workspace mode (auto-detects child configs).
-  const isDirectory = fs.existsSync(absolute) && fs.statSync(absolute).isDirectory();
+  const isDirectory =
+    fs.existsSync(absolute) && fs.statSync(absolute).isDirectory();
   const workspaceEnabled = opts.workspace !== false;
 
   if (isDirectory && workspaceEnabled && !configOverridePath) {
-    const wsResult = await engine.validateWorkspace(absolute, { noCache: opts.noCache });
-    if (wsResult.mode === 'workspace') {
+    const wsResult = await engine.validateWorkspace(absolute, {
+      noCache: opts.noCache,
+    });
+    if (wsResult.mode === "workspace") {
       // Add plugin diagnostics to root result
-      const pluginDiagnostics = runPluginPhase(config, repoRoot, 'validate');
       if (pluginDiagnostics.length > 0) {
         wsResult.result.rootResult.diagnostics.push(...pluginDiagnostics);
-        wsResult.result.rootResult.ok = wsResult.result.rootResult.diagnostics.every(
-          (d) => d.severity !== 'error',
-        );
-        wsResult.result.ok = wsResult.result.ok && wsResult.result.rootResult.ok;
+        wsResult.result.rootResult.ok =
+          wsResult.result.rootResult.diagnostics.every(
+            (d) => d.severity !== "error",
+          );
+        wsResult.result.ok =
+          wsResult.result.ok && wsResult.result.rootResult.ok;
       }
       return wsResult;
     }
     // flat mode returned from validateWorkspace — fall through with plugin diagnostics
-    const pluginDiagnostics = runPluginPhase(config, repoRoot, 'validate');
     const diagnostics = [...wsResult.result.diagnostics, ...pluginDiagnostics];
     return {
-      mode: 'flat',
+      mode: "flat",
       result: {
         ...wsResult.result,
         diagnostics,
-        ok: diagnostics.every((d) => d.severity !== 'error'),
+        ok: diagnostics.every((d) => d.severity !== "error"),
       },
     };
   }
 
   // Flat validation
   const result = await engine.validate(target, { configPath });
-  const pluginDiagnostics = runPluginPhase(config, repoRoot, 'validate');
   const diagnostics = [...result.diagnostics, ...pluginDiagnostics];
 
   return {
-    mode: 'flat',
+    mode: "flat",
     result: {
       ...result,
       diagnostics,
-      ok: diagnostics.every((d) => d.severity !== 'error'),
+      ok: diagnostics.every((d) => d.severity !== "error"),
     },
   };
 }
 
 export function explainPath(target: string, configOverridePath?: string) {
   const absolute = path.resolve(target);
-  const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path.dirname(configPath);
+  const configPath = configOverridePath
+    ? path.resolve(configOverridePath)
+    : findConfig(absolute);
+  const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const config = loadConfig(configPath);
   return explainRules(config, repoRoot, absolute);
 }
@@ -101,17 +124,19 @@ export function explainPath(target: string, configOverridePath?: string) {
 export async function fixPath(
   target: string,
   configOverridePath?: string,
-  opts: { workspace?: boolean; noCache?: boolean } = {},
+  opts: { workspace?: boolean; noCache?: boolean; plugins?: boolean } = {},
 ) {
   const absolute = path.resolve(target);
-  const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path.dirname(configPath);
+  const configPath = configOverridePath
+    ? path.resolve(configOverridePath)
+    : findConfig(absolute);
+  const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const config = loadConfig(configPath);
+  const pluginsEnabled = opts.plugins === true;
 
   const validateResult = await validatePath(target, configOverridePath, opts);
 
-  if (validateResult.mode === 'workspace') {
+  if (validateResult.mode === "workspace") {
     // Apply fixes per workspace: root first, then children deepest-first
     const wsResult = validateResult.result;
 
@@ -130,9 +155,13 @@ export async function fixPath(
       return { configPath: ws.configPath, subtreeRoot: ws.subtreeRoot, fix };
     });
 
-    const pluginDiagnostics = runPluginPhase(config, repoRoot, 'fix');
+    const pluginDiagnostics = pluginsEnabled
+      ? runPluginPhase(config, repoRoot, "fix")
+      : [];
     wsResult.rootResult.diagnostics.push(...pluginDiagnostics);
-    wsResult.rootResult.ok = wsResult.rootResult.diagnostics.every((d) => d.severity !== 'error');
+    wsResult.rootResult.ok = wsResult.rootResult.diagnostics.every(
+      (d) => d.severity !== "error",
+    );
     wsResult.ok = wsResult.ok && wsResult.rootResult.ok;
 
     const totalApplied =
@@ -152,14 +181,16 @@ export async function fixPath(
     .filter((action): action is AutofixAction => Boolean(action));
 
   const fixResult = applyAutofixes(actions);
-  const pluginDiagnostics = runPluginPhase(config, repoRoot, 'fix');
+  const pluginDiagnostics = pluginsEnabled
+    ? runPluginPhase(config, repoRoot, "fix")
+    : [];
   const diagnostics = [...result.diagnostics, ...pluginDiagnostics];
   const validation = {
-    mode: 'flat' as const,
+    mode: "flat" as const,
     result: {
       ...result,
       diagnostics,
-      ok: diagnostics.every((d) => d.severity !== 'error'),
+      ok: diagnostics.every((d) => d.severity !== "error"),
     },
   };
 
@@ -191,7 +222,7 @@ export function scaffoldFromTemplate(
 export function generateSchemaFromContent(
   target: string,
   output: string,
-  pattern: string = '**/*.md',
+  pattern: string = "**/*.md",
 ) {
   return generateFrontmatterSchemaFromContent(target, output, pattern);
 }
@@ -204,19 +235,25 @@ export function initRepotypeConfig(
     force?: boolean;
   } = {},
 ) {
-  const type = options.type ?? 'default';
+  const type = options.type ?? "default";
   const force = options.force ?? false;
   const absoluteTarget = path.resolve(targetDir);
-  const outputPath = path.join(absoluteTarget, 'repotype.yaml');
+  const outputPath = path.join(absoluteTarget, "repotype.yaml");
   if (fs.existsSync(outputPath) && !force) {
-    throw new Error(`repotype.yaml already exists at ${outputPath}. Use --force to overwrite.`);
+    throw new Error(
+      `repotype.yaml already exists at ${outputPath}. Use --force to overwrite.`,
+    );
   }
 
   const config = options.from
-    ? (yaml.load(fs.readFileSync(path.resolve(options.from), 'utf8')) as { version?: string })
+    ? (yaml.load(fs.readFileSync(path.resolve(options.from), "utf8")) as {
+        version?: string;
+      })
     : createPresetConfig(type);
-  if (!config || typeof config !== 'object' || !config.version) {
-    throw new Error('Source config is invalid. Expected YAML with top-level "version".');
+  if (!config || typeof config !== "object" || !config.version) {
+    throw new Error(
+      'Source config is invalid. Expected YAML with top-level "version".',
+    );
   }
   const rendered = yaml.dump(config, { lineWidth: 120 });
   fs.mkdirSync(absoluteTarget, { recursive: true });
@@ -224,7 +261,9 @@ export function initRepotypeConfig(
 
   return {
     outputPath,
-    source: options.from ? `file:${path.resolve(options.from)}` : `preset:${type}`,
+    source: options.from
+      ? `file:${path.resolve(options.from)}`
+      : `preset:${type}`,
   };
 }
 
@@ -263,21 +302,24 @@ export function pluginStatus(target: string) {
 
 export async function generateComplianceReport(
   target: string,
-  format: ComplianceReportFormat = 'markdown',
+  format: ComplianceReportFormat = "markdown",
   configOverridePath?: string,
 ) {
   const absolute = path.resolve(target);
-  const targetRoot = deriveTargetRoot(absolute);
-  const configPath = configOverridePath ? path.resolve(configOverridePath) : findConfig(absolute);
-  const repoRoot = configOverridePath ? targetRoot : path.dirname(configPath);
+  const configPath = configOverridePath
+    ? path.resolve(configOverridePath)
+    : findConfig(absolute);
+  const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const validateResult = await validatePath(target, configOverridePath);
 
   // Flatten diagnostics for reporting regardless of mode
   const allDiagnostics =
-    validateResult.mode === 'workspace'
+    validateResult.mode === "workspace"
       ? [
           ...validateResult.result.rootResult.diagnostics,
-          ...validateResult.result.workspaces.flatMap((ws) => ws.result.diagnostics),
+          ...validateResult.result.workspaces.flatMap(
+            (ws) => ws.result.diagnostics,
+          ),
         ]
       : validateResult.result.diagnostics;
   const ok = validateResult.result.ok;
@@ -285,16 +327,19 @@ export async function generateComplianceReport(
 
   const totals = allDiagnostics.reduce(
     (acc, diagnostic) => {
-      if (diagnostic.severity === 'error') acc.errors += 1;
-      if (diagnostic.severity === 'warning') acc.warnings += 1;
-      if (diagnostic.severity === 'suggestion') acc.suggestions += 1;
+      if (diagnostic.severity === "error") acc.errors += 1;
+      if (diagnostic.severity === "warning") acc.warnings += 1;
+      if (diagnostic.severity === "suggestion") acc.suggestions += 1;
       acc.diagnostics += 1;
       return acc;
     },
     { errors: 0, warnings: 0, suggestions: 0, diagnostics: 0 },
   );
 
-  const byCodeMap = new Map<string, { severity: DiagnosticSeverity; count: number }>();
+  const byCodeMap = new Map<
+    string,
+    { severity: DiagnosticSeverity; count: number }
+  >();
   for (const diagnostic of allDiagnostics) {
     const entry = byCodeMap.get(diagnostic.code);
     if (entry) {
@@ -314,7 +359,11 @@ export async function generateComplianceReport(
   };
 
   const byCode: ReportCodeSummary[] = [...byCodeMap.entries()]
-    .map(([code, value]) => ({ code, severity: value.severity, count: value.count }))
+    .map(([code, value]) => ({
+      code,
+      severity: value.severity,
+      count: value.count,
+    }))
     .sort((a, b) => {
       const severityDiff = severityRank[a.severity] - severityRank[b.severity];
       if (severityDiff !== 0) {
@@ -323,12 +372,14 @@ export async function generateComplianceReport(
       return b.count - a.count;
     });
 
-  const sampleFindings: ReportFinding[] = allDiagnostics.slice(0, 50).map((diagnostic) => ({
-    code: diagnostic.code,
-    severity: diagnostic.severity,
-    file: diagnostic.file,
-    message: diagnostic.message,
-  }));
+  const sampleFindings: ReportFinding[] = allDiagnostics
+    .slice(0, 50)
+    .map((diagnostic) => ({
+      code: diagnostic.code,
+      severity: diagnostic.severity,
+      file: diagnostic.file,
+      message: diagnostic.message,
+    }));
 
   const report: ComplianceReport = {
     generatedAt: new Date().toISOString(),

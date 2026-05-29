@@ -1,7 +1,7 @@
-import fs from 'node:fs';
-import os from 'node:os';
-import path from 'node:path';
-import { describe, expect, it } from 'vitest';
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { describe, expect, it } from "vitest";
 import {
   explainPath,
   fixPath,
@@ -11,45 +11,58 @@ import {
   pluginStatus,
   scaffoldFromTemplate,
   validatePath,
-} from '../src/cli/use-cases.js';
-import type { ValidateResult } from '../src/core/types.js';
+} from "../src/cli/use-cases.js";
+import type { ValidateResult } from "../src/core/types.js";
 import {
   parseComplianceReportJson,
   renderComplianceReportFromJson,
-} from '../src/sdk/report-sdk.js';
+} from "../src/sdk/report-sdk.js";
+import { resolveRepoRoot } from "../src/core/validator-framework.js";
+import { repotypeValidateCommand } from "../src/universal-commands.js";
 
 /** Flatten a ValidateResult to a single {ok, diagnostics, filesScanned} for tests that don't care about workspace grouping. */
 function flattenResult(r: ValidateResult) {
-  if (r.mode === 'workspace') {
+  if (r.mode === "workspace") {
     const allDiagnostics = [
       ...r.result.rootResult.diagnostics,
       ...r.result.workspaces.flatMap((ws) => ws.result.diagnostics),
     ];
-    return { ok: r.result.ok, diagnostics: allDiagnostics, filesScanned: r.result.filesScanned };
+    return {
+      ok: r.result.ok,
+      diagnostics: allDiagnostics,
+      filesScanned: r.result.filesScanned,
+    };
   }
-  return { ok: r.result.ok, diagnostics: r.result.diagnostics, filesScanned: r.result.filesScanned };
+  return {
+    ok: r.result.ok,
+    diagnostics: r.result.diagnostics,
+    filesScanned: r.result.filesScanned,
+  };
 }
 
 /** Flatten a fixPath result's validation to a single diagnostics array. */
 function flattenFixValidation(r: Awaited<ReturnType<typeof fixPath>>) {
-  if (r.validation.mode === 'workspace') {
+  if (r.validation.mode === "workspace") {
     const allDiagnostics = [
       ...r.validation.result.rootResult.diagnostics,
       ...r.validation.result.workspaces.flatMap((ws) => ws.result.diagnostics),
     ];
     return { ok: r.validation.result.ok, diagnostics: allDiagnostics };
   }
-  return { ok: r.validation.result.ok, diagnostics: r.validation.result.diagnostics };
+  return {
+    ok: r.validation.result.ok,
+    diagnostics: r.validation.result.diagnostics,
+  };
 }
 
 function makeFixtureRepo(): string {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-test-'));
-  fs.mkdirSync(path.join(root, 'examples', 'schemas'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'examples', 'templates'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'docs', 'requirements'), { recursive: true });
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "repotype-test-"));
+  fs.mkdirSync(path.join(root, "examples", "schemas"), { recursive: true });
+  fs.mkdirSync(path.join(root, "examples", "templates"), { recursive: true });
+  fs.mkdirSync(path.join(root, "docs", "requirements"), { recursive: true });
 
   fs.writeFileSync(
-    path.join(root, 'repotype.yaml'),
+    path.join(root, "repotype.yaml"),
     `version: "1"
 templates:
   - id: requirement
@@ -74,7 +87,7 @@ files:
   );
 
   fs.writeFileSync(
-    path.join(root, 'examples', 'templates', 'requirement.md'),
+    path.join(root, "examples", "templates", "requirement.md"),
     `---
 id: "REQ-XXX"
 title: ""
@@ -98,14 +111,19 @@ status: "todo"
   );
 
   fs.writeFileSync(
-    path.join(root, 'examples', 'schemas', 'requirement.frontmatter.schema.json'),
+    path.join(
+      root,
+      "examples",
+      "schemas",
+      "requirement.frontmatter.schema.json",
+    ),
     JSON.stringify({
-      type: 'object',
-      required: ['id', 'title', 'status'],
+      type: "object",
+      required: ["id", "title", "status"],
       properties: {
-        id: { type: 'string' },
-        title: { type: 'string' },
-        status: { type: 'string' },
+        id: { type: "string" },
+        title: { type: "string" },
+        status: { type: "string" },
       },
     }),
   );
@@ -114,12 +132,12 @@ status: "todo"
 }
 
 function makeFolderRuleFixtureRepo(): string {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-folder-test-'));
-  fs.mkdirSync(path.join(root, 'docs', 'requirements'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'docs', 'rogue'), { recursive: true });
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "repotype-folder-test-"));
+  fs.mkdirSync(path.join(root, "docs", "requirements"), { recursive: true });
+  fs.mkdirSync(path.join(root, "docs", "rogue"), { recursive: true });
 
   fs.writeFileSync(
-    path.join(root, 'repotype.yaml'),
+    path.join(root, "repotype.yaml"),
     `version: "1"
 folders:
   - id: docs-root
@@ -135,18 +153,20 @@ folders:
 `,
   );
 
-  fs.writeFileSync(path.join(root, 'docs', 'requirements', 'req.md'), '# ok\n');
-  fs.writeFileSync(path.join(root, 'docs', 'notes.txt'), 'not allowed\n');
+  fs.writeFileSync(path.join(root, "docs", "requirements", "req.md"), "# ok\n");
+  fs.writeFileSync(path.join(root, "docs", "notes.txt"), "not allowed\n");
 
   return root;
 }
 
-function makeUnmatchedRootFixture(mode: 'deny' | 'allow' = 'deny'): string {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-unmatched-root-'));
-  fs.mkdirSync(path.join(root, 'docs', 'requirements'), { recursive: true });
+function makeUnmatchedRootFixture(mode: "deny" | "allow" = "deny"): string {
+  const root = fs.mkdtempSync(
+    path.join(os.tmpdir(), "repotype-unmatched-root-"),
+  );
+  fs.mkdirSync(path.join(root, "docs", "requirements"), { recursive: true });
 
   fs.writeFileSync(
-    path.join(root, 'repotype.yaml'),
+    path.join(root, "repotype.yaml"),
     `version: "1"
 defaults:
   unmatchedFiles: ${mode}
@@ -156,19 +176,22 @@ files:
 `,
   );
 
-  fs.writeFileSync(path.join(root, 'docs', 'requirements', 'req-a.md'), '# okay\n');
-  fs.writeFileSync(path.join(root, 'README.md'), '# unmatched root file\n');
+  fs.writeFileSync(
+    path.join(root, "docs", "requirements", "req-a.md"),
+    "# okay\n",
+  );
+  fs.writeFileSync(path.join(root, "README.md"), "# unmatched root file\n");
   return root;
 }
 
 function makeIgnoreFixtureRepo(): string {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-ignore-test-'));
-  fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'scratch'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'generated'), { recursive: true });
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "repotype-ignore-test-"));
+  fs.mkdirSync(path.join(root, "docs"), { recursive: true });
+  fs.mkdirSync(path.join(root, "scratch"), { recursive: true });
+  fs.mkdirSync(path.join(root, "generated"), { recursive: true });
 
   fs.writeFileSync(
-    path.join(root, 'repotype.yaml'),
+    path.join(root, "repotype.yaml"),
     `version: "1"
 defaults:
   unmatchedFiles: deny
@@ -178,21 +201,29 @@ files:
 `,
   );
 
-  fs.writeFileSync(path.join(root, '.gitignore'), 'scratch/\n*.tmp\n');
-  fs.writeFileSync(path.join(root, '.customignore'), 'generated/\n');
-  fs.writeFileSync(path.join(root, 'docs', 'keep.txt'), 'kept\n');
-  fs.writeFileSync(path.join(root, 'scratch', 'rogue.md'), '# should be ignored\n');
-  fs.writeFileSync(path.join(root, 'generated', 'rogue.json'), '{"ignored":true}\n');
-  fs.writeFileSync(path.join(root, 'rogue.tmp'), 'ignored by extension rule\n');
+  fs.writeFileSync(path.join(root, ".gitignore"), "scratch/\n*.tmp\n");
+  fs.writeFileSync(path.join(root, ".customignore"), "generated/\n");
+  fs.writeFileSync(path.join(root, "docs", "keep.txt"), "kept\n");
+  fs.writeFileSync(
+    path.join(root, "scratch", "rogue.md"),
+    "# should be ignored\n",
+  );
+  fs.writeFileSync(
+    path.join(root, "generated", "rogue.json"),
+    '{"ignored":true}\n',
+  );
+  fs.writeFileSync(path.join(root, "rogue.tmp"), "ignored by extension rule\n");
 
   return root;
 }
 
 function makeOverbroadGlobFixtureRepo(): string {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-overbroad-glob-'));
-  fs.mkdirSync(path.join(root, 'docs', 'requirements'), { recursive: true });
+  const root = fs.mkdtempSync(
+    path.join(os.tmpdir(), "repotype-overbroad-glob-"),
+  );
+  fs.mkdirSync(path.join(root, "docs", "requirements"), { recursive: true });
   fs.writeFileSync(
-    path.join(root, 'repotype.yaml'),
+    path.join(root, "repotype.yaml"),
     `version: "1"
 defaults:
   unmatchedFiles: deny
@@ -203,18 +234,21 @@ files:
     glob: "docs/**/*"
 `,
   );
-  fs.writeFileSync(path.join(root, 'docs', 'requirements', 'req-a.md'), '# ok\n');
+  fs.writeFileSync(
+    path.join(root, "docs", "requirements", "req-a.md"),
+    "# ok\n",
+  );
   return root;
 }
 
 function makeTypedFileFixtureRepo(): string {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-typed-test-'));
-  fs.mkdirSync(path.join(root, 'config'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'src', 'Bad_Path'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'schemas'), { recursive: true });
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "repotype-typed-test-"));
+  fs.mkdirSync(path.join(root, "config"), { recursive: true });
+  fs.mkdirSync(path.join(root, "src", "Bad_Path"), { recursive: true });
+  fs.mkdirSync(path.join(root, "schemas"), { recursive: true });
 
   fs.writeFileSync(
-    path.join(root, 'repotype.yaml'),
+    path.join(root, "repotype.yaml"),
     `version: "1"
 files:
   - id: json-config
@@ -235,26 +269,26 @@ files:
   );
 
   fs.writeFileSync(
-    path.join(root, 'schemas', 'config.schema.json'),
+    path.join(root, "schemas", "config.schema.json"),
     JSON.stringify({
-      type: 'object',
-      required: ['name', 'enabled'],
+      type: "object",
+      required: ["name", "enabled"],
       properties: {
-        name: { type: 'string' },
-        enabled: { type: 'boolean' },
+        name: { type: "string" },
+        enabled: { type: "boolean" },
       },
       additionalProperties: true,
     }),
   );
 
   fs.writeFileSync(
-    path.join(root, 'schemas', 'service.schema.json'),
+    path.join(root, "schemas", "service.schema.json"),
     JSON.stringify({
-      type: 'object',
-      required: ['service', 'port'],
+      type: "object",
+      required: ["service", "port"],
       properties: {
-        service: { type: 'string' },
-        port: { type: 'integer' },
+        service: { type: "string" },
+        port: { type: "integer" },
       },
       additionalProperties: true,
     }),
@@ -264,9 +298,9 @@ files:
 }
 
 function makePluginFixtureRepo(): string {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-plugin-test-'));
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "repotype-plugin-test-"));
   fs.writeFileSync(
-    path.join(root, 'repotype.yaml'),
+    path.join(root, "repotype.yaml"),
     `version: "1"
 plugins:
   - id: ok-install
@@ -281,17 +315,17 @@ plugins:
       cmd: 'node -e "process.exit(0)"'
 `,
   );
-  fs.writeFileSync(path.join(root, 'README.md'), '# sample\n');
+  fs.writeFileSync(path.join(root, "README.md"), "# sample\n");
   return root;
 }
 
 function makeExtendedConfigFixtureRepo(): string {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-extends-test-'));
-  fs.mkdirSync(path.join(root, 'profiles'), { recursive: true });
-  fs.mkdirSync(path.join(root, 'docs', 'requirements'), { recursive: true });
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "repotype-extends-test-"));
+  fs.mkdirSync(path.join(root, "profiles"), { recursive: true });
+  fs.mkdirSync(path.join(root, "docs", "requirements"), { recursive: true });
 
   fs.writeFileSync(
-    path.join(root, 'profiles', 'base.yaml'),
+    path.join(root, "profiles", "base.yaml"),
     `version: "1"
 files:
   - id: req-doc
@@ -302,14 +336,14 @@ files:
   );
 
   fs.writeFileSync(
-    path.join(root, 'repotype.yaml'),
+    path.join(root, "repotype.yaml"),
     `version: "1"
 extends: "profiles/base.yaml"
 `,
   );
 
   fs.writeFileSync(
-    path.join(root, 'docs', 'requirements', 'req-a.md'),
+    path.join(root, "docs", "requirements", "req-a.md"),
     `# Requirement
 
 No section
@@ -319,10 +353,10 @@ No section
   return root;
 }
 
-describe('repotype', () => {
-  it('validates and reports diagnostics', async () => {
+describe("repotype", () => {
+  it("validates and reports diagnostics", async () => {
     const root = makeFixtureRepo();
-    const file = path.join(root, 'docs', 'requirements', 'req-auth.md');
+    const file = path.join(root, "docs", "requirements", "req-auth.md");
 
     fs.writeFileSync(
       file,
@@ -344,28 +378,30 @@ TODO:
     expect(result.diagnostics.length).toBeGreaterThan(0);
   });
 
-  it('explains effective rules', () => {
+  it("explains effective rules", () => {
     const root = makeFixtureRepo();
-    const file = path.join(root, 'docs', 'requirements', 'req-auth.md');
-    fs.writeFileSync(file, '# test\n');
+    const file = path.join(root, "docs", "requirements", "req-auth.md");
+    fs.writeFileSync(file, "# test\n");
 
     const explained = explainPath(file);
     expect(explained.reason.length).toBeGreaterThan(0);
     expect(explained.effective.fileRules.length).toBe(1);
   });
 
-  it('scaffolds from template', () => {
+  it("scaffolds from template", () => {
     const root = makeFixtureRepo();
-    const output = path.join(root, 'docs', 'requirements', 'req-new.md');
-    const created = scaffoldFromTemplate('requirement', output, { title: 'My Requirement' });
+    const output = path.join(root, "docs", "requirements", "req-new.md");
+    const created = scaffoldFromTemplate("requirement", output, {
+      title: "My Requirement",
+    });
 
     expect(created).toBe(output);
-    expect(fs.readFileSync(output, 'utf8')).toContain('# My Requirement');
+    expect(fs.readFileSync(output, "utf8")).toContain("# My Requirement");
   });
 
-  it('applies safe fixes', async () => {
+  it("applies safe fixes", async () => {
     const root = makeFixtureRepo();
-    const file = path.join(root, 'docs', 'requirements', 'req-fix.md');
+    const file = path.join(root, "docs", "requirements", "req-fix.md");
 
     fs.writeFileSync(
       file,
@@ -386,9 +422,9 @@ status: "todo"
     expect(output.fix.applied).toBeGreaterThan(0);
   });
 
-  it('flags forbidden content patterns', async () => {
+  it("flags forbidden content patterns", async () => {
     const root = makeFixtureRepo();
-    const file = path.join(root, 'docs', 'requirements', 'req-secret.md');
+    const file = path.join(root, "docs", "requirements", "req-secret.md");
     fs.writeFileSync(
       file,
       `---
@@ -412,21 +448,25 @@ Do not include API_KEY=abcd in docs.
     );
 
     const result = flattenResult(await validatePath(root));
-    expect(result.diagnostics.some((d) => d.code === 'forbidden_content_pattern')).toBe(true);
+    expect(
+      result.diagnostics.some((d) => d.code === "forbidden_content_pattern"),
+    ).toBe(true);
   });
 
-  it('loads and applies extended config profiles', async () => {
+  it("loads and applies extended config profiles", async () => {
     const root = makeExtendedConfigFixtureRepo();
     const result = flattenResult(await validatePath(root));
     expect(result.ok).toBe(false);
-    expect(result.diagnostics.some((d) => d.code === 'missing_section')).toBe(true);
+    expect(result.diagnostics.some((d) => d.code === "missing_section")).toBe(
+      true,
+    );
   });
 
-  it('generates frontmatter schema from markdown content', () => {
+  it("generates frontmatter schema from markdown content", () => {
     const root = makeFixtureRepo();
-    const docsDir = path.join(root, 'docs', 'requirements');
+    const docsDir = path.join(root, "docs", "requirements");
     fs.writeFileSync(
-      path.join(docsDir, 'req-one.md'),
+      path.join(docsDir, "req-one.md"),
       `---
 id: "REQ-ONE-001"
 title: "One"
@@ -436,7 +476,7 @@ priority: "high"
 `,
     );
     fs.writeFileSync(
-      path.join(docsDir, 'req-two.md'),
+      path.join(docsDir, "req-two.md"),
       `---
 id: "REQ-TWO-001"
 title: "Two"
@@ -445,21 +485,26 @@ status: "todo"
 `,
     );
 
-    const outputSchema = path.join(root, 'examples', 'schemas', 'generated.frontmatter.schema.json');
+    const outputSchema = path.join(
+      root,
+      "examples",
+      "schemas",
+      "generated.frontmatter.schema.json",
+    );
     const generated = generateSchemaFromContent(docsDir, outputSchema);
 
     expect(generated.filesParsed).toBe(2);
-    expect(generated.required).toContain('id');
-    expect(generated.required).toContain('title');
-    expect(generated.required).toContain('status');
-    const schema = JSON.parse(fs.readFileSync(outputSchema, 'utf8'));
-    expect(schema.type).toBe('object');
-    expect(schema.properties.id.type).toBe('string');
+    expect(generated.required).toContain("id");
+    expect(generated.required).toContain("title");
+    expect(generated.required).toContain("status");
+    const schema = JSON.parse(fs.readFileSync(outputSchema, "utf8"));
+    expect(schema.type).toBe("object");
+    expect(schema.properties.id.type).toBe("string");
   });
 
-  it('generates markdown and json compliance reports', async () => {
+  it("generates markdown and json compliance reports", async () => {
     const root = makeFixtureRepo();
-    const file = path.join(root, 'docs', 'requirements', 'req-report.md');
+    const file = path.join(root, "docs", "requirements", "req-report.md");
     fs.writeFileSync(
       file,
       `---
@@ -472,27 +517,30 @@ status: "todo"
     );
 
     const markdownReport = await generateComplianceReport(root);
-    expect(markdownReport.rendered).toContain('# Repotype Compliance Report');
+    expect(markdownReport.rendered).toContain("# Repotype Compliance Report");
     expect(markdownReport.report.totals.diagnostics).toBeGreaterThan(0);
 
-    const jsonReport = await generateComplianceReport(root, 'json');
+    const jsonReport = await generateComplianceReport(root, "json");
     expect(jsonReport.rendered).toContain('"generatedAt"');
     expect(jsonReport.report.byCode.length).toBeGreaterThan(0);
 
-    const htmlReport = await generateComplianceReport(root, 'html');
-    expect(htmlReport.rendered).toContain('<!doctype html>');
-    expect(htmlReport.rendered).toContain('Repotype Compliance Report');
+    const htmlReport = await generateComplianceReport(root, "html");
+    expect(htmlReport.rendered).toContain("<!doctype html>");
+    expect(htmlReport.rendered).toContain("Repotype Compliance Report");
 
     const parsed = parseComplianceReportJson(jsonReport.rendered);
     expect(parsed.filesScanned).toBeGreaterThan(0);
 
-    const htmlFromJson = renderComplianceReportFromJson(jsonReport.rendered, 'html');
-    expect(htmlFromJson).toContain('<!doctype html>');
+    const htmlFromJson = renderComplianceReportFromJson(
+      jsonReport.rendered,
+      "html",
+    );
+    expect(htmlFromJson).toContain("<!doctype html>");
   });
 
-  it('returns diagnostics instead of crashing on invalid frontmatter yaml', async () => {
+  it("returns diagnostics instead of crashing on invalid frontmatter yaml", async () => {
     const root = makeFixtureRepo();
-    const file = path.join(root, 'docs', 'requirements', 'req-bad.md');
+    const file = path.join(root, "docs", "requirements", "req-bad.md");
     fs.writeFileSync(
       file,
       `---
@@ -503,129 +551,196 @@ description: something: else
 
     const result = flattenResult(await validatePath(root));
     expect(result.ok).toBe(false);
-    expect(result.diagnostics.some((d) => d.code === 'invalid_frontmatter_yaml')).toBe(true);
+    expect(
+      result.diagnostics.some((d) => d.code === "invalid_frontmatter_yaml"),
+    ).toBe(true);
   });
 
-  it('enforces folder structure rules from folders config', async () => {
+  it("enforces folder structure rules from folders config", async () => {
     const root = makeFolderRuleFixtureRepo();
     const result = flattenResult(await validatePath(root));
 
     expect(result.ok).toBe(false);
-    expect(result.diagnostics.some((d) => d.code === 'disallowed_child_folder')).toBe(true);
-    expect(result.diagnostics.some((d) => d.code === 'disallowed_child_file')).toBe(true);
-    expect(result.diagnostics.some((d) => d.code === 'required_file_missing')).toBe(true);
+    expect(
+      result.diagnostics.some((d) => d.code === "disallowed_child_folder"),
+    ).toBe(true);
+    expect(
+      result.diagnostics.some((d) => d.code === "disallowed_child_file"),
+    ).toBe(true);
+    expect(
+      result.diagnostics.some((d) => d.code === "required_file_missing"),
+    ).toBe(true);
   });
 
-  it('validates JSON and YAML files against bound schemas', async () => {
+  it("validates JSON and YAML files against bound schemas", async () => {
     const root = makeTypedFileFixtureRepo();
-    fs.writeFileSync(path.join(root, 'config', 'app.json'), JSON.stringify({ name: 'app' }));
-    fs.writeFileSync(path.join(root, 'config', 'service.yaml'), 'service: api\nport: "3000"\n');
+    fs.writeFileSync(
+      path.join(root, "config", "app.json"),
+      JSON.stringify({ name: "app" }),
+    );
+    fs.writeFileSync(
+      path.join(root, "config", "service.yaml"),
+      'service: api\nport: "3000"\n',
+    );
 
     const result = flattenResult(await validatePath(root));
     expect(result.ok).toBe(false);
-    expect(result.diagnostics.some((d) => d.code === 'file_schema_violation')).toBe(true);
+    expect(
+      result.diagnostics.some((d) => d.code === "file_schema_violation"),
+    ).toBe(true);
   });
 
-  it('enforces file path case and path pattern rules', async () => {
+  it("enforces file path case and path pattern rules", async () => {
     const root = makeTypedFileFixtureRepo();
-    fs.writeFileSync(path.join(root, 'config', 'app.json'), JSON.stringify({ name: 'app', enabled: true }));
-    fs.writeFileSync(path.join(root, 'config', 'service.yaml'), 'service: api\nport: 3000\n');
-    fs.writeFileSync(path.join(root, 'src', 'Bad_Path', 'BadFile.ts'), 'export const x = 1;\n');
+    fs.writeFileSync(
+      path.join(root, "config", "app.json"),
+      JSON.stringify({ name: "app", enabled: true }),
+    );
+    fs.writeFileSync(
+      path.join(root, "config", "service.yaml"),
+      "service: api\nport: 3000\n",
+    );
+    fs.writeFileSync(
+      path.join(root, "src", "Bad_Path", "BadFile.ts"),
+      "export const x = 1;\n",
+    );
 
     const result = flattenResult(await validatePath(root));
     expect(result.ok).toBe(false);
-    expect(result.diagnostics.some((d) => d.code === 'path_case_mismatch')).toBe(true);
-    expect(result.diagnostics.some((d) => d.code === 'path_pattern_mismatch')).toBe(true);
+    expect(
+      result.diagnostics.some((d) => d.code === "path_case_mismatch"),
+    ).toBe(true);
+    expect(
+      result.diagnostics.some((d) => d.code === "path_pattern_mismatch"),
+    ).toBe(true);
   });
 
-  it('runs plugin validation commands and reports failures as diagnostics', async () => {
+  it("runs plugin validation commands and reports failures as diagnostics", async () => {
     const root = makePluginFixtureRepo();
-    const result = flattenResult(await validatePath(root));
-    expect(result.diagnostics.some((d) => d.code === 'plugin_validate_failed')).toBe(true);
-    const pluginFailure = result.diagnostics.find((d) => d.code === 'plugin_validate_failed');
-    expect(pluginFailure?.severity).toBe('warning');
+    // Plugins are opt-in (--plugins); they shell out to whole-repo scans and are
+    // off by default. Pass plugins:true to exercise the plugin phase.
+    const result = flattenResult(
+      await validatePath(root, undefined, { plugins: true }),
+    );
+    expect(
+      result.diagnostics.some((d) => d.code === "plugin_validate_failed"),
+    ).toBe(true);
+    const pluginFailure = result.diagnostics.find(
+      (d) => d.code === "plugin_validate_failed",
+    );
+    expect(pluginFailure?.severity).toBe("warning");
   });
 
-  it('runs plugin install commands and reports status', () => {
+  it("runs plugin install commands and reports status", () => {
     const root = makePluginFixtureRepo();
     const installs = installPluginRequirements(root);
     expect(installs.ok).toBe(true);
     expect(installs.installs.length).toBe(1);
-    expect(installs.installs[0].id).toBe('ok-install');
+    expect(installs.installs[0].id).toBe("ok-install");
 
     const status = pluginStatus(root);
     expect(status.plugins.length).toBe(3);
-    expect(status.plugins.some((p) => p.id === 'sample-validate' && p.hasValidate)).toBe(true);
+    expect(
+      status.plugins.some((p) => p.id === "sample-validate" && p.hasValidate),
+    ).toBe(true);
   });
 
-  it('fails unmatched root files by default (deny-by-default)', async () => {
-    const root = makeUnmatchedRootFixture('deny');
+  it("fails unmatched root files by default (deny-by-default)", async () => {
+    const root = makeUnmatchedRootFixture("deny");
     const result = flattenResult(await validatePath(root));
 
     expect(result.ok).toBe(false);
-    const unmatched = result.diagnostics.find((d) => d.code === 'no_matching_file_rule' && d.file.endsWith('README.md'));
-    expect(unmatched?.severity).toBe('error');
-  });
-
-  it('supports legacy permissive mode via defaults.unmatchedFiles=allow', async () => {
-    const root = makeUnmatchedRootFixture('allow');
-    const result = flattenResult(await validatePath(root));
-
-    expect(result.ok).toBe(true);
-    const unmatched = result.diagnostics.find((d) => d.code === 'no_matching_file_rule' && d.file.endsWith('README.md'));
-    expect(unmatched?.severity).toBe('suggestion');
-  });
-
-  it('ignores paths from .gitignore and .*ignore* files during validation', async () => {
-    const root = makeIgnoreFixtureRepo();
-    const result = flattenResult(await validatePath(root));
-
-    expect(result.ok).toBe(true);
-    expect(result.diagnostics.some((d) => d.code === 'no_matching_file_rule' && d.file.endsWith('rogue.tmp'))).toBe(
-      false,
+    const unmatched = result.diagnostics.find(
+      (d) => d.code === "no_matching_file_rule" && d.file.endsWith("README.md"),
     );
+    expect(unmatched?.severity).toBe("error");
+  });
+
+  it("supports legacy permissive mode via defaults.unmatchedFiles=allow", async () => {
+    const root = makeUnmatchedRootFixture("allow");
+    const result = flattenResult(await validatePath(root));
+
+    expect(result.ok).toBe(true);
+    const unmatched = result.diagnostics.find(
+      (d) => d.code === "no_matching_file_rule" && d.file.endsWith("README.md"),
+    );
+    expect(unmatched?.severity).toBe("suggestion");
+  });
+
+  it("ignores paths from .gitignore and .*ignore* files during validation", async () => {
+    const root = makeIgnoreFixtureRepo();
+    const result = flattenResult(await validatePath(root));
+
+    expect(result.ok).toBe(true);
     expect(
-      result.diagnostics.some((d) => d.code === 'no_matching_file_rule' && d.file.includes('/scratch/rogue.md')),
+      result.diagnostics.some(
+        (d) =>
+          d.code === "no_matching_file_rule" && d.file.endsWith("rogue.tmp"),
+      ),
     ).toBe(false);
     expect(
-      result.diagnostics.some((d) => d.code === 'no_matching_file_rule' && d.file.includes('/generated/rogue.json')),
+      result.diagnostics.some(
+        (d) =>
+          d.code === "no_matching_file_rule" &&
+          d.file.includes("/scratch/rogue.md"),
+      ),
+    ).toBe(false);
+    expect(
+      result.diagnostics.some(
+        (d) =>
+          d.code === "no_matching_file_rule" &&
+          d.file.includes("/generated/rogue.json"),
+      ),
     ).toBe(false);
   });
 
-  it('ignores .gitignore and .*ignore* paths in schema generation', () => {
+  it("ignores .gitignore and .*ignore* paths in schema generation", () => {
     const root = makeIgnoreFixtureRepo();
-    const outputSchema = path.join(root, 'schema.json');
-    fs.writeFileSync(path.join(root, 'docs', 'included.md'), '---\nid: "A"\n---\n');
-    fs.writeFileSync(path.join(root, 'scratch', 'ignored.md'), '---\nid: "B"\n---\n');
+    const outputSchema = path.join(root, "schema.json");
+    fs.writeFileSync(
+      path.join(root, "docs", "included.md"),
+      '---\nid: "A"\n---\n',
+    );
+    fs.writeFileSync(
+      path.join(root, "scratch", "ignored.md"),
+      '---\nid: "B"\n---\n',
+    );
 
-    const generated = generateSchemaFromContent(root, outputSchema, '**/*.md');
+    const generated = generateSchemaFromContent(root, outputSchema, "**/*.md");
     expect(generated.filesParsed).toBe(1);
   });
 
-  it('warns on overbroad glob patterns like **/* during validation', async () => {
+  it("warns on overbroad glob patterns like **/* during validation", async () => {
     const root = makeOverbroadGlobFixtureRepo();
     const result = flattenResult(await validatePath(root));
 
-    const warnings = result.diagnostics.filter((d) => d.code === 'overbroad_glob_pattern');
+    const warnings = result.diagnostics.filter(
+      (d) => d.code === "overbroad_glob_pattern",
+    );
     expect(warnings.length).toBeGreaterThanOrEqual(2);
-    expect(warnings.every((d) => d.severity === 'warning')).toBe(true);
+    expect(warnings.every((d) => d.severity === "warning")).toBe(true);
   });
 
-  it('runs plugin fix commands through repotype fix', async () => {
+  it("runs plugin fix commands through repotype fix", async () => {
     const root = makePluginFixtureRepo();
-    const fixResult = await fixPath(root);
+    // Plugins are opt-in (--plugins); pass plugins:true to exercise the fix phase.
+    const fixResult = await fixPath(root, undefined, { plugins: true });
     const validation = flattenFixValidation(fixResult);
-    expect(validation.diagnostics.some((d) => d.code === 'plugin_fix_ok')).toBe(true);
+    expect(validation.diagnostics.some((d) => d.code === "plugin_fix_ok")).toBe(
+      true,
+    );
   });
 
   // --- Robustness: inline schema objects and missing fields ---
 
-  it('does not crash when a file rule uses an inline schema object instead of a path string', async () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-inline-schema-'));
-    fs.mkdirSync(path.join(root, 'data'), { recursive: true });
+  it("does not crash when a file rule uses an inline schema object instead of a path string", async () => {
+    const root = fs.mkdtempSync(
+      path.join(os.tmpdir(), "repotype-inline-schema-"),
+    );
+    fs.mkdirSync(path.join(root, "data"), { recursive: true });
     // schema.schema is an inline object — would previously throw "p.replace is not a function"
     fs.writeFileSync(
-      path.join(root, 'repotype.yaml'),
+      path.join(root, "repotype.yaml"),
       `version: "1"
 defaults:
   unmatchedFiles: deny
@@ -641,16 +756,21 @@ files:
           name: {type: string}
 `,
     );
-    fs.writeFileSync(path.join(root, 'data', 'item.json'), JSON.stringify({ name: 'test' }));
+    fs.writeFileSync(
+      path.join(root, "data", "item.json"),
+      JSON.stringify({ name: "test" }),
+    );
     // Should not throw
     await expect(validatePath(root)).resolves.toBeDefined();
   });
 
-  it('does not crash when a file rule is missing its glob field', async () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-missing-glob-'));
+  it("does not crash when a file rule is missing its glob field", async () => {
+    const root = fs.mkdtempSync(
+      path.join(os.tmpdir(), "repotype-missing-glob-"),
+    );
     // A rule with id but no glob — would previously throw in normalize(rule.glob)
     fs.writeFileSync(
-      path.join(root, 'repotype.yaml'),
+      path.join(root, "repotype.yaml"),
       `version: "1"
 defaults:
   unmatchedFiles: allow
@@ -658,14 +778,16 @@ files:
   - id: broken-rule
 `,
     );
-    fs.writeFileSync(path.join(root, 'README.md'), '# Test\n');
+    fs.writeFileSync(path.join(root, "README.md"), "# Test\n");
     await expect(validatePath(root)).resolves.toBeDefined();
   });
 
-  it('does not crash when a template has a null path', async () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-null-template-'));
+  it("does not crash when a template has a null path", async () => {
+    const root = fs.mkdtempSync(
+      path.join(os.tmpdir(), "repotype-null-template-"),
+    );
     fs.writeFileSync(
-      path.join(root, 'repotype.yaml'),
+      path.join(root, "repotype.yaml"),
       `version: "1"
 defaults:
   unmatchedFiles: allow
@@ -674,17 +796,17 @@ templates:
     path: ~
 `,
     );
-    fs.writeFileSync(path.join(root, 'README.md'), '# Test\n');
+    fs.writeFileSync(path.join(root, "README.md"), "# Test\n");
     await expect(validatePath(root)).resolves.toBeDefined();
   });
 
   // --- frontmatter_comment_truncation warning ---
 
-  it('warns when a frontmatter plain scalar contains space-hash comment truncation risk', async () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-hash-warn-'));
-    fs.mkdirSync(path.join(root, 'skills', 'my-skill'), { recursive: true });
+  it("warns when a frontmatter plain scalar contains space-hash comment truncation risk", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "repotype-hash-warn-"));
+    fs.mkdirSync(path.join(root, "skills", "my-skill"), { recursive: true });
     fs.writeFileSync(
-      path.join(root, 'repotype.yaml'),
+      path.join(root, "repotype.yaml"),
       `version: "1"
 defaults:
   unmatchedFiles: allow
@@ -695,7 +817,7 @@ files:
     );
     // description contains ' #' — YAML will silently truncate it
     fs.writeFileSync(
-      path.join(root, 'skills', 'my-skill', 'SKILL.md'),
+      path.join(root, "skills", "my-skill", "SKILL.md"),
       `---
 name: my-skill
 description: Does the thing # internal only
@@ -705,15 +827,25 @@ description: Does the thing # internal only
 `,
     );
     const result = flattenResult(await validatePath(root));
-    expect(result.diagnostics.some((d) => d.code === 'frontmatter_comment_truncation')).toBe(true);
-    expect(result.diagnostics.find((d) => d.code === 'frontmatter_comment_truncation')?.severity).toBe('warning');
+    expect(
+      result.diagnostics.some(
+        (d) => d.code === "frontmatter_comment_truncation",
+      ),
+    ).toBe(true);
+    expect(
+      result.diagnostics.find(
+        (d) => d.code === "frontmatter_comment_truncation",
+      )?.severity,
+    ).toBe("warning");
   });
 
-  it('does not warn on quoted frontmatter values containing hash', async () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-hash-quoted-'));
-    fs.mkdirSync(path.join(root, 'skills', 'my-skill'), { recursive: true });
+  it("does not warn on quoted frontmatter values containing hash", async () => {
+    const root = fs.mkdtempSync(
+      path.join(os.tmpdir(), "repotype-hash-quoted-"),
+    );
+    fs.mkdirSync(path.join(root, "skills", "my-skill"), { recursive: true });
     fs.writeFileSync(
-      path.join(root, 'repotype.yaml'),
+      path.join(root, "repotype.yaml"),
       `version: "1"
 defaults:
   unmatchedFiles: allow
@@ -723,7 +855,7 @@ files:
 `,
     );
     fs.writeFileSync(
-      path.join(root, 'skills', 'my-skill', 'SKILL.md'),
+      path.join(root, "skills", "my-skill", "SKILL.md"),
       `---
 name: my-skill
 description: "Does the thing # safe because quoted"
@@ -733,14 +865,18 @@ description: "Does the thing # safe because quoted"
 `,
     );
     const result = flattenResult(await validatePath(root));
-    expect(result.diagnostics.some((d) => d.code === 'frontmatter_comment_truncation')).toBe(false);
+    expect(
+      result.diagnostics.some(
+        (d) => d.code === "frontmatter_comment_truncation",
+      ),
+    ).toBe(false);
   });
 
-  it('does not warn on flow-sequence values containing hash', async () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'repotype-hash-flow-'));
-    fs.mkdirSync(path.join(root, 'skills', 'my-skill'), { recursive: true });
+  it("does not warn on flow-sequence values containing hash", async () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), "repotype-hash-flow-"));
+    fs.mkdirSync(path.join(root, "skills", "my-skill"), { recursive: true });
     fs.writeFileSync(
-      path.join(root, 'repotype.yaml'),
+      path.join(root, "repotype.yaml"),
       `version: "1"
 defaults:
   unmatchedFiles: allow
@@ -750,7 +886,7 @@ files:
 `,
     );
     fs.writeFileSync(
-      path.join(root, 'skills', 'my-skill', 'SKILL.md'),
+      path.join(root, "skills", "my-skill", "SKILL.md"),
       `---
 name: my-skill
 description: Does the thing
@@ -761,6 +897,75 @@ tags: [a, b] # comment on flow sequence
 `,
     );
     const result = flattenResult(await validatePath(root));
-    expect(result.diagnostics.some((d) => d.code === 'frontmatter_comment_truncation')).toBe(false);
+    expect(
+      result.diagnostics.some(
+        (d) => d.code === "frontmatter_comment_truncation",
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("repoRoot resolution", () => {
+  it("uses the config directory when it is an ancestor of the target (in-tree --config)", () => {
+    const repoRoot = "/repo";
+    const configPath = "/repo/repotype.yaml";
+    // Validating a subtree with an in-tree config: repoRoot must stay the repo
+    // root so folder rules like `path: .supernal` and `node scripts/foo.js`
+    // resolve correctly — not the scoped target.
+    expect(resolveRepoRoot("/repo/.supernal/docs", configPath)).toBe(repoRoot);
+  });
+
+  it("uses the config directory when target equals the config directory", () => {
+    expect(resolveRepoRoot("/repo", "/repo/repotype.yaml")).toBe("/repo");
+  });
+
+  it("uses the target root when the config lives outside the target's tree (shared profile)", () => {
+    // A config file in a separate directory authors rules relative to the
+    // validated repo, so the repo root is the target's own root.
+    expect(resolveRepoRoot("/some/repo", "/elsewhere/profile.yaml")).toBe(
+      "/some/repo",
+    );
+  });
+});
+
+describe("validate CLI output filtering", () => {
+  const format = repotypeValidateCommand.schema.cli!.format!;
+  const sampleResult = {
+    ok: true,
+    filesScanned: 3,
+    diagnostics: [
+      { code: "err_x", severity: "error" },
+      { code: "warn_y", severity: "warning" },
+      { code: "sugg_z", severity: "suggestion" },
+      { code: "sugg_w", severity: "suggestion" },
+    ],
+  };
+
+  it("suppresses suggestion-severity diagnostics from CLI output by default", () => {
+    const out = JSON.parse(format(sampleResult, {}));
+    const severities = out.diagnostics.map(
+      (d: { severity: string }) => d.severity,
+    );
+    expect(severities).toContain("error");
+    expect(severities).toContain("warning");
+    expect(severities).not.toContain("suggestion");
+    expect(out.diagnostics).toHaveLength(2);
+  });
+
+  it("includes suggestions when --guidance is passed", () => {
+    const out = JSON.parse(format(sampleResult, { guidance: true }));
+    const severities = out.diagnostics.map(
+      (d: { severity: string }) => d.severity,
+    );
+    expect(severities).toContain("suggestion");
+    expect(out.diagnostics).toHaveLength(4);
+  });
+
+  it("does not alter the ok flag / exit code based on suggestion filtering", () => {
+    // Errors present → exit code 1 regardless of whether suggestions are shown.
+    process.exitCode = 0;
+    format({ ...sampleResult, ok: false }, {});
+    expect(process.exitCode).toBe(1);
+    process.exitCode = 0;
   });
 });
