@@ -321,6 +321,7 @@ export class ValidationEngine {
       const ruleSet = resolveEffectiveRules(config, repoRoot, filePath);
       const context: ValidatorContext = {
         repoRoot,
+        targetRoot,
         configPath,
         config,
         ruleSet,

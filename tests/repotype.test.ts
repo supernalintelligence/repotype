@@ -160,6 +160,37 @@ folders:
   return root;
 }
 
+/**
+ * Repo with two disjoint subtrees, each governed by its own FolderRule, plus a
+ * root config. Used to prove that a scoped validation run does not leak folder
+ * rules from out-of-target subtrees (the target-scoping regression).
+ */
+function makeScopedFolderRuleFixtureRepo(): string {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "repotype-folder-scope-"));
+  // alpha subtree: requires a "kept" folder it does NOT have → would error
+  fs.mkdirSync(path.join(root, "alpha"), { recursive: true });
+  fs.writeFileSync(path.join(root, "alpha", "a.md"), "# alpha\n");
+  // beta subtree: requires a "needed" folder it does NOT have → would error
+  fs.mkdirSync(path.join(root, "beta"), { recursive: true });
+  fs.writeFileSync(path.join(root, "beta", "b.md"), "# beta\n");
+
+  fs.writeFileSync(
+    path.join(root, "repotype.yaml"),
+    `version: "1"
+folders:
+  - id: alpha-rule
+    path: alpha
+    requiredFolders:
+      - kept
+  - id: beta-rule
+    path: beta
+    requiredFolders:
+      - needed
+`,
+  );
+  return root;
+}
+
 function makeUnmatchedRootFixture(mode: "deny" | "allow" = "deny"): string {
   const root = fs.mkdtempSync(
     path.join(os.tmpdir(), "repotype-unmatched-root-"),
@@ -573,6 +604,40 @@ description: something: else
     ).toBe(true);
   });
 
+  it("skips out-of-target folder rules under a scoped run but fires them under full-tree", async () => {
+    const root = makeScopedFolderRuleFixtureRepo();
+    const config = path.join(root, "repotype.yaml");
+
+    // Scoped run on alpha/: beta-rule's target is a disjoint subtree, so it must
+    // not fire. alpha-rule (the target itself) must still fire.
+    const alphaScoped = flattenResult(
+      await validatePath(path.join(root, "alpha"), config),
+    );
+    const alphaCodes = alphaScoped.diagnostics
+      .filter((d) => d.code === "required_folder_missing")
+      .map((d) => d.ruleId);
+    expect(alphaCodes).toContain("alpha-rule");
+    expect(alphaCodes).not.toContain("beta-rule");
+
+    // Scoped run on beta/: symmetric — beta-rule fires, alpha-rule is skipped.
+    const betaScoped = flattenResult(
+      await validatePath(path.join(root, "beta"), config),
+    );
+    const betaCodes = betaScoped.diagnostics
+      .filter((d) => d.code === "required_folder_missing")
+      .map((d) => d.ruleId);
+    expect(betaCodes).toContain("beta-rule");
+    expect(betaCodes).not.toContain("alpha-rule");
+
+    // Full-tree run: both rules fire — platform-wide debt is still caught.
+    const fullTree = flattenResult(await validatePath(root, config));
+    const fullCodes = fullTree.diagnostics
+      .filter((d) => d.code === "required_folder_missing")
+      .map((d) => d.ruleId);
+    expect(fullCodes).toContain("alpha-rule");
+    expect(fullCodes).toContain("beta-rule");
+  });
+
   it("validates JSON and YAML files against bound schemas", async () => {
     const root = makeTypedFileFixtureRepo();
     fs.writeFileSync(
@@ -973,7 +1038,9 @@ describe("validate CLI output filtering", () => {
 
 describe("glob extends", () => {
   function makeGlobExtendsRepo(): string {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), "repotype-glob-extends-"));
+    const root = fs.mkdtempSync(
+      path.join(os.tmpdir(), "repotype-glob-extends-"),
+    );
     fs.mkdirSync(path.join(root, "fragments"), { recursive: true });
     // Two fragments + a non-matching .txt to confirm only *.yaml are pulled in.
     fs.writeFileSync(
@@ -1028,7 +1095,9 @@ files:
   });
 
   it("still hard-errors on a missing literal (non-glob) extends target", () => {
-    const root = fs.mkdtempSync(path.join(os.tmpdir(), "repotype-lit-missing-"));
+    const root = fs.mkdtempSync(
+      path.join(os.tmpdir(), "repotype-lit-missing-"),
+    );
     fs.writeFileSync(
       path.join(root, "repotype.yaml"),
       `version: "1"

@@ -1128,6 +1128,13 @@ import { globSync as globSync5 } from "glob";
 function hasGlobChars2(value) {
   return /[*?[\]{}()!+@]/.test(value);
 }
+function isWithinTargetScope(ruleTargetDir, targetRoot) {
+  const rel = path11.relative(targetRoot, ruleTargetDir);
+  const targetIsAncestorOrEqual = rel === "" || !rel.startsWith("..") && !path11.isAbsolute(rel);
+  if (targetIsAncestorOrEqual) return true;
+  const relInverse = path11.relative(ruleTargetDir, targetRoot);
+  return relInverse !== "" && !relInverse.startsWith("..") && !path11.isAbsolute(relInverse);
+}
 function matchesAny(name, patterns) {
   return patterns.some((pattern) => matchesGlob(name, pattern));
 }
@@ -1254,20 +1261,42 @@ function checkAllowedFiles(dirPath, rule, childFiles, diagnostics) {
 }
 var FolderStructureAdapter = class {
   id = "folder-structure";
-  evaluated = false;
+  // Folder rules are file-independent, so they are evaluated once per
+  // (targetRoot, repoRoot) pair rather than per scanned file. Keying on
+  // targetRoot is required because the same adapter instance is shared across
+  // multiple validate() calls (workspace mode validates each subtree) — a plain
+  // boolean would evaluate folder rules for only the first subtree.
+  evaluatedScopes = /* @__PURE__ */ new Set();
   supports(_filePath, context) {
     return (context.config.folders || []).length > 0;
   }
   async validate(_filePath, context) {
-    if (this.evaluated) {
+    const scopeKey = `${context.repoRoot}\0${context.targetRoot}`;
+    if (this.evaluatedScopes.has(scopeKey)) {
       return [];
     }
-    this.evaluated = true;
+    this.evaluatedScopes.add(scopeKey);
     const diagnostics = [];
     const folderRules = context.config.folders || [];
     const ignoreMatcher = createIgnoreMatcher(context.repoRoot);
     for (const rule of folderRules) {
-      const targets = collectTargetDirectories(rule, context.repoRoot, ignoreMatcher);
+      if (rule.path) {
+        const nominalTarget = path11.resolve(context.repoRoot, rule.path);
+        if (!isWithinTargetScope(nominalTarget, context.targetRoot)) {
+          continue;
+        }
+      }
+      const collected = collectTargetDirectories(
+        rule,
+        context.repoRoot,
+        ignoreMatcher
+      );
+      const targets = rule.glob ? collected.filter(
+        (dir) => isWithinTargetScope(dir, context.targetRoot)
+      ) : collected;
+      if (rule.glob && collected.length > 0 && targets.length === 0) {
+        continue;
+      }
       if (rule.path && targets.length === 1 && !fs10.existsSync(targets[0])) {
         diagnostics.push({
           code: "folder_rule_path_missing",
@@ -1298,7 +1327,9 @@ var FolderStructureAdapter = class {
         if (!fs10.existsSync(targetDir) || !fs10.statSync(targetDir).isDirectory()) {
           continue;
         }
-        const entries = fs10.readdirSync(targetDir, { withFileTypes: true }).filter((entry) => !ignoreMatcher.isIgnored(path11.join(targetDir, entry.name)));
+        const entries = fs10.readdirSync(targetDir, { withFileTypes: true }).filter(
+          (entry) => !ignoreMatcher.isIgnored(path11.join(targetDir, entry.name))
+        );
         const childFolders = entries.filter((e) => e.isDirectory()).map((e) => e.name);
         const childFiles = entries.filter((e) => e.isFile()).map((e) => e.name);
         checkRequiredFolders(targetDir, rule, childFolders, diagnostics);
@@ -2444,6 +2475,7 @@ var ValidationEngine = class {
       const ruleSet = resolveEffectiveRules(config, repoRoot, filePath);
       const context = {
         repoRoot,
+        targetRoot,
         configPath,
         config,
         ruleSet,
