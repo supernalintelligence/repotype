@@ -1,7 +1,7 @@
-export type DiagnosticSeverity = 'error' | 'warning' | 'suggestion';
+export type DiagnosticSeverity = "error" | "warning" | "suggestion";
 
 export interface AutofixAction {
-  type: 'add_frontmatter_field' | 'add_section' | 'remove_template_hint';
+  type: "add_frontmatter_field" | "add_section" | "remove_template_hint";
   file: string;
   payload: Record<string, unknown>;
   safe: boolean;
@@ -30,7 +30,7 @@ export interface SectionRule {
 }
 
 export interface SchemaBinding {
-  kind: 'frontmatter' | 'json' | 'yaml';
+  kind: "frontmatter" | "json" | "yaml";
   schema: string;
 }
 
@@ -57,11 +57,17 @@ export interface FileRule {
   glob: string;
   filenamePattern?: string;
   pathPattern?: string;
-  pathCase?: 'kebab' | 'snake' | 'camel' | 'lower';
+  pathCase?: "kebab" | "snake" | "camel" | "lower";
   templateHints?: string[];
   forbidContentPatterns?: string[];
   /** Override the severity of forbidden content pattern violations. Defaults to 'error'. */
   forbidContentSeverity?: DiagnosticSeverity;
+  /**
+   * Override the severity of filenamePattern / pathPattern violations for this
+   * rule. Defaults to 'error'. Use 'warning' for advisory rules with known
+   * pre-existing offenders that should surface without blocking pushes.
+   */
+  severity?: DiagnosticSeverity;
   schema?: SchemaBinding;
   requiredSections?: string[];
   companionFiles?: string[];
@@ -86,7 +92,7 @@ export interface TemplateConfig {
 
 export interface CrossFileRule {
   id: string;
-  kind: 'companion' | 'cross_reference';
+  kind: "companion" | "cross_reference";
   sourceGlob: string;
   target?: string;
   field?: string;
@@ -100,14 +106,14 @@ export interface RepoSchemaConfig {
   version: string;
   extends?: string | string[];
   defaults?: {
-    inheritance?: 'merge' | 'replace';
-    strictness?: 'strict' | 'balanced' | 'lenient';
-    unmatchedFiles?: 'deny' | 'allow';
+    inheritance?: "merge" | "replace";
+    strictness?: "strict" | "balanced" | "lenient";
+    unmatchedFiles?: "deny" | "allow";
   };
   operations?: {
     hooks?: {
       enabled?: boolean;
-      hook?: 'pre-commit' | 'pre-push' | 'both';
+      hook?: "pre-commit" | "pre-push" | "both";
     };
     watcher?: {
       enabled?: boolean;
@@ -132,7 +138,7 @@ export interface EffectiveRuleSet {
   templateHints: string[];
   schema?: SchemaBinding;
   template?: TemplateBinding;
-  crossReferences?: FileRule['crossReferences'];
+  crossReferences?: FileRule["crossReferences"];
 }
 
 export interface ValidatorContext {
@@ -142,6 +148,14 @@ export interface ValidatorContext {
   ruleSet: EffectiveRuleSet;
   /** Global file index for cross-workspace reference checks (workspace mode only) */
   globalFileIndex?: Set<string>;
+  /**
+   * Absolute path of the validation target (the dir or file passed to validate).
+   * Distinct from repoRoot, which is the base that rule paths resolve against.
+   * Folder-scoped rules use this to skip rules whose target lies in a disjoint
+   * subtree from the validation target (e.g. board-structure rules under
+   * packages/boards/* must not fire when validating .supernal/docs).
+   */
+  targetRoot: string;
 }
 
 export interface ValidatorAdapter {
@@ -178,14 +192,14 @@ export interface PluginRequirement {
 // ── Workspace mode types ────────────────────────────────────────────────────
 
 export interface WorkspaceEntry {
-  configPath: string;   // absolute path to repotype.yaml / repo-schema.yaml
-  subtreeRoot: string;  // dirname(configPath) — never ends with trailing slash
-  depth: number;        // path segments in subtreeRoot
+  configPath: string; // absolute path to repotype.yaml / repo-schema.yaml
+  subtreeRoot: string; // dirname(configPath) — never ends with trailing slash
+  depth: number; // path segments in subtreeRoot
 }
 
 export interface WorkspaceConflict {
   code: string;
-  severity: 'error' | 'warning';
+  severity: "error" | "warning";
   message: string;
   parentConfigPath: string;
   childConfigPath: string;
@@ -194,7 +208,7 @@ export interface WorkspaceConflict {
 
 export interface WorkspaceValidationResult {
   ok: boolean;
-  mode: 'workspace';
+  mode: "workspace";
   filesScanned: number;
   workspaces: Array<{
     configPath: string;
@@ -215,5 +229,5 @@ export interface WorkspaceCache {
 }
 
 export type ValidateResult =
-  | { mode: 'flat'; result: ValidationResult }
-  | { mode: 'workspace'; result: WorkspaceValidationResult };
+  | { mode: "flat"; result: ValidationResult }
+  | { mode: "workspace"; result: WorkspaceValidationResult };
