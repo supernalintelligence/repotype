@@ -260,10 +260,10 @@ function mergeDefs(...defs) {
 function cloneDef(schema) {
   return mergeDefs(schema._zod.def);
 }
-function getElementAtPath(obj, path27) {
-  if (!path27)
+function getElementAtPath(obj, path28) {
+  if (!path28)
     return obj;
-  return path27.reduce((acc, key) => acc?.[key], obj);
+  return path28.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
@@ -575,11 +575,11 @@ function aborted(x, startIndex = 0) {
   }
   return false;
 }
-function prefixIssues(path27, issues) {
+function prefixIssues(path28, issues) {
   return issues.map((iss) => {
     var _a2;
     (_a2 = iss).path ?? (_a2.path = []);
-    iss.path.unshift(path27);
+    iss.path.unshift(path28);
     return iss;
   });
 }
@@ -9088,8 +9088,8 @@ import { createMCPServer } from "@supernal/universal-command/mcp";
 
 // src/universal-commands.ts
 import { UniversalCommand } from "@supernal/universal-command";
-import fs25 from "fs";
-import path26 from "path";
+import fs27 from "fs";
+import path27 from "path";
 
 // src/cli/git-hooks.ts
 import fs from "fs";
@@ -9236,12 +9236,12 @@ function uninstallChecks(options) {
 }
 
 // src/cli/cleanup.ts
-import fs22 from "fs";
-import path23 from "path";
+import fs24 from "fs";
+import path24 from "path";
 
 // src/cli/use-cases.ts
-import fs21 from "fs";
-import path22 from "path";
+import fs23 from "fs";
+import path23 from "path";
 
 // src/core/autofix.ts
 import fs3 from "fs";
@@ -11685,25 +11685,359 @@ var CronRegistryDriftAdapter = class {
   }
 };
 
-// src/core/validator-framework.ts
+// src/adapters/sentinel-content-adapter.ts
+import { spawnSync as spawnSync2 } from "child_process";
 import fs20 from "fs";
-import os from "os";
+
+// src/adapters/git-staged-cache.ts
+import { spawnSync } from "child_process";
+var stagedFilesCache = /* @__PURE__ */ new Map();
+var gitAvailabilityCache = /* @__PURE__ */ new Map();
+function getStagedFiles(repoRoot) {
+  if (stagedFilesCache.has(repoRoot)) {
+    return stagedFilesCache.get(repoRoot);
+  }
+  const result = spawnSync("git", ["diff", "--cached", "--name-only"], {
+    cwd: repoRoot,
+    encoding: "utf8"
+  });
+  if (result.status !== 0 || result.error) {
+    gitAvailabilityCache.set(repoRoot, false);
+    const empty = /* @__PURE__ */ new Set();
+    stagedFilesCache.set(repoRoot, empty);
+    return empty;
+  }
+  gitAvailabilityCache.set(repoRoot, true);
+  const staged = new Set(
+    result.stdout.split("\n").map((l) => l.trim()).filter(Boolean)
+  );
+  stagedFilesCache.set(repoRoot, staged);
+  return staged;
+}
+function wasGitUnavailable(repoRoot) {
+  getStagedFiles(repoRoot);
+  return gitAvailabilityCache.get(repoRoot) === false;
+}
+
+// src/adapters/sentinel-content-adapter.ts
+var ENV_VAR_PATTERN = /^[A-Z_][A-Z0-9_]*$/;
+var SentinelContentAdapter = class {
+  id = "sentinel-content";
+  supports(_filePath, context) {
+    return context.ruleSet.fileRules.some(
+      (rule) => Array.isArray(rule.requireSentinels) && rule.requireSentinels.length > 0
+    );
+  }
+  async validate(filePath, context) {
+    const diagnostics = [];
+    const relPath = context.ruleSet.filePath;
+    const repoRoot = context.repoRoot;
+    const gitUnavailable = wasGitUnavailable(repoRoot);
+    const stagedFiles = getStagedFiles(repoRoot);
+    let content;
+    if (gitUnavailable) {
+      diagnostics.push({
+        code: "sentinel_git_unavailable",
+        message: `git index unavailable for ${relPath}; falling back to working-tree read for sentinel checks.`,
+        severity: "warning",
+        file: filePath
+      });
+      try {
+        content = fs20.readFileSync(filePath);
+      } catch {
+        return diagnostics;
+      }
+    } else if (!stagedFiles.has(relPath)) {
+      return [];
+    } else {
+      const showResult = spawnSync2("git", ["show", `:${relPath}`], {
+        cwd: repoRoot,
+        encoding: "buffer"
+      });
+      if (showResult.status !== 0 || showResult.error) {
+        diagnostics.push({
+          code: "sentinel_git_unavailable",
+          message: `Could not read staged content for ${relPath} (git show failed); falling back to working-tree read.`,
+          severity: "warning",
+          file: filePath
+        });
+        try {
+          content = fs20.readFileSync(filePath);
+        } catch {
+          return diagnostics;
+        }
+      } else {
+        content = showResult.stdout;
+      }
+    }
+    const contentStr = content.toString("utf8");
+    for (const rule of context.ruleSet.fileRules) {
+      if (!Array.isArray(rule.requireSentinels) || rule.requireSentinels.length === 0) {
+        continue;
+      }
+      if (rule.sentinelOverrideEnvVar && !ENV_VAR_PATTERN.test(rule.sentinelOverrideEnvVar)) {
+        diagnostics.push({
+          code: "sentinel_config_error",
+          message: `sentinelOverrideEnvVar '${rule.sentinelOverrideEnvVar}' is not a valid environment variable name (must match /^[A-Z_][A-Z0-9_]*$/).`,
+          severity: "warning",
+          file: filePath,
+          ruleId: rule.id
+        });
+      }
+      if (!gitUnavailable && stagedFiles.has(relPath) && typeof rule.sentinelDeletionThreshold === "number") {
+        const diffResult = spawnSync2("git", ["diff", "--cached", "--", relPath], {
+          cwd: repoRoot,
+          encoding: "utf8"
+        });
+        if (diffResult.status === 0 && !diffResult.error) {
+          const deletionCount = diffResult.stdout.split("\n").filter((line) => line.startsWith("-") && !line.startsWith("---")).length;
+          if (deletionCount > rule.sentinelDeletionThreshold) {
+            const overrideSet = rule.sentinelOverrideEnvVar && process.env[rule.sentinelOverrideEnvVar] === "1";
+            if (overrideSet) {
+              diagnostics.push({
+                code: "sentinel_content_override",
+                message: `Deletion threshold exceeded for ${relPath} (${deletionCount} lines deleted, threshold: ${rule.sentinelDeletionThreshold}) but ${rule.sentinelOverrideEnvVar}=1 is set \u2014 override accepted.`,
+                severity: "warning",
+                file: filePath,
+                ruleId: rule.id,
+                details: {
+                  deletionCount,
+                  threshold: rule.sentinelDeletionThreshold,
+                  overrideEnvVar: rule.sentinelOverrideEnvVar
+                }
+              });
+            } else {
+              diagnostics.push({
+                code: "sentinel_deletion_threshold_exceeded",
+                message: `Too many lines deleted from ${relPath}: ${deletionCount} lines deleted (threshold: ${rule.sentinelDeletionThreshold}). Set ${rule.sentinelOverrideEnvVar ?? "the override env var"}=1 if this deletion is intentional.`,
+                severity: "error",
+                file: filePath,
+                ruleId: rule.id,
+                details: {
+                  deletionCount,
+                  threshold: rule.sentinelDeletionThreshold,
+                  overrideEnvVar: rule.sentinelOverrideEnvVar
+                }
+              });
+            }
+          }
+        }
+      }
+      for (const sentinel of rule.requireSentinels) {
+        if (!contentStr.includes(sentinel)) {
+          const overrideSet = rule.sentinelOverrideEnvVar && process.env[rule.sentinelOverrideEnvVar] === "1";
+          if (overrideSet) {
+            diagnostics.push({
+              code: "sentinel_content_override",
+              message: `Sentinel '${sentinel}' is missing from ${relPath} but ${rule.sentinelOverrideEnvVar}=1 is set \u2014 override accepted.`,
+              severity: "warning",
+              file: filePath,
+              ruleId: rule.id,
+              details: {
+                sentinel,
+                overrideEnvVar: rule.sentinelOverrideEnvVar
+              }
+            });
+          } else {
+            diagnostics.push({
+              code: "sentinel_content_removed",
+              message: `Required sentinel '${sentinel}' is missing from ${relPath}. This string must be present before committing.${rule.sentinelOverrideEnvVar ? ` Set ${rule.sentinelOverrideEnvVar}=1 to bypass if this removal is intentional.` : ""}`,
+              severity: "error",
+              file: filePath,
+              ruleId: rule.id,
+              details: {
+                sentinel,
+                overrideEnvVar: rule.sentinelOverrideEnvVar,
+                hint: rule.sentinelOverrideEnvVar ? `Set ${rule.sentinelOverrideEnvVar}=1 if this removal is intentional` : "Restore the required sentinel string before committing"
+              }
+            });
+          }
+        }
+      }
+    }
+    return diagnostics;
+  }
+};
+
+// src/adapters/workflow-gate-adapter.ts
 import path21 from "path";
+import fs21 from "fs";
+import yaml7 from "js-yaml";
+var REQ_ID_PATTERN = /^REQ-[A-Z0-9-]+$/;
+var STATE_FILE_RELATIVE = path21.join(".supernal", "controlled-files-workflow-state.yaml");
+var workflowStateCache = /* @__PURE__ */ new Map();
+function getWorkflowState(repoRoot, filePath) {
+  if (workflowStateCache.has(repoRoot)) {
+    return { state: workflowStateCache.get(repoRoot) };
+  }
+  const stateFilePath = path21.join(repoRoot, STATE_FILE_RELATIVE);
+  if (!fs21.existsSync(stateFilePath)) {
+    workflowStateCache.set(repoRoot, null);
+    return { state: null };
+  }
+  let parsed;
+  try {
+    const raw = fs21.readFileSync(stateFilePath, "utf8");
+    parsed = yaml7.load(raw);
+  } catch {
+    const warning = {
+      code: "workflow_gate_state_unreadable",
+      message: `Workflow state file exists but could not be parsed: ${stateFilePath}. Workflow gate checks are skipped.`,
+      severity: "warning",
+      file: filePath
+    };
+    workflowStateCache.set(repoRoot, null);
+    return { state: null, warning };
+  }
+  if (!parsed || typeof parsed !== "object") {
+    workflowStateCache.set(repoRoot, null);
+    return { state: null };
+  }
+  const state = parsed;
+  workflowStateCache.set(repoRoot, state);
+  return { state };
+}
+var WorkflowGateAdapter = class {
+  id = "workflow-gate";
+  supports(_filePath, context) {
+    return context.ruleSet.fileRules.some(
+      (rule) => Array.isArray(rule.requiresWorkflow) && rule.requiresWorkflow.length > 0
+    );
+  }
+  async validate(filePath, context) {
+    const diagnostics = [];
+    const relPath = context.ruleSet.filePath;
+    const repoRoot = context.repoRoot;
+    const gitUnavailable = wasGitUnavailable(repoRoot);
+    if (gitUnavailable) {
+      diagnostics.push({
+        code: "workflow_gate_git_unavailable",
+        message: `git index unavailable; workflow gate checks skipped for ${relPath}.`,
+        severity: "warning",
+        file: filePath
+      });
+      return diagnostics;
+    }
+    const stagedFiles = getStagedFiles(repoRoot);
+    if (!stagedFiles.has(relPath)) {
+      return [];
+    }
+    if (process.env.SC_ALLOW_CONTROLLED_EDIT === "1") {
+      diagnostics.push({
+        code: "workflow_gate_bypassed",
+        message: `SC_ALLOW_CONTROLLED_EDIT=1 is set \u2014 workflow gate bypassed for ${relPath}.`,
+        severity: "warning",
+        file: filePath,
+        details: {
+          relPath,
+          timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+          env: "SC_ALLOW_CONTROLLED_EDIT=1"
+        }
+      });
+      return diagnostics;
+    }
+    const stateFilePath = path21.join(repoRoot, STATE_FILE_RELATIVE);
+    const { state, warning } = getWorkflowState(repoRoot, filePath);
+    if (warning) {
+      diagnostics.push(warning);
+    }
+    for (const rule of context.ruleSet.fileRules) {
+      if (!Array.isArray(rule.requiresWorkflow) || rule.requiresWorkflow.length === 0) {
+        continue;
+      }
+      const fileEntry = state?.files?.[relPath];
+      const workflowCompleted = fileEntry?.workflowCompleted === true;
+      for (const level of rule.requiresWorkflow) {
+        if (!workflowCompleted) {
+          if (!state) {
+            const severity = level === "light" ? "warning" : "error";
+            diagnostics.push({
+              code: "workflow_gate_no_state_file",
+              message: `${relPath} is a controlled file (level: ${level}) but no workflow state file exists at ${stateFilePath}. Run: sc workflow controlled modify ${relPath}`,
+              severity,
+              file: filePath,
+              ruleId: rule.id,
+              details: {
+                requiresWorkflow: rule.requiresWorkflow,
+                workflowApprovers: rule.workflowApprovers,
+                stateFile: stateFilePath,
+                hint: `Run: sc workflow controlled modify ${relPath}`
+              }
+            });
+          } else {
+            const severity = level === "light" ? "warning" : "error";
+            diagnostics.push({
+              code: "workflow_gate_required",
+              message: `${relPath} is a controlled file (level: ${level}) but no completed workflow was found. Run: sc workflow controlled modify ${relPath}`,
+              severity,
+              file: filePath,
+              ruleId: rule.id,
+              details: {
+                requiresWorkflow: rule.requiresWorkflow,
+                workflowApprovers: rule.workflowApprovers,
+                stateFile: stateFilePath,
+                hint: `Run: sc workflow controlled modify ${relPath}`
+              }
+            });
+          }
+        } else {
+          if (level === "chg") {
+            if (!fileEntry?.chgId || String(fileEntry.chgId).trim() === "") {
+              diagnostics.push({
+                code: "workflow_gate_chg_id_missing",
+                message: `${relPath} requires a CHG document (requiresWorkflow: chg) but workflowCompleted=true with no chgId. Update the workflow state with a valid chgId.`,
+                severity: "error",
+                file: filePath,
+                ruleId: rule.id,
+                details: {
+                  workflowApprovers: rule.workflowApprovers,
+                  stateFile: stateFilePath
+                }
+              });
+            }
+          } else if (level === "req") {
+            const reqId = fileEntry?.reqId;
+            if (!reqId || !REQ_ID_PATTERN.test(String(reqId))) {
+              diagnostics.push({
+                code: "workflow_gate_req_id_missing",
+                message: `${relPath} requires a REQ-xxx requirement link (requiresWorkflow: req) but reqId '${reqId ?? "(missing)"}' does not match /^REQ-[A-Z0-9-]+$/. Update the workflow state with a valid reqId.`,
+                severity: "error",
+                file: filePath,
+                ruleId: rule.id,
+                details: {
+                  reqId,
+                  workflowApprovers: rule.workflowApprovers,
+                  stateFile: stateFilePath
+                }
+              });
+            }
+          }
+        }
+      }
+    }
+    return diagnostics;
+  }
+};
+
+// src/core/validator-framework.ts
+import fs22 from "fs";
+import os from "os";
+import path22 from "path";
 import { globSync as globSync6 } from "glob";
 var CONFIG_FILE_NAMES = /* @__PURE__ */ new Set(["repotype.yaml", "repo-schema.yaml"]);
 function resolveRepoRoot(targetRoot, configPath) {
-  const configDir = path21.dirname(configPath);
-  const rel = path21.relative(configDir, targetRoot);
-  const targetInsideConfigDir = rel === "" || !rel.startsWith("..") && !path21.isAbsolute(rel);
+  const configDir = path22.dirname(configPath);
+  const rel = path22.relative(configDir, targetRoot);
+  const targetInsideConfigDir = rel === "" || !rel.startsWith("..") && !path22.isAbsolute(rel);
   return targetInsideConfigDir ? configDir : targetRoot;
 }
 var MAX_SCAN_FILES = 5e4;
 function scanFiles(targetPath, repoRoot, sharedIgnoreMatcher) {
   const ignoreMatcher = sharedIgnoreMatcher ?? createIgnoreMatcher(repoRoot);
-  const stats = fs20.statSync(targetPath);
+  const stats = fs22.statSync(targetPath);
   if (stats.isFile()) {
-    const absoluteFile = path21.resolve(targetPath);
-    if (CONFIG_FILE_NAMES.has(path21.basename(absoluteFile))) return [];
+    const absoluteFile = path22.resolve(targetPath);
+    if (CONFIG_FILE_NAMES.has(path22.basename(absoluteFile))) return [];
     return ignoreMatcher.isIgnored(absoluteFile) ? [] : [absoluteFile];
   }
   const files = globSync6("**/*", {
@@ -11713,7 +12047,7 @@ function scanFiles(targetPath, repoRoot, sharedIgnoreMatcher) {
     ignore: getStaticIgnoreGlobs()
   });
   const filtered = files.filter((filePath) => {
-    if (CONFIG_FILE_NAMES.has(path21.basename(filePath))) return false;
+    if (CONFIG_FILE_NAMES.has(path22.basename(filePath))) return false;
     return !ignoreMatcher.isIgnored(filePath);
   });
   if (filtered.length > MAX_SCAN_FILES) {
@@ -11849,9 +12183,9 @@ var ValidationEngine = class {
     this.adapters = adapters;
   }
   async validate(targetPath, options) {
-    const absoluteTarget = path21.resolve(targetPath);
-    const targetRoot = fs20.existsSync(absoluteTarget) && fs20.statSync(absoluteTarget).isDirectory() ? absoluteTarget : path21.dirname(absoluteTarget);
-    const configPath = options?.configPath ? path21.resolve(options.configPath) : findConfig(absoluteTarget);
+    const absoluteTarget = path22.resolve(targetPath);
+    const targetRoot = fs22.existsSync(absoluteTarget) && fs22.statSync(absoluteTarget).isDirectory() ? absoluteTarget : path22.dirname(absoluteTarget);
+    const configPath = options?.configPath ? path22.resolve(options.configPath) : findConfig(absoluteTarget);
     const repoRoot = resolveRepoRoot(targetRoot, configPath);
     const config2 = loadConfig(configPath);
     const files = options?.fileList ?? scanFiles(absoluteTarget, repoRoot, options?.sharedIgnoreMatcher);
@@ -11912,9 +12246,9 @@ var ValidationEngine = class {
    * Auto-detects child configs under rootDir.
    */
   async validateWorkspace(rootDir, options = {}) {
-    const root = path21.resolve(rootDir);
+    const root = path22.resolve(rootDir);
     const rootConfigPath = findConfig(root);
-    const repoRoot = path21.dirname(rootConfigPath);
+    const repoRoot = path22.dirname(rootConfigPath);
     const sharedIgnoreMatcher = createIgnoreMatcher(repoRoot);
     const workspaces = discoverWorkspaces(repoRoot, sharedIgnoreMatcher);
     if (workspaces.length === 0) {
@@ -12029,11 +12363,11 @@ var ValidationEngine = class {
       }
       for (const folder of rootConfig.folders ?? []) {
         for (const reqFile of folder.requiredFiles ?? []) {
-          const absReqFile = path21.resolve(repoRoot, reqFile);
-          if (absReqFile.startsWith(ws.subtreeRoot + path21.sep) || absReqFile === ws.subtreeRoot) {
+          const absReqFile = path22.resolve(repoRoot, reqFile);
+          if (absReqFile.startsWith(ws.subtreeRoot + path22.sep) || absReqFile === ws.subtreeRoot) {
             const childRequires = (childConfig.folders ?? []).some(
               (cf) => (cf.requiredFiles ?? []).some(
-                (rf) => path21.resolve(ws.subtreeRoot, rf) === absReqFile
+                (rf) => path22.resolve(ws.subtreeRoot, rf) === absReqFile
               )
             );
             if (!childRequires) {
@@ -12049,7 +12383,7 @@ var ValidationEngine = class {
           }
         }
       }
-      const relSubtree = path21.relative(repoRoot, ws.subtreeRoot);
+      const relSubtree = path22.relative(repoRoot, ws.subtreeRoot);
       for (const rootRule of rootConfig.files ?? []) {
         if (!rootGlobCouldMatchSubtree(rootRule.glob, relSubtree)) continue;
         for (const childRule of childConfig.files ?? []) {
@@ -12123,6 +12457,8 @@ function createDefaultEngine() {
     new CrossReferenceAdapter(),
     new CrossFileRuleAdapter(),
     new ContentPolicyAdapter(),
+    new SentinelContentAdapter(),
+    new WorkflowGateAdapter(),
     new GuidanceAdapter(),
     new BoardYamlCompletenessAdapter(),
     new BoardStoryCompletenessAdapter(),
@@ -12332,23 +12668,23 @@ function renderComplianceReport(report, format = "markdown") {
 }
 
 // src/cli/use-cases.ts
-import yaml7 from "js-yaml";
+import yaml8 from "js-yaml";
 var deriveRepoRoot = resolveRepoRoot;
 function deriveTargetRoot(targetPath) {
-  if (fs21.existsSync(targetPath) && fs21.statSync(targetPath).isDirectory()) {
+  if (fs23.existsSync(targetPath) && fs23.statSync(targetPath).isDirectory()) {
     return targetPath;
   }
-  return path22.dirname(targetPath);
+  return path23.dirname(targetPath);
 }
 async function validatePath(target, configOverridePath, opts = {}) {
-  const absolute = path22.resolve(target);
-  const configPath = configOverridePath ? path22.resolve(configOverridePath) : findConfig(absolute);
+  const absolute = path23.resolve(target);
+  const configPath = configOverridePath ? path23.resolve(configOverridePath) : findConfig(absolute);
   const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const config2 = loadConfig(configPath);
   const engine = createDefaultEngine();
   const pluginsEnabled = opts.plugins === true;
   const pluginDiagnostics = pluginsEnabled ? runPluginPhase(config2, repoRoot, "validate") : [];
-  const isDirectory = fs21.existsSync(absolute) && fs21.statSync(absolute).isDirectory();
+  const isDirectory = fs23.existsSync(absolute) && fs23.statSync(absolute).isDirectory();
   const workspaceEnabled = opts.workspace !== false;
   if (isDirectory && workspaceEnabled && !configOverridePath) {
     const wsResult = await engine.validateWorkspace(absolute, {
@@ -12386,15 +12722,15 @@ async function validatePath(target, configOverridePath, opts = {}) {
   };
 }
 function explainPath(target, configOverridePath) {
-  const absolute = path22.resolve(target);
-  const configPath = configOverridePath ? path22.resolve(configOverridePath) : findConfig(absolute);
+  const absolute = path23.resolve(target);
+  const configPath = configOverridePath ? path23.resolve(configOverridePath) : findConfig(absolute);
   const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const config2 = loadConfig(configPath);
   return explainRules(config2, repoRoot, absolute);
 }
 async function fixPath(target, configOverridePath, opts = {}) {
-  const absolute = path22.resolve(target);
-  const configPath = configOverridePath ? path22.resolve(configOverridePath) : findConfig(absolute);
+  const absolute = path23.resolve(target);
+  const configPath = configOverridePath ? path23.resolve(configOverridePath) : findConfig(absolute);
   const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const config2 = loadConfig(configPath);
   const pluginsEnabled = opts.plugins === true;
@@ -12440,16 +12776,16 @@ async function fixPath(target, configOverridePath, opts = {}) {
   };
 }
 function scaffoldFromTemplate(templateId, outputPath, variables) {
-  const absolute = path22.resolve(outputPath);
+  const absolute = path23.resolve(outputPath);
   const configPath = findConfig(absolute);
-  const repoRoot = path22.dirname(configPath);
+  const repoRoot = path23.dirname(configPath);
   const config2 = loadConfig(configPath);
   const content = renderTemplate(config2, repoRoot, templateId, variables);
-  const parent = path22.dirname(absolute);
-  if (!fs21.existsSync(parent)) {
-    fs21.mkdirSync(parent, { recursive: true });
+  const parent = path23.dirname(absolute);
+  if (!fs23.existsSync(parent)) {
+    fs23.mkdirSync(parent, { recursive: true });
   }
-  fs21.writeFileSync(absolute, content);
+  fs23.writeFileSync(absolute, content);
   return absolute;
 }
 function generateSchemaFromContent(target, output, pattern = "**/*.md") {
@@ -12458,25 +12794,25 @@ function generateSchemaFromContent(target, output, pattern = "**/*.md") {
 function initRepotypeConfig(targetDir, options = {}) {
   const type = options.type ?? "default";
   const force = options.force ?? false;
-  const absoluteTarget = path22.resolve(targetDir);
-  const outputPath = path22.join(absoluteTarget, "repotype.yaml");
-  if (fs21.existsSync(outputPath) && !force) {
+  const absoluteTarget = path23.resolve(targetDir);
+  const outputPath = path23.join(absoluteTarget, "repotype.yaml");
+  if (fs23.existsSync(outputPath) && !force) {
     throw new Error(
       `repotype.yaml already exists at ${outputPath}. Use --force to overwrite.`
     );
   }
-  const config2 = options.from ? yaml7.load(fs21.readFileSync(path22.resolve(options.from), "utf8")) : createPresetConfig(type);
+  const config2 = options.from ? yaml8.load(fs23.readFileSync(path23.resolve(options.from), "utf8")) : createPresetConfig(type);
   if (!config2 || typeof config2 !== "object" || !config2.version) {
     throw new Error(
       'Source config is invalid. Expected YAML with top-level "version".'
     );
   }
-  const rendered = yaml7.dump(config2, { lineWidth: 120 });
-  fs21.mkdirSync(absoluteTarget, { recursive: true });
-  fs21.writeFileSync(outputPath, rendered);
+  const rendered = yaml8.dump(config2, { lineWidth: 120 });
+  fs23.mkdirSync(absoluteTarget, { recursive: true });
+  fs23.writeFileSync(outputPath, rendered);
   return {
     outputPath,
-    source: options.from ? `file:${path22.resolve(options.from)}` : `preset:${type}`
+    source: options.from ? `file:${path23.resolve(options.from)}` : `preset:${type}`
   };
 }
 function getRepotypePresetMetadata() {
@@ -12485,9 +12821,9 @@ function getRepotypePresetMetadata() {
   };
 }
 function installPluginRequirements(target) {
-  const absolute = path22.resolve(target);
+  const absolute = path23.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path22.dirname(configPath);
+  const repoRoot = path23.dirname(configPath);
   const config2 = loadConfig(configPath);
   const installs = installPlugins(config2, repoRoot);
   return {
@@ -12498,9 +12834,9 @@ function installPluginRequirements(target) {
   };
 }
 function pluginStatus(target) {
-  const absolute = path22.resolve(target);
+  const absolute = path23.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path22.dirname(configPath);
+  const repoRoot = path23.dirname(configPath);
   const config2 = loadConfig(configPath);
   const plugins = describePlugins(config2);
   return {
@@ -12510,8 +12846,8 @@ function pluginStatus(target) {
   };
 }
 async function generateComplianceReport(target, format = "markdown", configOverridePath) {
-  const absolute = path22.resolve(target);
-  const configPath = configOverridePath ? path22.resolve(configOverridePath) : findConfig(absolute);
+  const absolute = path23.resolve(target);
+  const configPath = configOverridePath ? path23.resolve(configOverridePath) : findConfig(absolute);
   const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const validateResult = await validatePath(target, configOverridePath);
   const allDiagnostics = validateResult.mode === "workspace" ? [
@@ -12586,8 +12922,8 @@ async function generateComplianceReport(target, format = "markdown", configOverr
 
 // src/cli/cleanup.ts
 function ensureDir(dir) {
-  if (!fs22.existsSync(dir)) {
-    fs22.mkdirSync(dir, { recursive: true });
+  if (!fs24.existsSync(dir)) {
+    fs24.mkdirSync(dir, { recursive: true });
   }
 }
 function getTimestamp() {
@@ -12597,22 +12933,22 @@ function dedupe(items) {
   return [...new Set(items)];
 }
 function safeDestination(baseQueue, targetRoot, sourceFile) {
-  const relative = path23.relative(targetRoot, sourceFile);
-  const clamped = relative.startsWith("..") ? path23.basename(sourceFile) : relative;
-  const destination = path23.join(baseQueue, clamped);
-  if (!fs22.existsSync(destination)) {
+  const relative = path24.relative(targetRoot, sourceFile);
+  const clamped = relative.startsWith("..") ? path24.basename(sourceFile) : relative;
+  const destination = path24.join(baseQueue, clamped);
+  if (!fs24.existsSync(destination)) {
     return destination;
   }
-  const ext = path23.extname(destination);
+  const ext = path24.extname(destination);
   const stem = destination.slice(0, destination.length - ext.length);
   return `${stem}.moved-${Date.now()}${ext}`;
 }
 function writeAuditLogs(queueDir, entries) {
   ensureDir(queueDir);
-  const jsonlPath = path23.join(queueDir, "cleanup-log.jsonl");
-  const textPath = path23.join(queueDir, "cleanup-log.md");
+  const jsonlPath = path24.join(queueDir, "cleanup-log.jsonl");
+  const textPath = path24.join(queueDir, "cleanup-log.md");
   for (const entry of entries) {
-    fs22.appendFileSync(jsonlPath, `${JSON.stringify(entry)}
+    fs24.appendFileSync(jsonlPath, `${JSON.stringify(entry)}
 `);
     const summary = [
       `- ${entry.timestamp}`,
@@ -12623,12 +12959,12 @@ function writeAuditLogs(queueDir, entries) {
       ...entry.diagnostics.map((d) => `  - ${d.code}: ${d.message}`),
       ""
     ].join("\n");
-    fs22.appendFileSync(textPath, summary);
+    fs24.appendFileSync(textPath, summary);
   }
 }
 async function runCleanup(options) {
-  const targetRoot = path23.resolve(options.target);
-  const queueDir = path23.resolve(options.queueDir);
+  const targetRoot = path24.resolve(options.target);
+  const queueDir = path24.resolve(options.queueDir);
   ensureDir(queueDir);
   const validateResult = await validatePath(targetRoot);
   const allDiagnostics = validateResult.mode === "workspace" ? [
@@ -12644,7 +12980,7 @@ async function runCleanup(options) {
   const entries = [];
   let moved = 0;
   for (const file2 of files) {
-    if (!fs22.existsSync(file2)) {
+    if (!fs24.existsSync(file2)) {
       continue;
     }
     const diagnostics = errorDiagnostics.filter((d) => d.file === file2);
@@ -12652,9 +12988,9 @@ async function runCleanup(options) {
       continue;
     }
     const destination = safeDestination(queueDir, targetRoot, file2);
-    ensureDir(path23.dirname(destination));
+    ensureDir(path24.dirname(destination));
     if (!options.dryRun) {
-      fs22.renameSync(file2, destination);
+      fs24.renameSync(file2, destination);
       moved += 1;
     }
     entries.push({
@@ -12683,31 +13019,31 @@ async function runCleanup(options) {
 }
 
 // src/cli/watcher.ts
-import fs23 from "fs";
-import path24 from "path";
-import { spawnSync } from "child_process";
+import fs25 from "fs";
+import path25 from "path";
+import { spawnSync as spawnSync3 } from "child_process";
 function shQuote(input) {
   return `'${input.replace(/'/g, `'"'"'`)}'`;
 }
 function readCrontab() {
-  const read = spawnSync("crontab", ["-l"], { encoding: "utf8" });
+  const read = spawnSync3("crontab", ["-l"], { encoding: "utf8" });
   if (read.status !== 0) {
     return "";
   }
   return read.stdout || "";
 }
 function writeCrontab(content) {
-  const write = spawnSync("crontab", ["-"], { input: content, encoding: "utf8" });
+  const write = spawnSync3("crontab", ["-"], { input: content, encoding: "utf8" });
   if (write.status !== 0) {
     throw new Error(write.stderr || "Failed to write crontab");
   }
 }
 function installWatcher(options) {
-  const target = path24.resolve(options.target);
-  const queueDir = path24.resolve(options.queueDir);
-  const logFile = path24.resolve(options.logFile);
-  fs23.mkdirSync(path24.dirname(logFile), { recursive: true });
-  fs23.mkdirSync(queueDir, { recursive: true });
+  const target = path25.resolve(options.target);
+  const queueDir = path25.resolve(options.queueDir);
+  const logFile = path25.resolve(options.logFile);
+  fs25.mkdirSync(path25.dirname(logFile), { recursive: true });
+  fs25.mkdirSync(queueDir, { recursive: true });
   const marker = `# REPOTYPE_WATCHER:${target}`;
   const command = [
     `cd ${shQuote(target)}`,
@@ -12736,7 +13072,7 @@ function installWatcher(options) {
   };
 }
 function inspectWatcher(target) {
-  const resolved = path24.resolve(target);
+  const resolved = path25.resolve(target);
   const marker = `# REPOTYPE_WATCHER:${resolved}`;
   const current = readCrontab();
   const lines = current.split("\n").map((entry) => entry.trimEnd()).filter((entry) => entry.length > 0);
@@ -12748,7 +13084,7 @@ function inspectWatcher(target) {
   };
 }
 function uninstallWatcher(target, dryRun = false) {
-  const resolved = path24.resolve(target);
+  const resolved = path25.resolve(target);
   const marker = `# REPOTYPE_WATCHER:${resolved}`;
   const current = readCrontab();
   const lines = current.split("\n").map((entry) => entry.trimEnd()).filter((entry) => entry.length > 0);
@@ -12767,12 +13103,12 @@ function uninstallWatcher(target, dryRun = false) {
 }
 
 // src/cli/operations.ts
-import fs24 from "fs";
-import path25 from "path";
+import fs26 from "fs";
+import path26 from "path";
 function resolveRepoRoot2(target) {
-  const absolute = path25.resolve(target);
+  const absolute = path26.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path25.dirname(configPath);
+  const repoRoot = path26.dirname(configPath);
   return { repoRoot, configPath };
 }
 function normalizeOperations(target) {
@@ -12786,9 +13122,9 @@ function normalizeOperations(target) {
     watcher: {
       enabled: config2.operations?.watcher?.enabled ?? false,
       schedule: config2.operations?.watcher?.schedule ?? "*/15 * * * *",
-      queueDir: path25.resolve(repoRoot, config2.operations?.watcher?.queueDir ?? "sort_queue"),
+      queueDir: path26.resolve(repoRoot, config2.operations?.watcher?.queueDir ?? "sort_queue"),
       minErrors: config2.operations?.watcher?.minErrors ?? 3,
-      logFile: path25.resolve(repoRoot, config2.operations?.watcher?.logFile ?? ".repotype/logs/watcher.log")
+      logFile: path26.resolve(repoRoot, config2.operations?.watcher?.logFile ?? ".repotype/logs/watcher.log")
     }
   };
   return {
@@ -12798,11 +13134,11 @@ function normalizeOperations(target) {
   };
 }
 function readLastCleanupEntry(queueDir) {
-  const logPath = path25.join(queueDir, "cleanup-log.jsonl");
-  if (!fs24.existsSync(logPath)) {
+  const logPath = path26.join(queueDir, "cleanup-log.jsonl");
+  if (!fs26.existsSync(logPath)) {
     return { found: false };
   }
-  const lines = fs24.readFileSync(logPath, "utf8").split("\n").map((line) => line.trim()).filter(Boolean);
+  const lines = fs26.readFileSync(logPath, "utf8").split("\n").map((line) => line.trim()).filter(Boolean);
   if (lines.length === 0) {
     return { found: false };
   }
@@ -13107,9 +13443,9 @@ var repotypeReportCommand = new UniversalCommand({
   async handler({ target = ".", format = "markdown", config: config2, output }) {
     const result = await generateComplianceReport(target, format, config2);
     if (output) {
-      const outPath = path26.resolve(output);
-      fs25.mkdirSync(path26.dirname(outPath), { recursive: true });
-      fs25.writeFileSync(outPath, result.rendered);
+      const outPath = path27.resolve(output);
+      fs27.mkdirSync(path27.dirname(outPath), { recursive: true });
+      fs27.writeFileSync(outPath, result.rendered);
       return { ...result, _writtenTo: outPath };
     }
     return result;
@@ -13187,8 +13523,8 @@ var repotypeCleanupRunCommand = new UniversalCommand({
     minErrors = 3,
     dryRun = false
   }) {
-    const absoluteTarget = path26.resolve(target);
-    const queueDir = path26.isAbsolute(queue) ? queue : path26.resolve(absoluteTarget, queue);
+    const absoluteTarget = path27.resolve(target);
+    const queueDir = path27.isAbsolute(queue) ? queue : path27.resolve(absoluteTarget, queue);
     return runCleanup({ target: absoluteTarget, queueDir, minErrors, dryRun });
   }
 });
@@ -13280,9 +13616,9 @@ var repotypeInstallWatcherCommand = new UniversalCommand({
     logFile = ".repotype/logs/watcher.log",
     dryRun = true
   }) {
-    const resolvedTarget = path26.resolve(target);
-    const queueDir = path26.isAbsolute(queue) ? queue : path26.resolve(resolvedTarget, queue);
-    const resolvedLogFile = path26.isAbsolute(logFile) ? logFile : path26.resolve(resolvedTarget, logFile);
+    const resolvedTarget = path27.resolve(target);
+    const queueDir = path27.isAbsolute(queue) ? queue : path27.resolve(resolvedTarget, queue);
+    const resolvedLogFile = path27.isAbsolute(logFile) ? logFile : path27.resolve(resolvedTarget, logFile);
     return installWatcher({
       target: resolvedTarget,
       schedule,

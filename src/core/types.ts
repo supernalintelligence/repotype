@@ -82,6 +82,16 @@ export interface FileRule {
     allowAbsolute?: boolean;
     allowedExtensions?: string[];
   };
+  // SentinelContentAdapter — strings that must be present in staged file content
+  requireSentinels?: string[];
+  /** Env var that, when set to '1', converts sentinel errors to warnings */
+  sentinelOverrideEnvVar?: string;
+  /** Max deleted lines before blocking (checked against git diff --cached) */
+  sentinelDeletionThreshold?: number;
+  // WorkflowGateAdapter — workflow level required before committing this file
+  requiresWorkflow?: Array<'chg' | 'req' | 'light'>;
+  /** Informational: approvers shown in workflow gate error messages */
+  workflowApprovers?: string[];
 }
 
 export interface TemplateConfig {
