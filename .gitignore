@@ -13,3 +13,4 @@ coverage/
 .supernal-local/
 dist/**/*.d.ts
 dist/**/*.d.ts.map
+reports/
