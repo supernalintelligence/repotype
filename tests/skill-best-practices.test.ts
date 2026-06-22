@@ -13,6 +13,12 @@ function makeSkill(base: string, skillName: string, content: string): string {
   return skillMd;
 }
 
+/** Make a skill that mirrors a board package (creates packages/boards/<id>). */
+function makeBoardSkill(base: string, skillName: string, content: string): string {
+  fs.mkdirSync(path.join(base, 'packages', 'boards', skillName), { recursive: true });
+  return makeSkill(base, skillName, content);
+}
+
 function makeContext(): ValidatorContext {
   return {} as ValidatorContext;
 }
@@ -115,6 +121,23 @@ describe('SkillBestPracticesAdapter', () => {
       expect(codes(diagnostics)).toContain('skill_md_name_invalid_format');
       expect(diagnostics.find((d) => d.code === 'skill_md_name_invalid_format')?.severity).toBe('error');
     }
+  });
+
+  // ── Check 3: board-skill underscore exception ─────────────────────────
+  it('allows underscores in a board-skill name (mirrors packages/boards/<id>)', async () => {
+    for (const id of ['opportunity_board', 'aria_overview', '__planner']) {
+      const base = tmp();
+      const skillMd = makeBoardSkill(base, id, `---\nname: ${id}\ndescription: x\n---\nbody\n`);
+      const diagnostics = await adapter.validate(skillMd, makeContext());
+      expect(codes(diagnostics)).not.toContain('skill_md_name_invalid_format');
+    }
+  });
+
+  it('still rejects underscores for a standalone (non-board) skill', async () => {
+    const base = tmp();
+    const skillMd = makeSkill(base, 'opportunity_board', '---\nname: opportunity_board\ndescription: x\n---\nbody\n');
+    const diagnostics = await adapter.validate(skillMd, makeContext());
+    expect(codes(diagnostics)).toContain('skill_md_name_invalid_format');
   });
 
   // ── Check 4: description ──────────────────────────────────────────────
