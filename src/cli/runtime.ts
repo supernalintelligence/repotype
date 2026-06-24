@@ -13,6 +13,7 @@ import { BoardStoryCompletenessAdapter } from '../adapters/board-story-completen
 import { CompanyYamlAdapter } from '../adapters/company-yaml-adapter.js';
 import { GitignorePolicyAdapter } from '../adapters/gitignore-policy-adapter.js';
 import { CronRegistryDriftAdapter } from '../adapters/cron-registry-drift-adapter.js';
+import { CronIndexDriftAdapter } from '../adapters/cron-index-drift-adapter.js';
 import { SentinelContentAdapter } from '../adapters/sentinel-content-adapter.js';
 import { WorkflowGateAdapter } from '../adapters/workflow-gate-adapter.js';
 import { ValidationEngine } from '../core/validator-framework.js';
@@ -36,5 +37,6 @@ export function createDefaultEngine(): ValidationEngine {
     new CompanyYamlAdapter(),
     new GitignorePolicyAdapter(),
     new CronRegistryDriftAdapter(),
+    new CronIndexDriftAdapter(),
   ]);
 }
