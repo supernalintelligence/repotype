@@ -6,6 +6,9 @@ package:
   type: standalone
   license: CC-BY-NC-SA-4.0
 
+git_sync:
+  dev_branch: ian-dev
+
 upstream:
   repo: https://github.com/supernalintelligence/supernal-coding
   docs_path: docs/features/developer-tooling/repotype
