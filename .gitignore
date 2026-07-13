@@ -14,3 +14,6 @@ coverage/
 dist/**/*.d.ts
 dist/**/*.d.ts.map
 reports/
+
+# IDE workspace files (VS Code/Cursor multi-root workspace configs) — machine-local
+*.code-workspace
