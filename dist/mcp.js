@@ -1,7 +1,12 @@
 var __defProp = Object.defineProperty;
 var __getOwnPropNames = Object.getOwnPropertyNames;
-var __esm = (fn, res) => function __init() {
-  return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+var __esm = (fn, res, err) => function __init() {
+  if (err) throw err[0];
+  try {
+    return fn && (res = (0, fn[__getOwnPropNames(fn)[0]])(fn = 0)), res;
+  } catch (e) {
+    throw err = [e], e;
+  }
 };
 var __export = (target, all) => {
   for (var name in all)
@@ -260,10 +265,10 @@ function mergeDefs(...defs) {
 function cloneDef(schema) {
   return mergeDefs(schema._zod.def);
 }
-function getElementAtPath(obj, path28) {
-  if (!path28)
+function getElementAtPath(obj, path30) {
+  if (!path30)
     return obj;
-  return path28.reduce((acc, key) => acc?.[key], obj);
+  return path30.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
@@ -575,11 +580,11 @@ function aborted(x, startIndex = 0) {
   }
   return false;
 }
-function prefixIssues(path28, issues) {
+function prefixIssues(path30, issues) {
   return issues.map((iss) => {
     var _a2;
     (_a2 = iss).path ?? (_a2.path = []);
-    iss.path.unshift(path28);
+    iss.path.unshift(path30);
     return iss;
   });
 }
@@ -7499,10 +7504,10 @@ var init_v4 = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/types.js
+// ../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/types.js
 var RELATED_TASK_META_KEY, JSONRPC_VERSION, AssertObjectSchema, ProgressTokenSchema, CursorSchema, TaskCreationParamsSchema, TaskMetadataSchema, RelatedTaskMetadataSchema, RequestMetaSchema, BaseRequestParamsSchema, TaskAugmentedRequestParamsSchema, RequestSchema, NotificationsParamsSchema, NotificationSchema, ResultSchema, RequestIdSchema, JSONRPCRequestSchema, JSONRPCNotificationSchema, JSONRPCResultResponseSchema, ErrorCode, JSONRPCErrorResponseSchema, JSONRPCMessageSchema, JSONRPCResponseSchema, EmptyResultSchema, CancelledNotificationParamsSchema, CancelledNotificationSchema, IconSchema, IconsSchema, BaseMetadataSchema, ImplementationSchema, FormElicitationCapabilitySchema, ElicitationCapabilitySchema, ClientTasksCapabilitySchema, ServerTasksCapabilitySchema, ClientCapabilitiesSchema, InitializeRequestParamsSchema, InitializeRequestSchema, ServerCapabilitiesSchema, InitializeResultSchema, InitializedNotificationSchema, PingRequestSchema, ProgressSchema, ProgressNotificationParamsSchema, ProgressNotificationSchema, PaginatedRequestParamsSchema, PaginatedRequestSchema, PaginatedResultSchema, TaskStatusSchema, TaskSchema, CreateTaskResultSchema, TaskStatusNotificationParamsSchema, TaskStatusNotificationSchema, GetTaskRequestSchema, GetTaskResultSchema, GetTaskPayloadRequestSchema, GetTaskPayloadResultSchema, ListTasksRequestSchema, ListTasksResultSchema, CancelTaskRequestSchema, CancelTaskResultSchema, ResourceContentsSchema, TextResourceContentsSchema, Base64Schema, BlobResourceContentsSchema, RoleSchema, AnnotationsSchema, ResourceSchema, ResourceTemplateSchema, ListResourcesRequestSchema, ListResourcesResultSchema, ListResourceTemplatesRequestSchema, ListResourceTemplatesResultSchema, ResourceRequestParamsSchema, ReadResourceRequestParamsSchema, ReadResourceRequestSchema, ReadResourceResultSchema, ResourceListChangedNotificationSchema, SubscribeRequestParamsSchema, SubscribeRequestSchema, UnsubscribeRequestParamsSchema, UnsubscribeRequestSchema, ResourceUpdatedNotificationParamsSchema, ResourceUpdatedNotificationSchema, PromptArgumentSchema, PromptSchema, ListPromptsRequestSchema, ListPromptsResultSchema, GetPromptRequestParamsSchema, GetPromptRequestSchema, TextContentSchema, ImageContentSchema, AudioContentSchema, ToolUseContentSchema, EmbeddedResourceSchema, ResourceLinkSchema, ContentBlockSchema, PromptMessageSchema, GetPromptResultSchema, PromptListChangedNotificationSchema, ToolAnnotationsSchema, ToolExecutionSchema, ToolSchema, ListToolsRequestSchema, ListToolsResultSchema, CallToolResultSchema, CompatibilityCallToolResultSchema, CallToolRequestParamsSchema, CallToolRequestSchema, ToolListChangedNotificationSchema, ListChangedOptionsBaseSchema, LoggingLevelSchema, SetLevelRequestParamsSchema, SetLevelRequestSchema, LoggingMessageNotificationParamsSchema, LoggingMessageNotificationSchema, ModelHintSchema, ModelPreferencesSchema, ToolChoiceSchema, ToolResultContentSchema, SamplingContentSchema, SamplingMessageContentBlockSchema, SamplingMessageSchema, CreateMessageRequestParamsSchema, CreateMessageRequestSchema, CreateMessageResultSchema, CreateMessageResultWithToolsSchema, BooleanSchemaSchema, StringSchemaSchema, NumberSchemaSchema, UntitledSingleSelectEnumSchemaSchema, TitledSingleSelectEnumSchemaSchema, LegacyTitledEnumSchemaSchema, SingleSelectEnumSchemaSchema, UntitledMultiSelectEnumSchemaSchema, TitledMultiSelectEnumSchemaSchema, MultiSelectEnumSchemaSchema, EnumSchemaSchema, PrimitiveSchemaDefinitionSchema, ElicitRequestFormParamsSchema, ElicitRequestURLParamsSchema, ElicitRequestParamsSchema, ElicitRequestSchema, ElicitationCompleteNotificationParamsSchema, ElicitationCompleteNotificationSchema, ElicitResultSchema, ResourceTemplateReferenceSchema, PromptReferenceSchema, CompleteRequestParamsSchema, CompleteRequestSchema, CompleteResultSchema, RootSchema, ListRootsRequestSchema, ListRootsResultSchema, RootsListChangedNotificationSchema, ClientRequestSchema, ClientNotificationSchema, ClientResultSchema, ServerRequestSchema, ServerNotificationSchema, ServerResultSchema;
 var init_types = __esm({
-  "../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/types.js"() {
+  "../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/types.js"() {
     "use strict";
     init_v4();
     RELATED_TASK_META_KEY = "io.modelcontextprotocol/related-task";
@@ -8974,7 +8979,7 @@ var init_types = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/shared/stdio.js
+// ../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/shared/stdio.js
 function deserializeMessage(line) {
   return JSONRPCMessageSchema.parse(JSON.parse(line));
 }
@@ -8983,7 +8988,7 @@ function serializeMessage(message) {
 }
 var ReadBuffer;
 var init_stdio = __esm({
-  "../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/shared/stdio.js"() {
+  "../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/shared/stdio.js"() {
     "use strict";
     init_types();
     ReadBuffer = class {
@@ -9009,7 +9014,7 @@ var init_stdio = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js
+// ../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js
 var stdio_exports = {};
 __export(stdio_exports, {
   StdioServerTransport: () => StdioServerTransport
@@ -9017,7 +9022,7 @@ __export(stdio_exports, {
 import process3 from "process";
 var StdioServerTransport;
 var init_stdio2 = __esm({
-  "../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js"() {
+  "../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js"() {
     "use strict";
     init_stdio();
     StdioServerTransport = class {
@@ -9088,8 +9093,8 @@ import { createMCPServer } from "@supernal/universal-command/mcp";
 
 // src/universal-commands.ts
 import { UniversalCommand } from "@supernal/universal-command";
-import fs27 from "fs";
-import path27 from "path";
+import fs29 from "fs";
+import path29 from "path";
 
 // src/cli/git-hooks.ts
 import fs from "fs";
@@ -9236,12 +9241,12 @@ function uninstallChecks(options) {
 }
 
 // src/cli/cleanup.ts
-import fs24 from "fs";
-import path24 from "path";
+import fs26 from "fs";
+import path26 from "path";
 
 // src/cli/use-cases.ts
-import fs23 from "fs";
-import path23 from "path";
+import fs25 from "fs";
+import path25 from "path";
 
 // src/core/autofix.ts
 import fs3 from "fs";
@@ -11685,9 +11690,118 @@ var CronRegistryDriftAdapter = class {
   }
 };
 
+// src/adapters/cron-index-drift-adapter.ts
+import fs20 from "fs";
+import path21 from "path";
+var CRONS_JSON_SEG = "/.supernal/modules/crons.json";
+var CRON_INDEX_JSON_SEG = "/.supernal/modules/crons.index.json";
+var CRON_INDEX_MD_SEG = "/.supernal/modules/crons.index.md";
+function normalize5(p) {
+  return p.replace(/\\/g, "/");
+}
+function matchesAnySeg(filePath) {
+  const n = normalize5(filePath);
+  return n.endsWith(CRONS_JSON_SEG) || n.endsWith(CRON_INDEX_JSON_SEG) || n.endsWith(CRON_INDEX_MD_SEG);
+}
+function resolveMonorepoRoot2(filePath, context) {
+  const n = normalize5(filePath);
+  for (const seg of [CRONS_JSON_SEG, CRON_INDEX_JSON_SEG, CRON_INDEX_MD_SEG]) {
+    const idx = n.indexOf(seg);
+    if (idx >= 0) return n.slice(0, idx);
+  }
+  return context.repoRoot;
+}
+function cronId2(c) {
+  return c.id ?? c.action ?? "(unnamed)";
+}
+var CronIndexDriftAdapter = class {
+  id = "cron-index-drift";
+  /** Memoized per monorepo root — the diff runs at most once per root per run. */
+  cache = /* @__PURE__ */ new Map();
+  supports(filePath, _context) {
+    return matchesAnySeg(filePath);
+  }
+  async validate(filePath, context) {
+    const root = resolveMonorepoRoot2(filePath, context);
+    const cached2 = this.cache.get(root);
+    if (cached2) return [];
+    const diagnostics = this.computeDrift(root);
+    this.cache.set(root, diagnostics);
+    return diagnostics;
+  }
+  computeDrift(monorepoRoot) {
+    const cronsJsonPath = path21.join(monorepoRoot, ".supernal", "modules", "crons.json");
+    const indexJsonPath = path21.join(monorepoRoot, ".supernal", "modules", "crons.index.json");
+    if (!fs20.existsSync(cronsJsonPath)) return [];
+    if (!fs20.existsSync(indexJsonPath)) {
+      return [
+        {
+          code: "cron_index_missing",
+          message: `.supernal/modules/crons.index.json is missing but crons.json exists \u2014 the git-visible cron index is required. Run \`sc cron index\` and commit it.`,
+          severity: "error",
+          file: indexJsonPath,
+          ruleId: this.id
+        }
+      ];
+    }
+    let index;
+    try {
+      index = JSON.parse(fs20.readFileSync(indexJsonPath, "utf8"));
+    } catch (err) {
+      return [
+        {
+          code: "cron_index_unparseable",
+          message: `.supernal/modules/crons.index.json could not be parsed: ${err.message}`,
+          severity: "error",
+          file: indexJsonPath,
+          ruleId: this.id
+        }
+      ];
+    }
+    let cronsFile;
+    try {
+      cronsFile = JSON.parse(fs20.readFileSync(cronsJsonPath, "utf8"));
+    } catch (err) {
+      return [
+        {
+          code: "cron_index_stale",
+          message: `.supernal/modules/crons.json could not be parsed: ${err.message}`,
+          severity: "error",
+          file: cronsJsonPath,
+          ruleId: this.id
+        }
+      ];
+    }
+    const indexByKey = /* @__PURE__ */ new Map();
+    for (const e of index.entries ?? []) {
+      indexByKey.set(`${e.boardId}\0${e.cronId}`, e);
+    }
+    const diagnostics = [];
+    const crons = cronsFile.crons ?? {};
+    for (const [boardId, jobs] of Object.entries(crons)) {
+      for (const job of jobs ?? []) {
+        const id = cronId2(job);
+        const key = `${boardId}\0${id}`;
+        const entry = indexByKey.get(key);
+        if (!entry || !entry.sources?.includes("crons.json")) {
+          diagnostics.push({
+            code: "cron_index_stale",
+            message: `Cron ${boardId}/${id} is present in crons.json but missing from .supernal/modules/crons.index.json (or not attributed to crons.json) \u2014 the cron index is stale. Run \`sc cron index\` and commit the result.`,
+            severity: "error",
+            file: indexJsonPath,
+            ruleId: this.id,
+            details: { boardId, cronId: id }
+          });
+        }
+      }
+    }
+    return diagnostics;
+  }
+};
+
 // src/adapters/sentinel-content-adapter.ts
 import { spawnSync as spawnSync2 } from "child_process";
-import fs20 from "fs";
+import fs21 from "fs";
 
 // src/adapters/git-staged-cache.ts
 import { spawnSync } from "child_process";
@@ -11743,7 +11857,7 @@ var SentinelContentAdapter = class {
         file: filePath
       });
       try {
-        content = fs20.readFileSync(filePath);
+        content = fs21.readFileSync(filePath);
       } catch {
         return diagnostics;
       }
@@ -11762,7 +11876,7 @@ var SentinelContentAdapter = class {
           file: filePath
         });
         try {
-          content = fs20.readFileSync(filePath);
+          content = fs21.readFileSync(filePath);
         } catch {
           return diagnostics;
         }
@@ -11859,25 +11973,197 @@ var SentinelContentAdapter = class {
   }
 };
 
+// src/adapters/skill-best-practices-adapter.ts
+import fs22 from "fs";
+import path22 from "path";
+var SKILL_MANIFEST_RE = /(?:^|\/)skills\/([^/]+)\/SKILL\.md$/;
+var SKILL_NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+var BOARD_SKILL_NAME_RE = /^[a-z0-9_][a-z0-9_-]*$/;
+var MAX_DESCRIPTION_LENGTH = 1024;
+var MAX_LINES = 500;
+function skillDirFromPath(filePath) {
+  const normalized = filePath.replace(/\\/g, "/");
+  const match = normalized.match(SKILL_MANIFEST_RE);
+  return match ? match[1] : path22.basename(path22.dirname(filePath));
+}
+function isBoardSkill(filePath, skillDir) {
+  const normalized = filePath.replace(/\\/g, "/");
+  const idx = normalized.lastIndexOf("/skills/");
+  if (idx < 0) return false;
+  const repoRoot = normalized.slice(0, idx);
+  try {
+    return fs22.existsSync(path22.join(repoRoot, "packages", "boards", skillDir));
+  } catch {
+    return false;
+  }
+}
+var SkillBestPracticesAdapter = class {
+  id = "skill-best-practices";
+  supports(filePath, _context) {
+    const normalized = filePath.replace(/\\/g, "/");
+    return SKILL_MANIFEST_RE.test(normalized);
+  }
+  async validate(filePath, _context) {
+    const diagnostics = [];
+    const skillDir = skillDirFromPath(filePath);
+    let raw;
+    try {
+      raw = fs22.readFileSync(filePath, "utf8");
+    } catch (err) {
+      return [
+        {
+          code: "skill_md_unreadable",
+          message: `SKILL.md could not be read: ${err.message}`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id
+        }
+      ];
+    }
+    if (raw.length === 0) {
+      return [
+        {
+          code: "skill_md_empty",
+          message: `SKILL.md for skill '${skillDir}' is empty. A skill manifest must have frontmatter and a body.`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id,
+          details: { skill: skillDir }
+        }
+      ];
+    }
+    const hasFrontmatter = /^---\r?\n[\s\S]*?\r?\n---/.test(raw);
+    if (!hasFrontmatter) {
+      diagnostics.push({
+        code: "skill_md_missing_frontmatter",
+        message: `SKILL.md for skill '${skillDir}' has no YAML frontmatter. Start the file with a '---' block containing at least 'name' and 'description'.`,
+        severity: "error",
+        file: filePath,
+        ruleId: this.id,
+        details: { skill: skillDir }
+      });
+    }
+    let frontmatter = {};
+    if (hasFrontmatter) {
+      try {
+        frontmatter = parseMarkdownContent(raw).frontmatter;
+      } catch (err) {
+        diagnostics.push({
+          code: "skill_md_invalid_frontmatter",
+          message: `SKILL.md for skill '${skillDir}' has invalid YAML frontmatter: ${err.message}`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id,
+          details: { skill: skillDir }
+        });
+      }
+      const name = frontmatter["name"];
+      if (name === void 0 || name === null || name === "") {
+        diagnostics.push({
+          code: "skill_md_missing_name",
+          message: `SKILL.md for skill '${skillDir}' must have a 'name' field in its frontmatter.`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id,
+          details: { skill: skillDir }
+        });
+      } else if (typeof name !== "string") {
+        diagnostics.push({
+          code: "skill_md_name_not_string",
+          message: `SKILL.md for skill '${skillDir}' has a non-string 'name' field.`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id,
+          details: { skill: skillDir, name }
+        });
+      } else {
+        const boardSkill = isBoardSkill(filePath, skillDir);
+        const nameOk = boardSkill ? BOARD_SKILL_NAME_RE.test(name) : SKILL_NAME_RE.test(name);
+        if (!nameOk) {
+          diagnostics.push({
+            code: "skill_md_name_invalid_format",
+            message: boardSkill ? `SKILL.md 'name' ("${name}") must be lowercase letters, digits, underscores, and hyphens only.` : `SKILL.md 'name' ("${name}") must be lowercase letters, digits, and single hyphens only (no leading, trailing, or consecutive hyphens). If this mirrors a board package, add packages/boards/${skillDir}.`,
+            severity: "error",
+            file: filePath,
+            ruleId: this.id,
+            details: { skill: skillDir, name, boardSkill }
+          });
+        }
+        if (name !== skillDir) {
+          diagnostics.push({
+            code: "skill_md_name_dir_mismatch",
+            message: `SKILL.md 'name' ("${name}") does not match its parent directory name ("${skillDir}").`,
+            severity: "error",
+            file: filePath,
+            ruleId: this.id,
+            details: { skill: skillDir, name }
+          });
+        }
+      }
+      const description = frontmatter["description"];
+      if (description === void 0 || description === null || description === "") {
+        diagnostics.push({
+          code: "skill_md_missing_description",
+          message: `SKILL.md for skill '${skillDir}' must have a non-empty 'description' field in its frontmatter.`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id,
+          details: { skill: skillDir }
+        });
+      } else if (typeof description !== "string") {
+        diagnostics.push({
+          code: "skill_md_description_not_string",
+          message: `SKILL.md for skill '${skillDir}' has a non-string 'description' field.`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id,
+          details: { skill: skillDir }
+        });
+      } else if (description.length > MAX_DESCRIPTION_LENGTH) {
+        diagnostics.push({
+          code: "skill_md_description_too_long",
+          message: `SKILL.md 'description' for skill '${skillDir}' is ${description.length} characters (max ${MAX_DESCRIPTION_LENGTH}). Shorten it.`,
+          severity: "error",
+          file: filePath,
+          ruleId: this.id,
+          details: { skill: skillDir, length: description.length, max: MAX_DESCRIPTION_LENGTH }
+        });
+      }
+    }
+    const lineCount = raw.split("\n").length;
+    if (lineCount > MAX_LINES) {
+      diagnostics.push({
+        code: "skill_md_too_long",
+        message: `SKILL.md for skill '${skillDir}' is ${lineCount} lines (recommended max ${MAX_LINES}). Split supporting detail into referenced files to keep the manifest scannable.`,
+        severity: "warning",
+        file: filePath,
+        ruleId: this.id,
+        details: { skill: skillDir, lines: lineCount, max: MAX_LINES }
+      });
+    }
+    return diagnostics;
+  }
+};
+
 // src/adapters/workflow-gate-adapter.ts
-import path21 from "path";
-import fs21 from "fs";
+import path23 from "path";
+import fs23 from "fs";
 import yaml7 from "js-yaml";
 var REQ_ID_PATTERN = /^REQ-[A-Z0-9-]+$/;
-var STATE_FILE_RELATIVE = path21.join(".supernal", "controlled-files-workflow-state.yaml");
+var STATE_FILE_RELATIVE = path23.join(".supernal", "controlled-files-workflow-state.yaml");
 var workflowStateCache = /* @__PURE__ */ new Map();
 function getWorkflowState(repoRoot, filePath) {
   if (workflowStateCache.has(repoRoot)) {
     return { state: workflowStateCache.get(repoRoot) };
   }
-  const stateFilePath = path21.join(repoRoot, STATE_FILE_RELATIVE);
-  if (!fs21.existsSync(stateFilePath)) {
+  const stateFilePath = path23.join(repoRoot, STATE_FILE_RELATIVE);
+  if (!fs23.existsSync(stateFilePath)) {
     workflowStateCache.set(repoRoot, null);
     return { state: null };
   }
   let parsed;
   try {
-    const raw = fs21.readFileSync(stateFilePath, "utf8");
+    const raw = fs23.readFileSync(stateFilePath, "utf8");
     parsed = yaml7.load(raw);
   } catch {
     const warning = {
@@ -11936,7 +12222,7 @@ var WorkflowGateAdapter = class {
       });
       return diagnostics;
     }
-    const stateFilePath = path21.join(repoRoot, STATE_FILE_RELATIVE);
+    const stateFilePath = path23.join(repoRoot, STATE_FILE_RELATIVE);
     const { state, warning } = getWorkflowState(repoRoot, filePath);
     if (warning) {
       diagnostics.push(warning);
@@ -12020,24 +12306,24 @@ var WorkflowGateAdapter = class {
 };
 
 // src/core/validator-framework.ts
-import fs22 from "fs";
+import fs24 from "fs";
 import os from "os";
-import path22 from "path";
+import path24 from "path";
 import { globSync as globSync6 } from "glob";
 var CONFIG_FILE_NAMES = /* @__PURE__ */ new Set(["repotype.yaml", "repo-schema.yaml"]);
 function resolveRepoRoot(targetRoot, configPath) {
-  const configDir = path22.dirname(configPath);
-  const rel = path22.relative(configDir, targetRoot);
-  const targetInsideConfigDir = rel === "" || !rel.startsWith("..") && !path22.isAbsolute(rel);
+  const configDir = path24.dirname(configPath);
+  const rel = path24.relative(configDir, targetRoot);
+  const targetInsideConfigDir = rel === "" || !rel.startsWith("..") && !path24.isAbsolute(rel);
   return targetInsideConfigDir ? configDir : targetRoot;
 }
 var MAX_SCAN_FILES = 5e4;
 function scanFiles(targetPath, repoRoot, sharedIgnoreMatcher) {
   const ignoreMatcher = sharedIgnoreMatcher ?? createIgnoreMatcher(repoRoot);
-  const stats = fs22.statSync(targetPath);
+  const stats = fs24.statSync(targetPath);
   if (stats.isFile()) {
-    const absoluteFile = path22.resolve(targetPath);
-    if (CONFIG_FILE_NAMES.has(path22.basename(absoluteFile))) return [];
+    const absoluteFile = path24.resolve(targetPath);
+    if (CONFIG_FILE_NAMES.has(path24.basename(absoluteFile))) return [];
     return ignoreMatcher.isIgnored(absoluteFile) ? [] : [absoluteFile];
   }
   const files = globSync6("**/*", {
@@ -12047,7 +12333,7 @@ function scanFiles(targetPath, repoRoot, sharedIgnoreMatcher) {
     ignore: getStaticIgnoreGlobs()
   });
   const filtered = files.filter((filePath) => {
-    if (CONFIG_FILE_NAMES.has(path22.basename(filePath))) return false;
+    if (CONFIG_FILE_NAMES.has(path24.basename(filePath))) return false;
     return !ignoreMatcher.isIgnored(filePath);
   });
   if (filtered.length > MAX_SCAN_FILES) {
@@ -12182,10 +12468,11 @@ var ValidationEngine = class {
   constructor(adapters) {
     this.adapters = adapters;
   }
+  adapters;
   async validate(targetPath, options) {
-    const absoluteTarget = path22.resolve(targetPath);
-    const targetRoot = fs22.existsSync(absoluteTarget) && fs22.statSync(absoluteTarget).isDirectory() ? absoluteTarget : path22.dirname(absoluteTarget);
-    const configPath = options?.configPath ? path22.resolve(options.configPath) : findConfig(absoluteTarget);
+    const absoluteTarget = path24.resolve(targetPath);
+    const targetRoot = fs24.existsSync(absoluteTarget) && fs24.statSync(absoluteTarget).isDirectory() ? absoluteTarget : path24.dirname(absoluteTarget);
+    const configPath = options?.configPath ? path24.resolve(options.configPath) : findConfig(absoluteTarget);
     const repoRoot = resolveRepoRoot(targetRoot, configPath);
     const config2 = loadConfig(configPath);
     const files = options?.fileList ?? scanFiles(absoluteTarget, repoRoot, options?.sharedIgnoreMatcher);
@@ -12246,9 +12533,9 @@ var ValidationEngine = class {
    * Auto-detects child configs under rootDir.
    */
   async validateWorkspace(rootDir, options = {}) {
-    const root = path22.resolve(rootDir);
+    const root = path24.resolve(rootDir);
     const rootConfigPath = findConfig(root);
-    const repoRoot = path22.dirname(rootConfigPath);
+    const repoRoot = path24.dirname(rootConfigPath);
     const sharedIgnoreMatcher = createIgnoreMatcher(repoRoot);
     const workspaces = discoverWorkspaces(repoRoot, sharedIgnoreMatcher);
     if (workspaces.length === 0) {
@@ -12363,11 +12650,11 @@ var ValidationEngine = class {
       }
       for (const folder of rootConfig.folders ?? []) {
         for (const reqFile of folder.requiredFiles ?? []) {
-          const absReqFile = path22.resolve(repoRoot, reqFile);
-          if (absReqFile.startsWith(ws.subtreeRoot + path22.sep) || absReqFile === ws.subtreeRoot) {
+          const absReqFile = path24.resolve(repoRoot, reqFile);
+          if (absReqFile.startsWith(ws.subtreeRoot + path24.sep) || absReqFile === ws.subtreeRoot) {
             const childRequires = (childConfig.folders ?? []).some(
               (cf) => (cf.requiredFiles ?? []).some(
-                (rf) => path22.resolve(ws.subtreeRoot, rf) === absReqFile
+                (rf) => path24.resolve(ws.subtreeRoot, rf) === absReqFile
               )
             );
             if (!childRequires) {
@@ -12383,7 +12670,7 @@ var ValidationEngine = class {
           }
         }
       }
-      const relSubtree = path22.relative(repoRoot, ws.subtreeRoot);
+      const relSubtree = path24.relative(repoRoot, ws.subtreeRoot);
       for (const rootRule of rootConfig.files ?? []) {
         if (!rootGlobCouldMatchSubtree(rootRule.glob, relSubtree)) continue;
         for (const childRule of childConfig.files ?? []) {
@@ -12464,7 +12751,9 @@ function createDefaultEngine() {
     new BoardStoryCompletenessAdapter(),
     new CompanyYamlAdapter(),
     new GitignorePolicyAdapter(),
-    new CronRegistryDriftAdapter()
+    new CronRegistryDriftAdapter(),
+    new CronIndexDriftAdapter(),
+    new SkillBestPracticesAdapter()
   ]);
 }
 
@@ -12671,20 +12960,20 @@ function renderComplianceReport(report, format = "markdown") {
 import yaml8 from "js-yaml";
 var deriveRepoRoot = resolveRepoRoot;
 function deriveTargetRoot(targetPath) {
-  if (fs23.existsSync(targetPath) && fs23.statSync(targetPath).isDirectory()) {
+  if (fs25.existsSync(targetPath) && fs25.statSync(targetPath).isDirectory()) {
     return targetPath;
   }
-  return path23.dirname(targetPath);
+  return path25.dirname(targetPath);
 }
 async function validatePath(target, configOverridePath, opts = {}) {
-  const absolute = path23.resolve(target);
-  const configPath = configOverridePath ? path23.resolve(configOverridePath) : findConfig(absolute);
+  const absolute = path25.resolve(target);
+  const configPath = configOverridePath ? path25.resolve(configOverridePath) : findConfig(absolute);
   const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const config2 = loadConfig(configPath);
   const engine = createDefaultEngine();
   const pluginsEnabled = opts.plugins === true;
   const pluginDiagnostics = pluginsEnabled ? runPluginPhase(config2, repoRoot, "validate") : [];
-  const isDirectory = fs23.existsSync(absolute) && fs23.statSync(absolute).isDirectory();
+  const isDirectory = fs25.existsSync(absolute) && fs25.statSync(absolute).isDirectory();
   const workspaceEnabled = opts.workspace !== false;
   if (isDirectory && workspaceEnabled && !configOverridePath) {
     const wsResult = await engine.validateWorkspace(absolute, {
@@ -12722,15 +13011,15 @@ async function validatePath(target, configOverridePath, opts = {}) {
   };
 }
 function explainPath(target, configOverridePath) {
-  const absolute = path23.resolve(target);
-  const configPath = configOverridePath ? path23.resolve(configOverridePath) : findConfig(absolute);
+  const absolute = path25.resolve(target);
+  const configPath = configOverridePath ? path25.resolve(configOverridePath) : findConfig(absolute);
   const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const config2 = loadConfig(configPath);
   return explainRules(config2, repoRoot, absolute);
 }
 async function fixPath(target, configOverridePath, opts = {}) {
-  const absolute = path23.resolve(target);
-  const configPath = configOverridePath ? path23.resolve(configOverridePath) : findConfig(absolute);
+  const absolute = path25.resolve(target);
+  const configPath = configOverridePath ? path25.resolve(configOverridePath) : findConfig(absolute);
   const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const config2 = loadConfig(configPath);
   const pluginsEnabled = opts.plugins === true;
@@ -12776,16 +13065,16 @@ async function fixPath(target, configOverridePath, opts = {}) {
   };
 }
 function scaffoldFromTemplate(templateId, outputPath, variables) {
-  const absolute = path23.resolve(outputPath);
+  const absolute = path25.resolve(outputPath);
   const configPath = findConfig(absolute);
-  const repoRoot = path23.dirname(configPath);
+  const repoRoot = path25.dirname(configPath);
   const config2 = loadConfig(configPath);
   const content = renderTemplate(config2, repoRoot, templateId, variables);
-  const parent = path23.dirname(absolute);
-  if (!fs23.existsSync(parent)) {
-    fs23.mkdirSync(parent, { recursive: true });
+  const parent = path25.dirname(absolute);
+  if (!fs25.existsSync(parent)) {
+    fs25.mkdirSync(parent, { recursive: true });
   }
-  fs23.writeFileSync(absolute, content);
+  fs25.writeFileSync(absolute, content);
   return absolute;
 }
 function generateSchemaFromContent(target, output, pattern = "**/*.md") {
@@ -12794,25 +13083,25 @@ function generateSchemaFromContent(target, output, pattern = "**/*.md") {
 function initRepotypeConfig(targetDir, options = {}) {
   const type = options.type ?? "default";
   const force = options.force ?? false;
-  const absoluteTarget = path23.resolve(targetDir);
-  const outputPath = path23.join(absoluteTarget, "repotype.yaml");
-  if (fs23.existsSync(outputPath) && !force) {
+  const absoluteTarget = path25.resolve(targetDir);
+  const outputPath = path25.join(absoluteTarget, "repotype.yaml");
+  if (fs25.existsSync(outputPath) && !force) {
     throw new Error(
       `repotype.yaml already exists at ${outputPath}. Use --force to overwrite.`
     );
   }
-  const config2 = options.from ? yaml8.load(fs23.readFileSync(path23.resolve(options.from), "utf8")) : createPresetConfig(type);
+  const config2 = options.from ? yaml8.load(fs25.readFileSync(path25.resolve(options.from), "utf8")) : createPresetConfig(type);
   if (!config2 || typeof config2 !== "object" || !config2.version) {
     throw new Error(
       'Source config is invalid. Expected YAML with top-level "version".'
     );
   }
   const rendered = yaml8.dump(config2, { lineWidth: 120 });
-  fs23.mkdirSync(absoluteTarget, { recursive: true });
-  fs23.writeFileSync(outputPath, rendered);
+  fs25.mkdirSync(absoluteTarget, { recursive: true });
+  fs25.writeFileSync(outputPath, rendered);
   return {
     outputPath,
-    source: options.from ? `file:${path23.resolve(options.from)}` : `preset:${type}`
+    source: options.from ? `file:${path25.resolve(options.from)}` : `preset:${type}`
   };
 }
 function getRepotypePresetMetadata() {
@@ -12821,9 +13110,9 @@ function getRepotypePresetMetadata() {
   };
 }
 function installPluginRequirements(target) {
-  const absolute = path23.resolve(target);
+  const absolute = path25.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path23.dirname(configPath);
+  const repoRoot = path25.dirname(configPath);
   const config2 = loadConfig(configPath);
   const installs = installPlugins(config2, repoRoot);
   return {
@@ -12834,9 +13123,9 @@ function installPluginRequirements(target) {
   };
 }
 function pluginStatus(target) {
-  const absolute = path23.resolve(target);
+  const absolute = path25.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path23.dirname(configPath);
+  const repoRoot = path25.dirname(configPath);
   const config2 = loadConfig(configPath);
   const plugins = describePlugins(config2);
   return {
@@ -12846,8 +13135,8 @@ function pluginStatus(target) {
   };
 }
 async function generateComplianceReport(target, format = "markdown", configOverridePath) {
-  const absolute = path23.resolve(target);
-  const configPath = configOverridePath ? path23.resolve(configOverridePath) : findConfig(absolute);
+  const absolute = path25.resolve(target);
+  const configPath = configOverridePath ? path25.resolve(configOverridePath) : findConfig(absolute);
   const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const validateResult = await validatePath(target, configOverridePath);
   const allDiagnostics = validateResult.mode === "workspace" ? [
@@ -12922,8 +13211,8 @@ async function generateComplianceReport(target, format = "markdown", configOverr
 
 // src/cli/cleanup.ts
 function ensureDir(dir) {
-  if (!fs24.existsSync(dir)) {
-    fs24.mkdirSync(dir, { recursive: true });
+  if (!fs26.existsSync(dir)) {
+    fs26.mkdirSync(dir, { recursive: true });
   }
 }
 function getTimestamp() {
@@ -12933,22 +13222,22 @@ function dedupe(items) {
   return [...new Set(items)];
 }
 function safeDestination(baseQueue, targetRoot, sourceFile) {
-  const relative = path24.relative(targetRoot, sourceFile);
-  const clamped = relative.startsWith("..") ? path24.basename(sourceFile) : relative;
-  const destination = path24.join(baseQueue, clamped);
-  if (!fs24.existsSync(destination)) {
+  const relative = path26.relative(targetRoot, sourceFile);
+  const clamped = relative.startsWith("..") ? path26.basename(sourceFile) : relative;
+  const destination = path26.join(baseQueue, clamped);
+  if (!fs26.existsSync(destination)) {
     return destination;
   }
-  const ext = path24.extname(destination);
+  const ext = path26.extname(destination);
   const stem = destination.slice(0, destination.length - ext.length);
   return `${stem}.moved-${Date.now()}${ext}`;
 }
 function writeAuditLogs(queueDir, entries) {
   ensureDir(queueDir);
-  const jsonlPath = path24.join(queueDir, "cleanup-log.jsonl");
-  const textPath = path24.join(queueDir, "cleanup-log.md");
+  const jsonlPath = path26.join(queueDir, "cleanup-log.jsonl");
+  const textPath = path26.join(queueDir, "cleanup-log.md");
   for (const entry of entries) {
-    fs24.appendFileSync(jsonlPath, `${JSON.stringify(entry)}
+    fs26.appendFileSync(jsonlPath, `${JSON.stringify(entry)}
 `);
     const summary = [
       `- ${entry.timestamp}`,
@@ -12959,12 +13248,12 @@ function writeAuditLogs(queueDir, entries) {
       ...entry.diagnostics.map((d) => `  - ${d.code}: ${d.message}`),
       ""
     ].join("\n");
-    fs24.appendFileSync(textPath, summary);
+    fs26.appendFileSync(textPath, summary);
   }
 }
 async function runCleanup(options) {
-  const targetRoot = path24.resolve(options.target);
-  const queueDir = path24.resolve(options.queueDir);
+  const targetRoot = path26.resolve(options.target);
+  const queueDir = path26.resolve(options.queueDir);
   ensureDir(queueDir);
   const validateResult = await validatePath(targetRoot);
   const allDiagnostics = validateResult.mode === "workspace" ? [
@@ -12980,7 +13269,7 @@ async function runCleanup(options) {
   const entries = [];
   let moved = 0;
   for (const file2 of files) {
-    if (!fs24.existsSync(file2)) {
+    if (!fs26.existsSync(file2)) {
       continue;
     }
     const diagnostics = errorDiagnostics.filter((d) => d.file === file2);
@@ -12988,9 +13277,9 @@ async function runCleanup(options) {
       continue;
     }
     const destination = safeDestination(queueDir, targetRoot, file2);
-    ensureDir(path24.dirname(destination));
+    ensureDir(path26.dirname(destination));
     if (!options.dryRun) {
-      fs24.renameSync(file2, destination);
+      fs26.renameSync(file2, destination);
       moved += 1;
     }
     entries.push({
@@ -13019,8 +13308,8 @@ async function runCleanup(options) {
 }
 
 // src/cli/watcher.ts
-import fs25 from "fs";
-import path25 from "path";
+import fs27 from "fs";
+import path27 from "path";
 import { spawnSync as spawnSync3 } from "child_process";
 function shQuote(input) {
   return `'${input.replace(/'/g, `'"'"'`)}'`;
@@ -13039,11 +13328,11 @@ function writeCrontab(content) {
   }
 }
 function installWatcher(options) {
-  const target = path25.resolve(options.target);
-  const queueDir = path25.resolve(options.queueDir);
-  const logFile = path25.resolve(options.logFile);
-  fs25.mkdirSync(path25.dirname(logFile), { recursive: true });
-  fs25.mkdirSync(queueDir, { recursive: true });
+  const target = path27.resolve(options.target);
+  const queueDir = path27.resolve(options.queueDir);
+  const logFile = path27.resolve(options.logFile);
+  fs27.mkdirSync(path27.dirname(logFile), { recursive: true });
+  fs27.mkdirSync(queueDir, { recursive: true });
   const marker = `# REPOTYPE_WATCHER:${target}`;
   const command = [
     `cd ${shQuote(target)}`,
@@ -13072,7 +13361,7 @@ function installWatcher(options) {
   };
 }
 function inspectWatcher(target) {
-  const resolved = path25.resolve(target);
+  const resolved = path27.resolve(target);
   const marker = `# REPOTYPE_WATCHER:${resolved}`;
   const current = readCrontab();
   const lines = current.split("\n").map((entry) => entry.trimEnd()).filter((entry) => entry.length > 0);
@@ -13084,7 +13373,7 @@ function inspectWatcher(target) {
   };
 }
 function uninstallWatcher(target, dryRun = false) {
-  const resolved = path25.resolve(target);
+  const resolved = path27.resolve(target);
   const marker = `# REPOTYPE_WATCHER:${resolved}`;
   const current = readCrontab();
   const lines = current.split("\n").map((entry) => entry.trimEnd()).filter((entry) => entry.length > 0);
@@ -13103,12 +13392,12 @@ function uninstallWatcher(target, dryRun = false) {
 }
 
 // src/cli/operations.ts
-import fs26 from "fs";
-import path26 from "path";
+import fs28 from "fs";
+import path28 from "path";
 function resolveRepoRoot2(target) {
-  const absolute = path26.resolve(target);
+  const absolute = path28.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path26.dirname(configPath);
+  const repoRoot = path28.dirname(configPath);
   return { repoRoot, configPath };
 }
 function normalizeOperations(target) {
@@ -13122,9 +13411,9 @@ function normalizeOperations(target) {
     watcher: {
       enabled: config2.operations?.watcher?.enabled ?? false,
       schedule: config2.operations?.watcher?.schedule ?? "*/15 * * * *",
-      queueDir: path26.resolve(repoRoot, config2.operations?.watcher?.queueDir ?? "sort_queue"),
+      queueDir: path28.resolve(repoRoot, config2.operations?.watcher?.queueDir ?? "sort_queue"),
       minErrors: config2.operations?.watcher?.minErrors ?? 3,
-      logFile: path26.resolve(repoRoot, config2.operations?.watcher?.logFile ?? ".repotype/logs/watcher.log")
+      logFile: path28.resolve(repoRoot, config2.operations?.watcher?.logFile ?? ".repotype/logs/watcher.log")
     }
   };
   return {
@@ -13134,11 +13423,11 @@ function normalizeOperations(target) {
   };
 }
 function readLastCleanupEntry(queueDir) {
-  const logPath = path26.join(queueDir, "cleanup-log.jsonl");
-  if (!fs26.existsSync(logPath)) {
+  const logPath = path28.join(queueDir, "cleanup-log.jsonl");
+  if (!fs28.existsSync(logPath)) {
     return { found: false };
   }
-  const lines = fs26.readFileSync(logPath, "utf8").split("\n").map((line) => line.trim()).filter(Boolean);
+  const lines = fs28.readFileSync(logPath, "utf8").split("\n").map((line) => line.trim()).filter(Boolean);
   if (lines.length === 0) {
     return { found: false };
   }
@@ -13443,9 +13732,9 @@ var repotypeReportCommand = new UniversalCommand({
   async handler({ target = ".", format = "markdown", config: config2, output }) {
     const result = await generateComplianceReport(target, format, config2);
     if (output) {
-      const outPath = path27.resolve(output);
-      fs27.mkdirSync(path27.dirname(outPath), { recursive: true });
-      fs27.writeFileSync(outPath, result.rendered);
+      const outPath = path29.resolve(output);
+      fs29.mkdirSync(path29.dirname(outPath), { recursive: true });
+      fs29.writeFileSync(outPath, result.rendered);
       return { ...result, _writtenTo: outPath };
     }
     return result;
@@ -13523,8 +13812,8 @@ var repotypeCleanupRunCommand = new UniversalCommand({
     minErrors = 3,
     dryRun = false
   }) {
-    const absoluteTarget = path27.resolve(target);
-    const queueDir = path27.isAbsolute(queue) ? queue : path27.resolve(absoluteTarget, queue);
+    const absoluteTarget = path29.resolve(target);
+    const queueDir = path29.isAbsolute(queue) ? queue : path29.resolve(absoluteTarget, queue);
     return runCleanup({ target: absoluteTarget, queueDir, minErrors, dryRun });
   }
 });
@@ -13616,9 +13905,9 @@ var repotypeInstallWatcherCommand = new UniversalCommand({
     logFile = ".repotype/logs/watcher.log",
     dryRun = true
   }) {
-    const resolvedTarget = path27.resolve(target);
-    const queueDir = path27.isAbsolute(queue) ? queue : path27.resolve(resolvedTarget, queue);
-    const resolvedLogFile = path27.isAbsolute(logFile) ? logFile : path27.resolve(resolvedTarget, logFile);
+    const resolvedTarget = path29.resolve(target);
+    const queueDir = path29.isAbsolute(queue) ? queue : path29.resolve(resolvedTarget, queue);
+    const resolvedLogFile = path29.isAbsolute(logFile) ? logFile : path29.resolve(resolvedTarget, logFile);
     return installWatcher({
       target: resolvedTarget,
       schedule,
