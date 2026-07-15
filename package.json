@@ -24,7 +24,7 @@
     }
   },
   "scripts": {
-    "prepare": "husky || true",
+    "prepare": "husky || true && sh scripts/ensure-refguard-hook.sh || true",
     "build": "tsup",
     "dev": "tsup --watch",
     "typecheck": "tsc --noEmit",
