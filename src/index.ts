@@ -1,5 +1,7 @@
 export * from './core/types.js';
 export * from './core/config-loader.js';
+export * from './core/path-ignore.js';
+export * from './core/glob.js';
 export * from './core/presets.js';
 export * from './core/rule-engine.js';
 export * from './core/schema-generator.js';

@@ -363,6 +363,22 @@ function writeWorkspaceCache(repoRoot, cache) {
   }
 }
 
+// src/core/glob.ts
+import { Minimatch as Minimatch2 } from "minimatch";
+var MATCH_OPTS2 = { dot: true, nocase: false, nocomment: true };
+var compiledCache = /* @__PURE__ */ new Map();
+function getCompiled(glob) {
+  let mm = compiledCache.get(glob);
+  if (!mm) {
+    mm = new Minimatch2(glob, MATCH_OPTS2);
+    compiledCache.set(glob, mm);
+  }
+  return mm;
+}
+function matchesGlob(pathValue, glob) {
+  return getCompiled(glob).match(pathValue);
+}
+
 // src/core/presets.ts
 function baseDefaults() {
   return {
@@ -431,24 +447,6 @@ function listPresetTypes() {
 
 // src/core/rule-engine.ts
 import path3 from "path";
-
-// src/core/glob.ts
-import { Minimatch as Minimatch2 } from "minimatch";
-var MATCH_OPTS2 = { dot: true, nocase: false, nocomment: true };
-var compiledCache = /* @__PURE__ */ new Map();
-function getCompiled(glob) {
-  let mm = compiledCache.get(glob);
-  if (!mm) {
-    mm = new Minimatch2(glob, MATCH_OPTS2);
-    compiledCache.set(glob, mm);
-  }
-  return mm;
-}
-function matchesGlob(pathValue, glob) {
-  return getCompiled(glob).match(pathValue);
-}
-
-// src/core/rule-engine.ts
 function normalize2(p) {
   return p.replace(/\\\\/g, "/").replace(/^\.\//, "");
 }
@@ -5048,6 +5046,7 @@ export {
   ValidationEngine,
   applyOperationsConfig,
   collectExtendsDeps,
+  createIgnoreMatcher,
   createPresetConfig,
   describePlugins,
   discoverWorkspaces,
@@ -5060,6 +5059,7 @@ export {
   generateSchemaFromContent,
   getOperationsStatus,
   getRepotypePresetMetadata,
+  getStaticIgnoreGlobs,
   hashConfigFiles,
   initRepotypeConfig,
   installPluginRequirements,
@@ -5067,6 +5067,7 @@ export {
   listPresetTypes,
   loadConfig,
   loadWorkspaceCache,
+  matchesGlob,
   parseComplianceReportJson,
   pluginStatus,
   renderComplianceReport,
