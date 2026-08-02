@@ -67,7 +67,7 @@ function isBoardSkill(filePath: string, skillDir: string): boolean {
   if (idx < 0) return false;
   const repoRoot = normalized.slice(0, idx);
   try {
-    return fs.existsSync(path.join(repoRoot, 'packages', 'boards', skillDir));
+    return fs.existsSync(path.join(repoRoot, 'packages', 'modules', skillDir));
   } catch {
     return false;
   }

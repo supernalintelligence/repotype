@@ -163,7 +163,7 @@ export class CronRegistryDriftAdapter implements ValidatorAdapter {
     const registryCrons = registry.crons ?? {};
 
     // ── Enumerate declared crons from every board.yaml under packages/boards/ ──
-    const boardsDir = path.join(monorepoRoot, 'packages', 'boards');
+    const boardsDir = path.join(monorepoRoot, 'packages', 'modules');
     let boardDirs: string[];
     try {
       boardDirs = fs
