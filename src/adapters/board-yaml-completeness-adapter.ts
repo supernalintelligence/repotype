@@ -1,7 +1,7 @@
 /**
  * REQ-MLM-016: board-yaml-completeness adapter
  *
- * Lints all board.yaml files in packages/boards/ and .supernal/boards/.
+ * Lints all module.yaml/board.yaml files in packages/modules/ and .supernal/boards/.
  * Rule ID: board-yaml-completeness
  * Severity: warning (not error) — boards with no connectors/crons/secrets are valid.
  *
@@ -29,7 +29,12 @@ import yaml from 'js-yaml';
 import type { Diagnostic, ValidatorAdapter, ValidatorContext } from '../core/types.js';
 
 function isBoardYaml(filePath: string): boolean {
-  return filePath.endsWith('/board.yaml') || filePath === 'board.yaml';
+  return (
+    filePath.endsWith('/module.yaml') ||
+    filePath === 'module.yaml' ||
+    filePath.endsWith('/board.yaml') ||
+    filePath === 'board.yaml'
+  );
 }
 
 export class BoardYamlCompletenessAdapter implements ValidatorAdapter {

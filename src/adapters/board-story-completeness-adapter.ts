@@ -16,14 +16,17 @@ import fs from 'node:fs';
 import path from 'node:path';
 import type { Diagnostic, ValidatorAdapter, ValidatorContext } from '../core/types.js';
 
-const BOARDS_DIR_SEGMENT = `${path.sep}packages${path.sep}boards${path.sep}`;
-const BOARDS_DIR_SEGMENT_FWD = '/packages/boards/';
+const BOARDS_DIR_SEGMENT = `${path.sep}packages${path.sep}modules${path.sep}`;
+const BOARDS_DIR_SEGMENT_FWD = '/packages/modules/';
 
 function isBoardYaml(filePath: string): boolean {
   const normalized = filePath.replace(/\\/g, '/');
   return (
     normalized.includes(BOARDS_DIR_SEGMENT_FWD) &&
-    (normalized.endsWith('/board.yaml') || normalized === 'board.yaml')
+    (normalized.endsWith('/module.yaml') ||
+      normalized === 'module.yaml' ||
+      normalized.endsWith('/board.yaml') ||
+      normalized === 'board.yaml')
   );
 }
 

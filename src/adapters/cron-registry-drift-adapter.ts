@@ -180,7 +180,11 @@ export class CronRegistryDriftAdapter implements ValidatorAdapter {
 
     for (const boardId of boardDirs) {
       if (RECONCILE_EXCLUDED.has(boardId)) continue;
-      const yamlPath = path.join(boardsDir, boardId, 'board.yaml');
+      // module.yaml preferred (board->module naming migration), board.yaml legacy fallback.
+      const moduleYamlPath = path.join(boardsDir, boardId, 'module.yaml');
+      const yamlPath = fs.existsSync(moduleYamlPath)
+        ? moduleYamlPath
+        : path.join(boardsDir, boardId, 'board.yaml');
       if (!fs.existsSync(yamlPath)) continue;
 
       let doc: { crons?: BoardYamlCron[] };
