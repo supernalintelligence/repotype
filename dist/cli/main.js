@@ -1789,7 +1789,7 @@ import fs14 from "fs";
 import path16 from "path";
 import yaml4 from "js-yaml";
 function isBoardYaml(filePath) {
-  return filePath.endsWith("/board.yaml") || filePath === "board.yaml";
+  return filePath.endsWith("/module.yaml") || filePath === "module.yaml";
 }
 var BoardYamlCompletenessAdapter = class {
   id = "board-yaml-completeness";
@@ -1806,7 +1806,7 @@ var BoardYamlCompletenessAdapter = class {
       return [
         {
           code: "board_yaml_unreadable",
-          message: `board.yaml could not be read: ${err.message}`,
+          message: `module.yaml could not be read: ${err.message}`,
           severity: "error",
           file: filePath,
           ruleId: this.id
@@ -1820,7 +1820,7 @@ var BoardYamlCompletenessAdapter = class {
         return [
           {
             code: "board_yaml_not_object",
-            message: "board.yaml must be a YAML mapping (object), not a scalar or array.",
+            message: "module.yaml must be a YAML mapping (object), not a scalar or array.",
             severity: "error",
             file: filePath,
             ruleId: this.id
@@ -1832,7 +1832,7 @@ var BoardYamlCompletenessAdapter = class {
       return [
         {
           code: "board_yaml_invalid_yaml",
-          message: `board.yaml has invalid YAML syntax: ${err.message}`,
+          message: `module.yaml has invalid YAML syntax: ${err.message}`,
           severity: "error",
           file: filePath,
           ruleId: this.id
@@ -1843,7 +1843,7 @@ var BoardYamlCompletenessAdapter = class {
     if (!("id" in doc) || doc["id"] === void 0 || doc["id"] === null || doc["id"] === "") {
       diagnostics.push({
         code: "board_yaml_missing_id",
-        message: "board.yaml must have an id field.",
+        message: "module.yaml must have an id field.",
         severity: "error",
         file: filePath,
         ruleId: this.id
@@ -1851,7 +1851,7 @@ var BoardYamlCompletenessAdapter = class {
     } else if (typeof doc["id"] === "string" && doc["id"] !== dirName) {
       diagnostics.push({
         code: "board_yaml_id_mismatch",
-        message: `board.yaml id "${doc["id"]}" does not match directory name "${dirName}".`,
+        message: `module.yaml id "${doc["id"]}" does not match directory name "${dirName}".`,
         severity: "error",
         file: filePath,
         ruleId: this.id,
@@ -1861,7 +1861,7 @@ var BoardYamlCompletenessAdapter = class {
     if (!("label" in doc) || doc["label"] === void 0 || doc["label"] === null || doc["label"] === "") {
       diagnostics.push({
         code: "board_yaml_missing_label",
-        message: "board.yaml must have a label field.",
+        message: "module.yaml must have a label field.",
         severity: "error",
         file: filePath,
         ruleId: this.id
@@ -1870,7 +1870,7 @@ var BoardYamlCompletenessAdapter = class {
     if (!("description" in doc) || doc["description"] === void 0 || doc["description"] === null) {
       diagnostics.push({
         code: "board_yaml_missing_description",
-        message: "board.yaml must have a description field.",
+        message: "module.yaml must have a description field.",
         severity: "error",
         file: filePath,
         ruleId: this.id
@@ -1878,7 +1878,7 @@ var BoardYamlCompletenessAdapter = class {
     } else if (typeof doc["description"] === "string" && doc["description"].trim().length === 0) {
       diagnostics.push({
         code: "board_yaml_empty_description",
-        message: "board.yaml description must not be empty.",
+        message: "module.yaml description must not be empty.",
         severity: "error",
         file: filePath,
         ruleId: this.id
@@ -1887,7 +1887,7 @@ var BoardYamlCompletenessAdapter = class {
     if (!("category" in doc) || doc["category"] === void 0 || doc["category"] === null || doc["category"] === "") {
       diagnostics.push({
         code: "board_yaml_missing_category",
-        message: "board.yaml should have a category field (revenue | operations | intelligence | content | custom).",
+        message: "module.yaml should have a category field (revenue | operations | intelligence | content | custom).",
         severity: "warning",
         file: filePath,
         ruleId: this.id
@@ -1896,7 +1896,7 @@ var BoardYamlCompletenessAdapter = class {
     if (!("icon" in doc) || doc["icon"] === void 0 || doc["icon"] === null || doc["icon"] === "") {
       diagnostics.push({
         code: "board_yaml_missing_icon",
-        message: "board.yaml should have an icon field (lucide icon name).",
+        message: "module.yaml should have an icon field (lucide icon name).",
         severity: "warning",
         file: filePath,
         ruleId: this.id
@@ -1908,7 +1908,7 @@ var BoardYamlCompletenessAdapter = class {
     if (!hasConnectors && !hasCrons && !hasSecrets) {
       diagnostics.push({
         code: "board_yaml_no_external_deps",
-        message: "board.yaml declares no connectors, crons, or secrets \u2014 agent will have nothing to schedule or connect. Add connectors/crons/secrets sections or this note is expected for utility boards.",
+        message: "module.yaml declares no connectors, crons, or secrets \u2014 agent will have nothing to schedule or connect. Add connectors/crons/secrets sections or this note is expected for utility boards.",
         severity: "suggestion",
         file: filePath,
         ruleId: this.id
@@ -1987,11 +1987,11 @@ var BoardYamlCompletenessAdapter = class {
 // src/adapters/board-story-completeness-adapter.ts
 import fs15 from "fs";
 import path17 from "path";
-var BOARDS_DIR_SEGMENT = `${path17.sep}packages${path17.sep}boards${path17.sep}`;
-var BOARDS_DIR_SEGMENT_FWD = "/packages/boards/";
+var BOARDS_DIR_SEGMENT = `${path17.sep}packages${path17.sep}modules${path17.sep}`;
+var BOARDS_DIR_SEGMENT_FWD = "/packages/modules/";
 function isBoardYaml2(filePath) {
   const normalized = filePath.replace(/\\/g, "/");
-  return normalized.includes(BOARDS_DIR_SEGMENT_FWD) && (normalized.endsWith("/board.yaml") || normalized === "board.yaml");
+  return normalized.includes(BOARDS_DIR_SEGMENT_FWD) && (normalized.endsWith("/module.yaml") || normalized === "module.yaml");
 }
 function boardNameFromPath(filePath) {
   return path17.basename(path17.dirname(filePath));
@@ -2299,7 +2299,7 @@ var GitignorePolicyAdapter = class {
 import fs18 from "fs";
 import path19 from "path";
 import yaml6 from "js-yaml";
-var BOARDS_DIR_SEGMENT_FWD2 = "/packages/boards/";
+var BOARDS_DIR_SEGMENT_FWD2 = "/packages/modules/";
 var CRONS_JSON_SEGMENT_FWD = "/.supernal/modules/crons.json";
 var RECONCILE_EXCLUDED = /* @__PURE__ */ new Set([
   "templates",
@@ -2313,7 +2313,7 @@ function normalize4(p) {
 }
 function isBoardYaml3(filePath) {
   const n = normalize4(filePath);
-  return n.includes(BOARDS_DIR_SEGMENT_FWD2) && n.endsWith("/board.yaml");
+  return n.includes(BOARDS_DIR_SEGMENT_FWD2) && n.endsWith("/module.yaml");
 }
 function isCronsJson(filePath) {
   return normalize4(filePath).endsWith(CRONS_JSON_SEGMENT_FWD);
@@ -2344,7 +2344,7 @@ var CronRegistryDriftAdapter = class {
     this.cache.set(root, diagnostics);
     return diagnostics;
   }
-  /** The pure declared×registered diff over every board under packages/boards/. */
+  /** The pure declared×registered diff over every board under packages/modules/. */
   computeDrift(monorepoRoot) {
     const diagnostics = [];
     const cronsJsonPath = path19.join(monorepoRoot, ".supernal", "modules", "crons.json");
@@ -2374,7 +2374,7 @@ var CronRegistryDriftAdapter = class {
       ];
     }
     const registryCrons = registry.crons ?? {};
-    const boardsDir = path19.join(monorepoRoot, "packages", "boards");
+    const boardsDir = path19.join(monorepoRoot, "packages", "modules");
     let boardDirs;
     try {
       boardDirs = fs18.readdirSync(boardsDir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
@@ -2384,7 +2384,7 @@ var CronRegistryDriftAdapter = class {
     const declaredByBoard = /* @__PURE__ */ new Map();
     for (const boardId of boardDirs) {
       if (RECONCILE_EXCLUDED.has(boardId)) continue;
-      const yamlPath = path19.join(boardsDir, boardId, "board.yaml");
+      const yamlPath = path19.join(boardsDir, boardId, "module.yaml");
       if (!fs18.existsSync(yamlPath)) continue;
       let doc;
       try {
@@ -2407,7 +2407,7 @@ var CronRegistryDriftAdapter = class {
         if (!reg) {
           diagnostics.push({
             code: "cron_declared_but_unregistered",
-            message: `Cron ${boardId}/${id} is declared in board.yaml but has no entry in .supernal/modules/crons.json \u2014 it will never be scheduled (silent drift). Run the workspace-worker reconcile (or restart it) to register it.`,
+            message: `Cron ${boardId}/${id} is declared in module.yaml but has no entry in .supernal/modules/crons.json \u2014 it will never be scheduled (silent drift). Run the workspace-worker reconcile (or restart it) to register it.`,
             severity: "error",
             file: yamlPath,
             ruleId: this.id,
@@ -2418,7 +2418,7 @@ var CronRegistryDriftAdapter = class {
         if (enabled === false) {
           diagnostics.push({
             code: "cron_explicitly_disabled",
-            message: `Cron ${boardId}/${id} is explicitly disabled (board.yaml enabled:false, registry enabled:${reg.enabled === false ? "false" : "true"}). Surfaced so "off" is always a visible, deliberate decision.`,
+            message: `Cron ${boardId}/${id} is explicitly disabled (module.yaml enabled:false, registry enabled:${reg.enabled === false ? "false" : "true"}). Surfaced so "off" is always a visible, deliberate decision.`,
             severity: "warning",
             file: yamlPath,
             ruleId: this.id,
@@ -2438,7 +2438,7 @@ var CronRegistryDriftAdapter = class {
         if (!stillDeclared) {
           diagnostics.push({
             code: "cron_registered_but_undeclared",
-            message: `Cron ${boardId}/${reg.id} is registered (source:"yaml") in .supernal/modules/crons.json but is not declared in packages/boards/${boardId}/board.yaml \u2014 orphaned registry entry. Remove it from the registry or re-declare it in board.yaml.`,
+            message: `Cron ${boardId}/${reg.id} is registered (source:"yaml") in .supernal/modules/crons.json but is not declared in packages/modules/${boardId}/module.yaml \u2014 orphaned registry entry. Remove it from the registry or re-declare it in module.yaml.`,
             severity: "error",
             file: cronsJsonRel,
             ruleId: this.id,
@@ -2753,7 +2753,7 @@ function isBoardSkill(filePath, skillDir) {
   if (idx < 0) return false;
   const repoRoot = normalized.slice(0, idx);
   try {
-    return fs21.existsSync(path21.join(repoRoot, "packages", "boards", skillDir));
+    return fs21.existsSync(path21.join(repoRoot, "packages", "modules", skillDir));
   } catch {
     return false;
   }
