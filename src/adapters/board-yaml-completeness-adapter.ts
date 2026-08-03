@@ -1,7 +1,7 @@
 /**
  * REQ-MLM-016: board-yaml-completeness adapter
  *
- * Lints all module.yaml/board.yaml files in packages/modules/ and .supernal/boards/.
+ * Lints all module.yaml files in packages/modules/ and .supernal/boards/.
  * Rule ID: board-yaml-completeness
  * Severity: warning (not error) — boards with no connectors/crons/secrets are valid.
  *
@@ -13,7 +13,7 @@
  *  5. icon MUST be present. Violation: warning.
  *  6. If connectors, crons, AND secrets are all absent: informational note (suggestion).
  *  7. Each connector item MUST have id, label, and auth. Missing any: warning.
- *     NOTE: board.yaml uses two connector formats —
+ *     NOTE: module.yaml uses two connector formats —
  *       - new format: connectors as array with { id, label, auth }
  *       - legacy format: connectors as { default, supported } object
  *     We lint only the new array format; legacy format is silently allowed.
@@ -29,12 +29,7 @@ import yaml from 'js-yaml';
 import type { Diagnostic, ValidatorAdapter, ValidatorContext } from '../core/types.js';
 
 function isBoardYaml(filePath: string): boolean {
-  return (
-    filePath.endsWith('/module.yaml') ||
-    filePath === 'module.yaml' ||
-    filePath.endsWith('/board.yaml') ||
-    filePath === 'board.yaml'
-  );
+  return filePath.endsWith('/module.yaml') || filePath === 'module.yaml';
 }
 
 export class BoardYamlCompletenessAdapter implements ValidatorAdapter {
@@ -55,7 +50,7 @@ export class BoardYamlCompletenessAdapter implements ValidatorAdapter {
       return [
         {
           code: 'board_yaml_unreadable',
-          message: `board.yaml could not be read: ${(err as Error).message}`,
+          message: `module.yaml could not be read: ${(err as Error).message}`,
           severity: 'error',
           file: filePath,
           ruleId: this.id,
@@ -70,7 +65,7 @@ export class BoardYamlCompletenessAdapter implements ValidatorAdapter {
         return [
           {
             code: 'board_yaml_not_object',
-            message: 'board.yaml must be a YAML mapping (object), not a scalar or array.',
+            message: 'module.yaml must be a YAML mapping (object), not a scalar or array.',
             severity: 'error',
             file: filePath,
             ruleId: this.id,
@@ -82,7 +77,7 @@ export class BoardYamlCompletenessAdapter implements ValidatorAdapter {
       return [
         {
           code: 'board_yaml_invalid_yaml',
-          message: `board.yaml has invalid YAML syntax: ${(err as Error).message}`,
+          message: `module.yaml has invalid YAML syntax: ${(err as Error).message}`,
           severity: 'error',
           file: filePath,
           ruleId: this.id,
@@ -95,7 +90,7 @@ export class BoardYamlCompletenessAdapter implements ValidatorAdapter {
     if (!('id' in doc) || doc['id'] === undefined || doc['id'] === null || doc['id'] === '') {
       diagnostics.push({
         code: 'board_yaml_missing_id',
-        message: 'board.yaml must have an id field.',
+        message: 'module.yaml must have an id field.',
         severity: 'error',
         file: filePath,
         ruleId: this.id,
@@ -103,7 +98,7 @@ export class BoardYamlCompletenessAdapter implements ValidatorAdapter {
     } else if (typeof doc['id'] === 'string' && doc['id'] !== dirName) {
       diagnostics.push({
         code: 'board_yaml_id_mismatch',
-        message: `board.yaml id "${doc['id']}" does not match directory name "${dirName}".`,
+        message: `module.yaml id "${doc['id']}" does not match directory name "${dirName}".`,
         severity: 'error',
         file: filePath,
         ruleId: this.id,
@@ -115,7 +110,7 @@ export class BoardYamlCompletenessAdapter implements ValidatorAdapter {
     if (!('label' in doc) || doc['label'] === undefined || doc['label'] === null || doc['label'] === '') {
       diagnostics.push({
         code: 'board_yaml_missing_label',
-        message: 'board.yaml must have a label field.',
+        message: 'module.yaml must have a label field.',
         severity: 'error',
         file: filePath,
         ruleId: this.id,
@@ -126,7 +121,7 @@ export class BoardYamlCompletenessAdapter implements ValidatorAdapter {
     if (!('description' in doc) || doc['description'] === undefined || doc['description'] === null) {
       diagnostics.push({
         code: 'board_yaml_missing_description',
-        message: 'board.yaml must have a description field.',
+        message: 'module.yaml must have a description field.',
         severity: 'error',
         file: filePath,
         ruleId: this.id,
@@ -134,7 +129,7 @@ export class BoardYamlCompletenessAdapter implements ValidatorAdapter {
     } else if (typeof doc['description'] === 'string' && doc['description'].trim().length === 0) {
       diagnostics.push({
         code: 'board_yaml_empty_description',
-        message: 'board.yaml description must not be empty.',
+        message: 'module.yaml description must not be empty.',
         severity: 'error',
         file: filePath,
         ruleId: this.id,
@@ -145,7 +140,7 @@ export class BoardYamlCompletenessAdapter implements ValidatorAdapter {
     if (!('category' in doc) || doc['category'] === undefined || doc['category'] === null || doc['category'] === '') {
       diagnostics.push({
         code: 'board_yaml_missing_category',
-        message: 'board.yaml should have a category field (revenue | operations | intelligence | content | custom).',
+        message: 'module.yaml should have a category field (revenue | operations | intelligence | content | custom).',
         severity: 'warning',
         file: filePath,
         ruleId: this.id,
@@ -156,7 +151,7 @@ export class BoardYamlCompletenessAdapter implements ValidatorAdapter {
     if (!('icon' in doc) || doc['icon'] === undefined || doc['icon'] === null || doc['icon'] === '') {
       diagnostics.push({
         code: 'board_yaml_missing_icon',
-        message: 'board.yaml should have an icon field (lucide icon name).',
+        message: 'module.yaml should have an icon field (lucide icon name).',
         severity: 'warning',
         file: filePath,
         ruleId: this.id,
@@ -172,7 +167,7 @@ export class BoardYamlCompletenessAdapter implements ValidatorAdapter {
       diagnostics.push({
         code: 'board_yaml_no_external_deps',
         message:
-          'board.yaml declares no connectors, crons, or secrets — agent will have nothing to schedule or connect. ' +
+          'module.yaml declares no connectors, crons, or secrets — agent will have nothing to schedule or connect. ' +
           'Add connectors/crons/secrets sections or this note is expected for utility boards.',
         severity: 'suggestion',
         file: filePath,

@@ -6,11 +6,11 @@ import { CronRegistryDriftAdapter } from '../src/adapters/cron-registry-drift-ad
 import type { ValidatorContext } from '../src/core/types.js';
 
 /**
- * Test harness: builds a fake monorepo root with packages/boards/<id>/board.yaml
+ * Test harness: builds a fake monorepo root with packages/modules/<id>/module.yaml
  * files and a .supernal/modules/crons.json registry, then runs the adapter.
  *
  * The adapter is a repo-level rule that performs a full declared×registered diff.
- * It self-selects on board.yaml (under packages/boards/) and on crons.json, so a
+ * It self-selects on module.yaml (under packages/modules/) and on crons.json, so a
  * test invokes it by passing one of those file paths.
  */
 
@@ -30,7 +30,7 @@ interface RegistryCron {
 }
 
 function writeBoardYaml(root: string, boardId: string, crons: BoardCronDecl[] | null): string {
-  const dir = path.join(root, 'packages', 'boards', boardId);
+  const dir = path.join(root, 'packages', 'modules', boardId);
   fs.mkdirSync(dir, { recursive: true });
   const lines: string[] = [`id: ${boardId}`, 'label: Test', 'description: test board'];
   if (crons !== null) {
@@ -43,7 +43,7 @@ function writeBoardYaml(root: string, boardId: string, crons: BoardCronDecl[] | 
       if (c.enabled !== undefined) lines.push(`    enabled: ${c.enabled}`);
     }
   }
-  const p = path.join(dir, 'board.yaml');
+  const p = path.join(dir, 'module.yaml');
   fs.writeFileSync(p, lines.join('\n') + '\n');
   return p;
 }
@@ -94,10 +94,10 @@ describe('CronRegistryDriftAdapter', () => {
     return dir;
   }
 
-  it('supports board.yaml under packages/boards and crons.json', () => {
+  it('supports module.yaml under packages/modules and crons.json', () => {
     const adapter = new CronRegistryDriftAdapter();
     const root = tmp();
-    const boardYaml = path.join(root, 'packages', 'boards', 'finances', 'board.yaml');
+    const boardYaml = path.join(root, 'packages', 'modules', 'finances', 'module.yaml');
     const cronsJson = path.join(root, '.supernal', 'modules', 'crons.json');
     expect(adapter.supports(boardYaml, makeContext(root))).toBe(true);
     expect(adapter.supports(cronsJson, makeContext(root))).toBe(true);
@@ -106,7 +106,7 @@ describe('CronRegistryDriftAdapter', () => {
   it('does not support unrelated files', () => {
     const adapter = new CronRegistryDriftAdapter();
     const root = tmp();
-    expect(adapter.supports(path.join(root, 'packages', 'boards', 'finances', 'schema.ts'), makeContext(root))).toBe(false);
+    expect(adapter.supports(path.join(root, 'packages', 'modules', 'finances', 'schema.ts'), makeContext(root))).toBe(false);
     expect(adapter.supports(path.join(root, 'README.md'), makeContext(root))).toBe(false);
   });
 
@@ -124,11 +124,11 @@ describe('CronRegistryDriftAdapter', () => {
     expect(drift[0].message).toContain('finances/sync-expenses');
   });
 
-  it('(b) reports a registered source:yaml cron absent from board.yaml as ORPHAN/error', async () => {
+  it('(b) reports a registered source:yaml cron absent from module.yaml as ORPHAN/error', async () => {
     const adapter = new CronRegistryDriftAdapter();
     const root = tmp();
     const boardYaml = writeBoardYaml(root, 'finances', [{ id: 'sync-expenses' }]);
-    // Registry has the declared one PLUS a ghost yaml-sourced entry not in board.yaml
+    // Registry has the declared one PLUS a ghost yaml-sourced entry not in module.yaml
     writeCronsJson(root, {
       finances: [
         { id: 'sync-expenses', source: 'yaml' },
@@ -162,7 +162,7 @@ describe('CronRegistryDriftAdapter', () => {
     expect(diagnostics.every((d) => d.severity !== 'error')).toBe(true);
   });
 
-  it('(d) passes cleanly when board.yaml and registry are fully consistent', async () => {
+  it('(d) passes cleanly when module.yaml and registry are fully consistent', async () => {
     const adapter = new CronRegistryDriftAdapter();
     const root = tmp();
     const boardYaml = writeBoardYaml(root, 'finances', [

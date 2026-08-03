@@ -6,7 +6,7 @@ import { BoardStoryCompletenessAdapter } from '../src/adapters/board-story-compl
 import type { ValidatorContext } from '../src/core/types.js';
 
 function makeBoardDir(base: string, boardName: string, withStories?: 'empty' | 'with-feature' | 'none'): string {
-  const boardsDir = path.join(base, 'packages', 'boards', boardName);
+  const boardsDir = path.join(base, 'packages', 'modules', boardName);
   fs.mkdirSync(boardsDir, { recursive: true });
   if (withStories === 'empty') {
     fs.mkdirSync(path.join(boardsDir, 'stories'), { recursive: true });
@@ -15,7 +15,7 @@ function makeBoardDir(base: string, boardName: string, withStories?: 'empty' | '
     fs.mkdirSync(storiesDir, { recursive: true });
     fs.writeFileSync(path.join(storiesDir, `${boardName}.feature`), `Feature: ${boardName}\n  Scenario: loads\n    Given I am on the board\n`);
   }
-  const boardYaml = path.join(boardsDir, 'board.yaml');
+  const boardYaml = path.join(boardsDir, 'module.yaml');
   fs.writeFileSync(boardYaml, `id: ${boardName}\ntitle: Test\n`);
   return boardYaml;
 }
@@ -41,17 +41,17 @@ describe('BoardStoryCompletenessAdapter', () => {
     return dir;
   }
 
-  it('ignores non-board.yaml files', () => {
+  it('ignores non-module.yaml files', () => {
     const base = tmp();
-    const notBoard = path.join(base, 'packages', 'boards', 'my-board', 'something.yaml');
+    const notBoard = path.join(base, 'packages', 'modules', 'my-board', 'something.yaml');
     fs.mkdirSync(path.dirname(notBoard), { recursive: true });
     fs.writeFileSync(notBoard, 'id: test');
     expect(adapter.supports(notBoard, makeContext())).toBe(false);
   });
 
-  it('ignores board.yaml outside packages/boards/', () => {
+  it('ignores module.yaml outside packages/modules/', () => {
     const base = tmp();
-    const notInBoards = path.join(base, 'packages', 'other', 'my-board', 'board.yaml');
+    const notInBoards = path.join(base, 'packages', 'other', 'my-board', 'module.yaml');
     fs.mkdirSync(path.dirname(notInBoards), { recursive: true });
     fs.writeFileSync(notInBoards, 'id: test');
     expect(adapter.supports(notInBoards, makeContext())).toBe(false);
@@ -60,14 +60,14 @@ describe('BoardStoryCompletenessAdapter', () => {
   it('ignores infrastructure dirs (lib, scripts, __mocks__, etc.)', () => {
     const base = tmp();
     for (const skip of ['lib', 'scripts', '__mocks__', '__system__', 'agents']) {
-      const boardYaml = path.join(base, 'packages', 'boards', skip, 'board.yaml');
+      const boardYaml = path.join(base, 'packages', 'modules', skip, 'module.yaml');
       fs.mkdirSync(path.dirname(boardYaml), { recursive: true });
       fs.writeFileSync(boardYaml, 'id: test');
       expect(adapter.supports(boardYaml, makeContext())).toBe(false);
     }
   });
 
-  it('supports board.yaml inside packages/boards/<name>/', () => {
+  it('supports module.yaml inside packages/modules/<name>/', () => {
     const base = tmp();
     const boardYaml = makeBoardDir(base, 'my-board', 'with-feature');
     expect(adapter.supports(boardYaml, makeContext())).toBe(true);

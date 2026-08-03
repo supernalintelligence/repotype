@@ -1,14 +1,14 @@
 /**
  * Board story completeness adapter
  *
- * Every board in packages/boards/ that has a board.yaml MUST have at least one
+ * Every board in packages/modules/ that has a module.yaml MUST have at least one
  * .feature file under a stories/ sibling directory. Boards without stories cannot
  * be considered complete — they have no test coverage and no simulation harness entry.
  *
  * Rule ID: board-story-required
  * Severity: error — boards without stories fail lint
  *
- * Fires on: board.yaml files inside packages/boards/<name>/
+ * Fires on: module.yaml files inside packages/modules/<name>/
  * Checks: sibling stories/ directory exists AND contains at least one .feature file
  */
 
@@ -23,10 +23,7 @@ function isBoardYaml(filePath: string): boolean {
   const normalized = filePath.replace(/\\/g, '/');
   return (
     normalized.includes(BOARDS_DIR_SEGMENT_FWD) &&
-    (normalized.endsWith('/module.yaml') ||
-      normalized === 'module.yaml' ||
-      normalized.endsWith('/board.yaml') ||
-      normalized === 'board.yaml')
+    (normalized.endsWith('/module.yaml') || normalized === 'module.yaml')
   );
 }
 

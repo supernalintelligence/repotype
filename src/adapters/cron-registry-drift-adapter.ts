@@ -2,10 +2,10 @@
  * cron-registry-drift adapter (req-alluring-gold-easement)
  *
  * Pre-push gate that detects split-brain between what crons each board DECLARES
- * (packages/boards/<id>/board.yaml `crons:`) and what is REGISTERED in the derived
+ * (packages/modules/<id>/module.yaml `crons:`) and what is REGISTERED in the derived
  * runtime registry (.supernal/modules/crons.json → crons[boardId][]).
  *
- * The registry is reconciled from board.yaml on worker startup + on a periodic
+ * The registry is reconciled from module.yaml on worker startup + on a periodic
  * __system__ cron (see apps/workspace-worker/src/scheduler/CronScheduler.ts).
  * A declared cron that never made it into the registry is silently dark — the
  * exact defect that left the SEO/distribution crons un-scheduled. This rule
@@ -15,20 +15,20 @@
  *
  * Three classifications:
  *   1. declared-but-unregistered  → cron_declared_but_unregistered → error (DRIFT)
- *        A board.yaml cron with no entry in crons.json for that board.
+ *        A module.yaml cron with no entry in crons.json for that board.
  *   2. registered-but-undeclared  → cron_registered_but_undeclared → error (ORPHAN)
- *        A source:"yaml" registry entry with no matching board.yaml cron.
+ *        A source:"yaml" registry entry with no matching module.yaml cron.
  *        Soft-removed (removedFromYaml) and non-yaml-sourced entries are exempt —
  *        they are legitimately registry-only.
  *   3. explicitly-disabled        → cron_explicitly_disabled → warning (SURFACE, not error)
- *        A board.yaml cron declared enabled:false, materialized disabled in the
+ *        A module.yaml cron declared enabled:false, materialized disabled in the
  *        registry. This is a deliberate, visible "off" — surfaced, never an error.
  *
  * No fallbacks (repo rule): if crons.json is missing or unparseable, the rule
  * emits an error — it never silently passes.
  *
  * This is a REPO-LEVEL rule, not a per-file rule. repotype invokes adapters per
- * scanned file, so the rule self-selects when ANY packages/boards/<id>/board.yaml
+ * scanned file, so the rule self-selects when ANY packages/modules/<id>/module.yaml
  * OR the .supernal/modules/crons.json is in the changeset, then performs the full
  * declared×registered diff over EVERY board. To avoid emitting the same diagnostic
  * once per matched file in a single run, the result is computed once per repo root
@@ -40,11 +40,11 @@ import path from 'node:path';
 import yaml from 'js-yaml';
 import type { Diagnostic, ValidatorAdapter, ValidatorContext } from '../core/types.js';
 
-const BOARDS_DIR_SEGMENT_FWD = '/packages/boards/';
+const BOARDS_DIR_SEGMENT_FWD = '/packages/modules/';
 const CRONS_JSON_SEGMENT_FWD = '/.supernal/modules/crons.json';
 
 /**
- * Directories under packages/boards that the scheduler's reconcile loop excludes.
+ * Directories under packages/modules that the scheduler's reconcile loop excludes.
  * Kept in sync with the EXCLUDED set in
  * apps/workspace-worker/src/scheduler/CronScheduler.ts. A declared cron in one of
  * these dirs is never reconciled into the registry, so it must not be flagged as drift.
@@ -82,7 +82,7 @@ function normalize(p: string): string {
 
 function isBoardYaml(filePath: string): boolean {
   const n = normalize(filePath);
-  return n.includes(BOARDS_DIR_SEGMENT_FWD) && n.endsWith('/board.yaml');
+  return n.includes(BOARDS_DIR_SEGMENT_FWD) && n.endsWith('/module.yaml');
 }
 
 function isCronsJson(filePath: string): boolean {
@@ -95,8 +95,8 @@ function cronId(c: BoardYamlCron): string | undefined {
 }
 
 /**
- * Resolve the monorepo root from a matched file path. For a board.yaml the root
- * is the ancestor directly above `packages/boards/`; for crons.json it is the
+ * Resolve the monorepo root from a matched file path. For a module.yaml the root
+ * is the ancestor directly above `packages/modules/`; for crons.json it is the
  * ancestor directly above `.supernal/modules/`. Falls back to context.repoRoot.
  */
 function resolveMonorepoRoot(filePath: string, context: ValidatorContext): string {
@@ -127,7 +127,7 @@ export class CronRegistryDriftAdapter implements ValidatorAdapter {
     return diagnostics;
   }
 
-  /** The pure declared×registered diff over every board under packages/boards/. */
+  /** The pure declared×registered diff over every board under packages/modules/. */
   private computeDrift(monorepoRoot: string): Diagnostic[] {
     const diagnostics: Diagnostic[] = [];
     const cronsJsonPath = path.join(monorepoRoot, '.supernal', 'modules', 'crons.json');
@@ -162,7 +162,7 @@ export class CronRegistryDriftAdapter implements ValidatorAdapter {
 
     const registryCrons = registry.crons ?? {};
 
-    // ── Enumerate declared crons from every board.yaml under packages/boards/ ──
+    // ── Enumerate declared crons from every module.yaml under packages/modules/ ──
     const boardsDir = path.join(monorepoRoot, 'packages', 'modules');
     let boardDirs: string[];
     try {
@@ -180,11 +180,7 @@ export class CronRegistryDriftAdapter implements ValidatorAdapter {
 
     for (const boardId of boardDirs) {
       if (RECONCILE_EXCLUDED.has(boardId)) continue;
-      // module.yaml preferred (board->module naming migration), board.yaml legacy fallback.
-      const moduleYamlPath = path.join(boardsDir, boardId, 'module.yaml');
-      const yamlPath = fs.existsSync(moduleYamlPath)
-        ? moduleYamlPath
-        : path.join(boardsDir, boardId, 'board.yaml');
+      const yamlPath = path.join(boardsDir, boardId, 'module.yaml');
       if (!fs.existsSync(yamlPath)) continue;
 
       let doc: { crons?: BoardYamlCron[] };
@@ -194,7 +190,7 @@ export class CronRegistryDriftAdapter implements ValidatorAdapter {
           crons?: BoardYamlCron[];
         };
       } catch {
-        // A malformed board.yaml is caught by board-yaml-completeness-adapter — skip here.
+        // A malformed module.yaml is caught by board-yaml-completeness-adapter — skip here.
         continue;
       }
 
@@ -217,7 +213,7 @@ export class CronRegistryDriftAdapter implements ValidatorAdapter {
           diagnostics.push({
             code: 'cron_declared_but_unregistered',
             message:
-              `Cron ${boardId}/${id} is declared in board.yaml but has no entry in ` +
+              `Cron ${boardId}/${id} is declared in module.yaml but has no entry in ` +
               `.supernal/modules/crons.json — it will never be scheduled (silent drift). ` +
               `Run the workspace-worker reconcile (or restart it) to register it.`,
             severity: 'error',
@@ -232,7 +228,7 @@ export class CronRegistryDriftAdapter implements ValidatorAdapter {
           diagnostics.push({
             code: 'cron_explicitly_disabled',
             message:
-              `Cron ${boardId}/${id} is explicitly disabled (board.yaml enabled:false, ` +
+              `Cron ${boardId}/${id} is explicitly disabled (module.yaml enabled:false, ` +
               `registry enabled:${reg.enabled === false ? 'false' : 'true'}). ` +
               `Surfaced so "off" is always a visible, deliberate decision.`,
             severity: 'warning',
@@ -244,13 +240,13 @@ export class CronRegistryDriftAdapter implements ValidatorAdapter {
       }
     }
 
-    // ── (2) ORPHAN — yaml-sourced registry entries with no matching board.yaml cron ──
+    // ── (2) ORPHAN — yaml-sourced registry entries with no matching module.yaml cron ──
     for (const [boardId, registryList] of Object.entries(registryCrons)) {
       if (RECONCILE_EXCLUDED.has(boardId)) continue;
       const declared = declaredByBoard.get(boardId);
       const cronsJsonRel = path.join(monorepoRoot, '.supernal', 'modules', 'crons.json');
       for (const reg of registryList) {
-        // Only yaml-sourced entries are reconciled from board.yaml; non-yaml
+        // Only yaml-sourced entries are reconciled from module.yaml; non-yaml
         // (e.g. manual/runtime) entries are legitimately registry-only.
         if (reg.source !== 'yaml') continue;
         // Soft-removed entries are an intentional, audited registry-only state.
@@ -262,8 +258,8 @@ export class CronRegistryDriftAdapter implements ValidatorAdapter {
             message:
               `Cron ${boardId}/${reg.id} is registered (source:"yaml") in ` +
               `.supernal/modules/crons.json but is not declared in ` +
-              `packages/boards/${boardId}/board.yaml — orphaned registry entry. ` +
-              `Remove it from the registry or re-declare it in board.yaml.`,
+              `packages/modules/${boardId}/module.yaml — orphaned registry entry. ` +
+              `Remove it from the registry or re-declare it in module.yaml.`,
             severity: 'error',
             file: cronsJsonRel,
             ruleId: this.id,
