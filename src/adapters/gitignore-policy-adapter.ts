@@ -48,6 +48,55 @@ const DANGEROUS_PATTERNS: DangerousPattern[] = [
   },
 ];
 
+interface RequiredCoverageGroup {
+  id: string;
+  description: string;
+  suggestion: string;
+  /** A line is considered to cover this group if it matches ANY of these. */
+  coveredBy: RegExp[];
+}
+
+// Baseline categories every repo's .gitignore should cover. This is the
+// inverse check of DANGEROUS_PATTERNS above: that list flags things that
+// SHOULD NOT be hidden (delete instead); this list flags things that SHOULD
+// be hidden but aren't — the concrete gap that let a 23GB .git accumulate
+// committed Next.js webpack caches and multi-MB ralph runtime logs (see
+// .supernal/incidents and the 2026-08-07 gitignore-coverage audit).
+const REQUIRED_COVERAGE: RequiredCoverageGroup[] = [
+  {
+    id: 'node_modules',
+    description: 'node_modules is not excluded',
+    suggestion: 'node_modules/',
+    coveredBy: [/node_modules/],
+  },
+  {
+    id: 'build-output',
+    description: 'common build output/cache dirs (.next, dist, build) are not excluded',
+    suggestion: '.next/\ndist/\nbuild/',
+    coveredBy: [/\.next\b/, /(^|\/)dist\/?$/, /(^|\/)build\/?$/],
+  },
+  {
+    id: 'os-junk',
+    description: 'OS junk files (.DS_Store) are not excluded',
+    suggestion: '.DS_Store',
+    coveredBy: [/\.DS_Store/],
+  },
+  {
+    id: 'local-env',
+    description: 'local env/secret files (.env.local) are not excluded',
+    suggestion: '.env.local\n.env*.local',
+    coveredBy: [/\.env(\*|\.local)?\b/, /^\.env$/],
+  },
+  {
+    id: 'log-artifacts',
+    description:
+      'runtime log/jsonl artifacts (*.log, ralph logs) are not excluded — these are the exact ' +
+      'category of file that bloats git history with large, non-diffable blobs',
+    suggestion: '*.log\n.ralph-log*.jsonl',
+    coveredBy: [/\*?\.log\b/, /ralph-log/, /\.supernal-local/, /\*\.jsonl/],
+  },
+];
+
 export class GitignorePolicyAdapter implements ValidatorAdapter {
   id = 'gitignore-policy';
 
@@ -72,6 +121,7 @@ export class GitignorePolicyAdapter implements ValidatorAdapter {
     }
 
     const lines = content.split('\n');
+    const nonCommentLines: string[] = [];
 
     for (let i = 0; i < lines.length; i++) {
       const raw = lines[i];
@@ -81,6 +131,7 @@ export class GitignorePolicyAdapter implements ValidatorAdapter {
       if (trimmed === '' || trimmed.startsWith('#')) {
         continue;
       }
+      nonCommentLines.push(trimmed);
 
       for (const { regex, reason, fix } of DANGEROUS_PATTERNS) {
         if (regex.test(trimmed)) {
@@ -98,6 +149,23 @@ export class GitignorePolicyAdapter implements ValidatorAdapter {
           });
           break; // one diagnostic per line — first matching rule wins
         }
+      }
+    }
+
+    for (const group of REQUIRED_COVERAGE) {
+      const covered = nonCommentLines.some((line) => group.coveredBy.some((re) => re.test(line)));
+      if (!covered) {
+        diagnostics.push({
+          code: 'missing_gitignore_coverage',
+          severity: 'error',
+          file: filePath,
+          message: `.gitignore is missing coverage for ${group.id}: ${group.description}. Add e.g.: ${group.suggestion.replace(/\n/g, ' / ')}`,
+          details: {
+            group: group.id,
+            reason: group.description,
+            suggestion: group.suggestion,
+          },
+        });
       }
     }
 

@@ -13,7 +13,7 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/core.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/core.js
 // @__NO_SIDE_EFFECTS__
 function $constructor(name, initializer3, params) {
   function init(inst, def) {
@@ -73,7 +73,7 @@ function config(newConfig) {
 }
 var NEVER, $ZodAsyncError, $ZodEncodeError, globalConfig;
 var init_core = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/core.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/core.js"() {
     "use strict";
     NEVER = Object.freeze({
       status: "aborted"
@@ -93,7 +93,7 @@ var init_core = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/util.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/util.js
 var util_exports = {};
 __export(util_exports, {
   BIGINT_FORMAT_RANGES: () => BIGINT_FORMAT_RANGES,
@@ -265,10 +265,10 @@ function mergeDefs(...defs) {
 function cloneDef(schema) {
   return mergeDefs(schema._zod.def);
 }
-function getElementAtPath(obj, path30) {
-  if (!path30)
+function getElementAtPath(obj, path31) {
+  if (!path31)
     return obj;
-  return path30.reduce((acc, key) => acc?.[key], obj);
+  return path31.reduce((acc, key) => acc?.[key], obj);
 }
 function promiseAllObject(promisesObj) {
   const keys = Object.keys(promisesObj);
@@ -580,11 +580,11 @@ function aborted(x, startIndex = 0) {
   }
   return false;
 }
-function prefixIssues(path30, issues) {
+function prefixIssues(path31, issues) {
   return issues.map((iss) => {
     var _a2;
     (_a2 = iss).path ?? (_a2.path = []);
-    iss.path.unshift(path30);
+    iss.path.unshift(path31);
     return iss;
   });
 }
@@ -697,7 +697,7 @@ function uint8ArrayToHex(bytes) {
 }
 var EVALUATING, captureStackTrace, allowsEval, getParsedType, propertyKeyTypes, primitiveTypes, NUMBER_FORMAT_RANGES, BIGINT_FORMAT_RANGES, Class;
 var init_util = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/util.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/util.js"() {
     "use strict";
     EVALUATING = /* @__PURE__ */ Symbol("evaluating");
     captureStackTrace = "captureStackTrace" in Error ? Error.captureStackTrace : (..._args) => {
@@ -778,7 +778,7 @@ var init_util = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/errors.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/errors.js
 function flattenError(error2, mapper = (issue2) => issue2.message) {
   const fieldErrors = {};
   const formErrors = [];
@@ -827,7 +827,7 @@ function formatError(error2, mapper = (issue2) => issue2.message) {
 }
 var initializer, $ZodError, $ZodRealError;
 var init_errors = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/errors.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/errors.js"() {
     "use strict";
     init_core();
     init_util();
@@ -852,10 +852,10 @@ var init_errors = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/parse.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/parse.js
 var _parse, parse, _parseAsync, parseAsync, _safeParse, safeParse, _safeParseAsync, safeParseAsync, _encode, _decode, _encodeAsync, _decodeAsync, _safeEncode, _safeDecode, _safeEncodeAsync, _safeDecodeAsync;
 var init_parse = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/parse.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/parse.js"() {
     "use strict";
     init_core();
     init_errors();
@@ -941,7 +941,7 @@ var init_parse = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/regexes.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/regexes.js
 var regexes_exports = {};
 __export(regexes_exports, {
   base64: () => base64,
@@ -1032,7 +1032,7 @@ function fixedBase64url(length) {
 }
 var cuid, cuid2, ulid, xid, ksuid, nanoid, duration, extendedDuration, guid, uuid, uuid4, uuid6, uuid7, email, html5Email, rfc5322Email, unicodeEmail, idnEmail, browserEmail, _emoji, ipv4, ipv6, mac, cidrv4, cidrv6, base64, base64url, hostname, domain, e164, dateSource, date, string, bigint, integer, number, boolean, _null, _undefined, lowercase, uppercase, hex, md5_hex, md5_base64, md5_base64url, sha1_hex, sha1_base64, sha1_base64url, sha256_hex, sha256_base64, sha256_base64url, sha384_hex, sha384_base64, sha384_base64url, sha512_hex, sha512_base64, sha512_base64url;
 var init_regexes = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/regexes.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/regexes.js"() {
     "use strict";
     init_util();
     cuid = /^[cC][^\s-]{8,}$/;
@@ -1105,7 +1105,7 @@ var init_regexes = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/checks.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/checks.js
 function handleCheckPropertyResult(result, payload, property) {
   if (result.issues.length) {
     payload.issues.push(...prefixIssues(property, result.issues));
@@ -1113,7 +1113,7 @@ function handleCheckPropertyResult(result, payload, property) {
 }
 var $ZodCheck, numericOriginMap, $ZodCheckLessThan, $ZodCheckGreaterThan, $ZodCheckMultipleOf, $ZodCheckNumberFormat, $ZodCheckBigIntFormat, $ZodCheckMaxSize, $ZodCheckMinSize, $ZodCheckSizeEquals, $ZodCheckMaxLength, $ZodCheckMinLength, $ZodCheckLengthEquals, $ZodCheckStringFormat, $ZodCheckRegex, $ZodCheckLowerCase, $ZodCheckUpperCase, $ZodCheckIncludes, $ZodCheckStartsWith, $ZodCheckEndsWith, $ZodCheckProperty, $ZodCheckMimeType, $ZodCheckOverwrite;
 var init_checks = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/checks.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/checks.js"() {
     "use strict";
     init_core();
     init_regexes();
@@ -1662,10 +1662,10 @@ var init_checks = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/doc.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/doc.js
 var Doc;
 var init_doc = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/doc.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/doc.js"() {
     "use strict";
     Doc = class {
       constructor(args = []) {
@@ -1704,10 +1704,10 @@ var init_doc = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/versions.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/versions.js
 var version;
 var init_versions = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/versions.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/versions.js"() {
     "use strict";
     version = {
       major: 4,
@@ -1717,7 +1717,7 @@ var init_versions = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/schemas.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/schemas.js
 function isValidBase64(data) {
   if (data === "")
     return true;
@@ -2077,7 +2077,7 @@ function handleRefineResult(result, payload, input, inst) {
 }
 var $ZodType, $ZodString, $ZodStringFormat, $ZodGUID, $ZodUUID, $ZodEmail, $ZodURL, $ZodEmoji, $ZodNanoID, $ZodCUID, $ZodCUID2, $ZodULID, $ZodXID, $ZodKSUID, $ZodISODateTime, $ZodISODate, $ZodISOTime, $ZodISODuration, $ZodIPv4, $ZodIPv6, $ZodMAC, $ZodCIDRv4, $ZodCIDRv6, $ZodBase64, $ZodBase64URL, $ZodE164, $ZodJWT, $ZodCustomStringFormat, $ZodNumber, $ZodNumberFormat, $ZodBoolean, $ZodBigInt, $ZodBigIntFormat, $ZodSymbol, $ZodUndefined, $ZodNull, $ZodAny, $ZodUnknown, $ZodNever, $ZodVoid, $ZodDate, $ZodArray, $ZodObject, $ZodObjectJIT, $ZodUnion, $ZodXor, $ZodDiscriminatedUnion, $ZodIntersection, $ZodTuple, $ZodRecord, $ZodMap, $ZodSet, $ZodEnum, $ZodLiteral, $ZodFile, $ZodTransform, $ZodOptional, $ZodExactOptional, $ZodNullable, $ZodDefault, $ZodPrefault, $ZodNonOptional, $ZodSuccess, $ZodCatch, $ZodNaN, $ZodPipe, $ZodCodec, $ZodReadonly, $ZodTemplateLiteral, $ZodFunction, $ZodPromise, $ZodLazy, $ZodCustom;
 var init_schemas = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/schemas.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/schemas.js"() {
     "use strict";
     init_checks();
     init_core();
@@ -3702,71 +3702,71 @@ var init_schemas = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ar.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ar.js
 var init_ar = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ar.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ar.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/az.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/az.js
 var init_az = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/az.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/az.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/be.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/be.js
 var init_be = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/be.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/be.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/bg.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/bg.js
 var init_bg = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/bg.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/bg.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ca.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ca.js
 var init_ca = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ca.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ca.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/cs.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/cs.js
 var init_cs = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/cs.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/cs.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/da.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/da.js
 var init_da = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/da.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/da.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/de.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/de.js
 var init_de = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/de.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/de.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/en.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/en.js
 function en_default() {
   return {
     localeError: error()
@@ -3774,7 +3774,7 @@ function en_default() {
 }
 var error;
 var init_en = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/en.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/en.js"() {
     "use strict";
     init_util();
     error = () => {
@@ -3882,329 +3882,329 @@ var init_en = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/eo.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/eo.js
 var init_eo = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/eo.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/eo.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/es.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/es.js
 var init_es = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/es.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/es.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/fa.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/fa.js
 var init_fa = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/fa.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/fa.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/fi.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/fi.js
 var init_fi = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/fi.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/fi.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/fr.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/fr.js
 var init_fr = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/fr.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/fr.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/fr-CA.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/fr-CA.js
 var init_fr_CA = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/fr-CA.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/fr-CA.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/he.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/he.js
 var init_he = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/he.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/he.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/hu.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/hu.js
 var init_hu = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/hu.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/hu.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/hy.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/hy.js
 var init_hy = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/hy.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/hy.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/id.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/id.js
 var init_id = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/id.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/id.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/is.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/is.js
 var init_is = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/is.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/is.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/it.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/it.js
 var init_it = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/it.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/it.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ja.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ja.js
 var init_ja = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ja.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ja.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ka.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ka.js
 var init_ka = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ka.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ka.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/km.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/km.js
 var init_km = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/km.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/km.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/kh.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/kh.js
 var init_kh = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/kh.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/kh.js"() {
     "use strict";
     init_km();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ko.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ko.js
 var init_ko = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ko.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ko.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/lt.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/lt.js
 var init_lt = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/lt.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/lt.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/mk.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/mk.js
 var init_mk = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/mk.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/mk.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ms.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ms.js
 var init_ms = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ms.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ms.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/nl.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/nl.js
 var init_nl = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/nl.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/nl.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/no.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/no.js
 var init_no = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/no.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/no.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ota.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ota.js
 var init_ota = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ota.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ota.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ps.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ps.js
 var init_ps = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ps.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ps.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/pl.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/pl.js
 var init_pl = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/pl.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/pl.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/pt.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/pt.js
 var init_pt = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/pt.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/pt.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ru.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ru.js
 var init_ru = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ru.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ru.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/sl.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/sl.js
 var init_sl = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/sl.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/sl.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/sv.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/sv.js
 var init_sv = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/sv.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/sv.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ta.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ta.js
 var init_ta = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ta.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ta.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/th.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/th.js
 var init_th = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/th.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/th.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/tr.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/tr.js
 var init_tr = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/tr.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/tr.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/uk.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/uk.js
 var init_uk = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/uk.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/uk.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ua.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ua.js
 var init_ua = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ua.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ua.js"() {
     "use strict";
     init_uk();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ur.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ur.js
 var init_ur = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ur.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/ur.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/uz.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/uz.js
 var init_uz = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/uz.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/uz.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/vi.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/vi.js
 var init_vi = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/vi.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/vi.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/zh-CN.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/zh-CN.js
 var init_zh_CN = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/zh-CN.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/zh-CN.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/zh-TW.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/zh-TW.js
 var init_zh_TW = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/zh-TW.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/zh-TW.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/yo.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/yo.js
 var init_yo = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/yo.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/yo.js"() {
     "use strict";
     init_util();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/index.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/index.js
 var init_locales = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/index.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/locales/index.js"() {
     "use strict";
     init_ar();
     init_az();
@@ -4258,13 +4258,13 @@ var init_locales = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/registries.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/registries.js
 function registry() {
   return new $ZodRegistry();
 }
 var _a, $ZodRegistry, globalRegistry;
 var init_registries = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/registries.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/registries.js"() {
     "use strict";
     $ZodRegistry = class {
       constructor() {
@@ -4311,7 +4311,7 @@ var init_registries = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/api.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/api.js
 // @__NO_SIDE_EFFECTS__
 function _string(Class2, params) {
   return new Class2({
@@ -5115,7 +5115,7 @@ function _stringFormat(Class2, format, fnOrRegex, _params = {}) {
   return inst;
 }
 var init_api = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/api.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/api.js"() {
     "use strict";
     init_checks();
     init_registries();
@@ -5124,7 +5124,7 @@ var init_api = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/to-json-schema.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/to-json-schema.js
 function initializeContext(params) {
   let target = params?.target ?? "draft-2020-12";
   if (target === "draft-4")
@@ -5464,7 +5464,7 @@ function isTransforming(_schema, _ctx) {
 }
 var createToJSONSchemaMethod, createStandardJSONSchemaMethod;
 var init_to_json_schema = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/to-json-schema.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/to-json-schema.js"() {
     "use strict";
     init_registries();
     createToJSONSchemaMethod = (schema, processors = {}) => (params) => {
@@ -5483,10 +5483,10 @@ var init_to_json_schema = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/json-schema-processors.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/json-schema-processors.js
 var formatMap, stringProcessor, numberProcessor, booleanProcessor, bigintProcessor, symbolProcessor, nullProcessor, undefinedProcessor, voidProcessor, neverProcessor, anyProcessor, unknownProcessor, dateProcessor, enumProcessor, literalProcessor, nanProcessor, templateLiteralProcessor, fileProcessor, successProcessor, customProcessor, functionProcessor, transformProcessor, mapProcessor, setProcessor, arrayProcessor, objectProcessor, unionProcessor, intersectionProcessor, tupleProcessor, recordProcessor, nullableProcessor, nonoptionalProcessor, defaultProcessor, prefaultProcessor, catchProcessor, pipeProcessor, readonlyProcessor, promiseProcessor, optionalProcessor, lazyProcessor;
 var init_json_schema_processors = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/json-schema-processors.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/json-schema-processors.js"() {
     "use strict";
     init_to_json_schema();
     init_util();
@@ -5967,25 +5967,25 @@ var init_json_schema_processors = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/json-schema-generator.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/json-schema-generator.js
 var init_json_schema_generator = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/json-schema-generator.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/json-schema-generator.js"() {
     "use strict";
     init_json_schema_processors();
     init_to_json_schema();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/json-schema.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/json-schema.js
 var init_json_schema = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/json-schema.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/json-schema.js"() {
     "use strict";
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/index.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/index.js
 var init_core2 = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/index.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/core/index.js"() {
     "use strict";
     init_core();
     init_parse();
@@ -6006,7 +6006,7 @@ var init_core2 = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/checks.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/checks.js
 var checks_exports2 = {};
 __export(checks_exports2, {
   endsWith: () => _endsWith,
@@ -6040,13 +6040,13 @@ __export(checks_exports2, {
   uppercase: () => _uppercase
 });
 var init_checks2 = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/checks.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/checks.js"() {
     "use strict";
     init_core2();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/iso.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/iso.js
 var iso_exports = {};
 __export(iso_exports, {
   ZodISODate: () => ZodISODate,
@@ -6072,7 +6072,7 @@ function duration2(params) {
 }
 var ZodISODateTime, ZodISODate, ZodISOTime, ZodISODuration;
 var init_iso = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/iso.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/iso.js"() {
     "use strict";
     init_core2();
     init_schemas2();
@@ -6095,10 +6095,10 @@ var init_iso = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/errors.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/errors.js
 var initializer2, ZodError, ZodRealError;
 var init_errors2 = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/errors.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/errors.js"() {
     "use strict";
     init_core2();
     init_core2();
@@ -6144,10 +6144,10 @@ var init_errors2 = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/parse.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/parse.js
 var parse2, parseAsync2, safeParse2, safeParseAsync2, encode, decode, encodeAsync, decodeAsync, safeEncode, safeDecode, safeEncodeAsync, safeDecodeAsync;
 var init_parse2 = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/parse.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/parse.js"() {
     "use strict";
     init_core2();
     init_errors2();
@@ -6166,7 +6166,7 @@ var init_parse2 = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/schemas.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/schemas.js
 var schemas_exports2 = {};
 __export(schemas_exports2, {
   ZodAny: () => ZodAny,
@@ -6790,7 +6790,7 @@ function preprocess(fn, schema) {
 }
 var ZodType, _ZodString, ZodString, ZodStringFormat, ZodEmail, ZodGUID, ZodUUID, ZodURL, ZodEmoji, ZodNanoID, ZodCUID, ZodCUID2, ZodULID, ZodXID, ZodKSUID, ZodIPv4, ZodMAC, ZodIPv6, ZodCIDRv4, ZodCIDRv6, ZodBase64, ZodBase64URL, ZodE164, ZodJWT, ZodCustomStringFormat, ZodNumber, ZodNumberFormat, ZodBoolean, ZodBigInt, ZodBigIntFormat, ZodSymbol, ZodUndefined, ZodNull, ZodAny, ZodUnknown, ZodNever, ZodVoid, ZodDate, ZodArray, ZodObject, ZodUnion, ZodXor, ZodDiscriminatedUnion, ZodIntersection, ZodTuple, ZodRecord, ZodMap, ZodSet, ZodEnum, ZodLiteral, ZodFile, ZodTransform, ZodOptional, ZodExactOptional, ZodNullable, ZodDefault, ZodPrefault, ZodNonOptional, ZodSuccess, ZodCatch, ZodNaN, ZodPipe, ZodCodec, ZodReadonly, ZodTemplateLiteral, ZodLazy, ZodPromise, ZodFunction, ZodCustom, describe2, meta2, stringbool;
 var init_schemas2 = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/schemas.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/schemas.js"() {
     "use strict";
     init_core2();
     init_core2();
@@ -7425,10 +7425,10 @@ var init_schemas2 = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/compat.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/compat.js
 var ZodFirstPartyTypeKind;
 var init_compat = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/compat.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/compat.js"() {
     "use strict";
     init_core2();
     init_core2();
@@ -7437,10 +7437,10 @@ var init_compat = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/from-json-schema.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/from-json-schema.js
 var z;
 var init_from_json_schema = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/from-json-schema.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/from-json-schema.js"() {
     "use strict";
     init_registries();
     init_checks2();
@@ -7454,18 +7454,18 @@ var init_from_json_schema = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/coerce.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/coerce.js
 var init_coerce = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/coerce.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/coerce.js"() {
     "use strict";
     init_core2();
     init_schemas2();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/external.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/external.js
 var init_external = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/external.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/external.js"() {
     "use strict";
     init_core2();
     init_schemas2();
@@ -7486,28 +7486,28 @@ var init_external = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/index.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/index.js
 var init_classic = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/index.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/classic/index.js"() {
     "use strict";
     init_external();
     init_external();
   }
 });
 
-// ../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/index.js
+// ../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/index.js
 var init_v4 = __esm({
-  "../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/index.js"() {
+  "../../../../node_modules/.pnpm/zod@4.3.6/node_modules/zod/v4/index.js"() {
     "use strict";
     init_classic();
     init_classic();
   }
 });
 
-// ../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/types.js
+// ../../../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/types.js
 var RELATED_TASK_META_KEY, JSONRPC_VERSION, AssertObjectSchema, ProgressTokenSchema, CursorSchema, TaskCreationParamsSchema, TaskMetadataSchema, RelatedTaskMetadataSchema, RequestMetaSchema, BaseRequestParamsSchema, TaskAugmentedRequestParamsSchema, RequestSchema, NotificationsParamsSchema, NotificationSchema, ResultSchema, RequestIdSchema, JSONRPCRequestSchema, JSONRPCNotificationSchema, JSONRPCResultResponseSchema, ErrorCode, JSONRPCErrorResponseSchema, JSONRPCMessageSchema, JSONRPCResponseSchema, EmptyResultSchema, CancelledNotificationParamsSchema, CancelledNotificationSchema, IconSchema, IconsSchema, BaseMetadataSchema, ImplementationSchema, FormElicitationCapabilitySchema, ElicitationCapabilitySchema, ClientTasksCapabilitySchema, ServerTasksCapabilitySchema, ClientCapabilitiesSchema, InitializeRequestParamsSchema, InitializeRequestSchema, ServerCapabilitiesSchema, InitializeResultSchema, InitializedNotificationSchema, PingRequestSchema, ProgressSchema, ProgressNotificationParamsSchema, ProgressNotificationSchema, PaginatedRequestParamsSchema, PaginatedRequestSchema, PaginatedResultSchema, TaskStatusSchema, TaskSchema, CreateTaskResultSchema, TaskStatusNotificationParamsSchema, TaskStatusNotificationSchema, GetTaskRequestSchema, GetTaskResultSchema, GetTaskPayloadRequestSchema, GetTaskPayloadResultSchema, ListTasksRequestSchema, ListTasksResultSchema, CancelTaskRequestSchema, CancelTaskResultSchema, ResourceContentsSchema, TextResourceContentsSchema, Base64Schema, BlobResourceContentsSchema, RoleSchema, AnnotationsSchema, ResourceSchema, ResourceTemplateSchema, ListResourcesRequestSchema, ListResourcesResultSchema, ListResourceTemplatesRequestSchema, ListResourceTemplatesResultSchema, ResourceRequestParamsSchema, ReadResourceRequestParamsSchema, ReadResourceRequestSchema, ReadResourceResultSchema, ResourceListChangedNotificationSchema, SubscribeRequestParamsSchema, SubscribeRequestSchema, UnsubscribeRequestParamsSchema, UnsubscribeRequestSchema, ResourceUpdatedNotificationParamsSchema, ResourceUpdatedNotificationSchema, PromptArgumentSchema, PromptSchema, ListPromptsRequestSchema, ListPromptsResultSchema, GetPromptRequestParamsSchema, GetPromptRequestSchema, TextContentSchema, ImageContentSchema, AudioContentSchema, ToolUseContentSchema, EmbeddedResourceSchema, ResourceLinkSchema, ContentBlockSchema, PromptMessageSchema, GetPromptResultSchema, PromptListChangedNotificationSchema, ToolAnnotationsSchema, ToolExecutionSchema, ToolSchema, ListToolsRequestSchema, ListToolsResultSchema, CallToolResultSchema, CompatibilityCallToolResultSchema, CallToolRequestParamsSchema, CallToolRequestSchema, ToolListChangedNotificationSchema, ListChangedOptionsBaseSchema, LoggingLevelSchema, SetLevelRequestParamsSchema, SetLevelRequestSchema, LoggingMessageNotificationParamsSchema, LoggingMessageNotificationSchema, ModelHintSchema, ModelPreferencesSchema, ToolChoiceSchema, ToolResultContentSchema, SamplingContentSchema, SamplingMessageContentBlockSchema, SamplingMessageSchema, CreateMessageRequestParamsSchema, CreateMessageRequestSchema, CreateMessageResultSchema, CreateMessageResultWithToolsSchema, BooleanSchemaSchema, StringSchemaSchema, NumberSchemaSchema, UntitledSingleSelectEnumSchemaSchema, TitledSingleSelectEnumSchemaSchema, LegacyTitledEnumSchemaSchema, SingleSelectEnumSchemaSchema, UntitledMultiSelectEnumSchemaSchema, TitledMultiSelectEnumSchemaSchema, MultiSelectEnumSchemaSchema, EnumSchemaSchema, PrimitiveSchemaDefinitionSchema, ElicitRequestFormParamsSchema, ElicitRequestURLParamsSchema, ElicitRequestParamsSchema, ElicitRequestSchema, ElicitationCompleteNotificationParamsSchema, ElicitationCompleteNotificationSchema, ElicitResultSchema, ResourceTemplateReferenceSchema, PromptReferenceSchema, CompleteRequestParamsSchema, CompleteRequestSchema, CompleteResultSchema, RootSchema, ListRootsRequestSchema, ListRootsResultSchema, RootsListChangedNotificationSchema, ClientRequestSchema, ClientNotificationSchema, ClientResultSchema, ServerRequestSchema, ServerNotificationSchema, ServerResultSchema;
 var init_types = __esm({
-  "../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/types.js"() {
+  "../../../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/types.js"() {
     "use strict";
     init_v4();
     RELATED_TASK_META_KEY = "io.modelcontextprotocol/related-task";
@@ -8979,7 +8979,7 @@ var init_types = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/shared/stdio.js
+// ../../../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/shared/stdio.js
 function deserializeMessage(line) {
   return JSONRPCMessageSchema.parse(JSON.parse(line));
 }
@@ -8988,7 +8988,7 @@ function serializeMessage(message) {
 }
 var ReadBuffer;
 var init_stdio = __esm({
-  "../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/shared/stdio.js"() {
+  "../../../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/shared/stdio.js"() {
     "use strict";
     init_types();
     ReadBuffer = class {
@@ -9014,7 +9014,7 @@ var init_stdio = __esm({
   }
 });
 
-// ../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js
+// ../../../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js
 var stdio_exports = {};
 __export(stdio_exports, {
   StdioServerTransport: () => StdioServerTransport
@@ -9022,7 +9022,7 @@ __export(stdio_exports, {
 import process3 from "process";
 var StdioServerTransport;
 var init_stdio2 = __esm({
-  "../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js"() {
+  "../../../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.3.6/node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js"() {
     "use strict";
     init_stdio();
     StdioServerTransport = class {
@@ -9093,8 +9093,8 @@ import { createMCPServer } from "@supernal/universal-command/mcp";
 
 // src/universal-commands.ts
 import { UniversalCommand } from "@supernal/universal-command";
-import fs29 from "fs";
-import path29 from "path";
+import fs30 from "fs";
+import path30 from "path";
 
 // src/cli/git-hooks.ts
 import fs from "fs";
@@ -9241,12 +9241,12 @@ function uninstallChecks(options) {
 }
 
 // src/cli/cleanup.ts
-import fs26 from "fs";
-import path26 from "path";
+import fs27 from "fs";
+import path27 from "path";
 
 // src/cli/use-cases.ts
-import fs25 from "fs";
-import path25 from "path";
+import fs26 from "fs";
+import path26 from "path";
 
 // src/core/autofix.ts
 import fs3 from "fs";
@@ -11486,6 +11486,38 @@ var DANGEROUS_PATTERNS = [
     fix: "Delete completion markers after use instead of ignoring them. If only ralph markers are intended, use a narrower pattern like *-ralph.complete."
   }
 ];
+var REQUIRED_COVERAGE = [
+  {
+    id: "node_modules",
+    description: "node_modules is not excluded",
+    suggestion: "node_modules/",
+    coveredBy: [/node_modules/]
+  },
+  {
+    id: "build-output",
+    description: "common build output/cache dirs (.next, dist, build) are not excluded",
+    suggestion: ".next/\ndist/\nbuild/",
+    coveredBy: [/\.next\b/, /(^|\/)dist\/?$/, /(^|\/)build\/?$/]
+  },
+  {
+    id: "os-junk",
+    description: "OS junk files (.DS_Store) are not excluded",
+    suggestion: ".DS_Store",
+    coveredBy: [/\.DS_Store/]
+  },
+  {
+    id: "local-env",
+    description: "local env/secret files (.env.local) are not excluded",
+    suggestion: ".env.local\n.env*.local",
+    coveredBy: [/\.env(\*|\.local)?\b/, /^\.env$/]
+  },
+  {
+    id: "log-artifacts",
+    description: "runtime log/jsonl artifacts (*.log, ralph logs) are not excluded \u2014 these are the exact category of file that bloats git history with large, non-diffable blobs",
+    suggestion: "*.log\n.ralph-log*.jsonl",
+    coveredBy: [/\*?\.log\b/, /ralph-log/, /\.supernal-local/, /\*\.jsonl/]
+  }
+];
 var GitignorePolicyAdapter = class {
   id = "gitignore-policy";
   supports(filePath, _context) {
@@ -11506,12 +11538,14 @@ var GitignorePolicyAdapter = class {
       return diagnostics;
     }
     const lines = content.split("\n");
+    const nonCommentLines = [];
     for (let i = 0; i < lines.length; i++) {
       const raw = lines[i];
       const trimmed = raw.trim();
       if (trimmed === "" || trimmed.startsWith("#")) {
         continue;
       }
+      nonCommentLines.push(trimmed);
       for (const { regex, reason, fix } of DANGEROUS_PATTERNS) {
         if (regex.test(trimmed)) {
           diagnostics.push({
@@ -11530,13 +11564,114 @@ var GitignorePolicyAdapter = class {
         }
       }
     }
+    for (const group of REQUIRED_COVERAGE) {
+      const covered = nonCommentLines.some((line) => group.coveredBy.some((re) => re.test(line)));
+      if (!covered) {
+        diagnostics.push({
+          code: "missing_gitignore_coverage",
+          severity: "error",
+          file: filePath,
+          message: `.gitignore is missing coverage for ${group.id}: ${group.description}. Add e.g.: ${group.suggestion.replace(/\n/g, " / ")}`,
+          details: {
+            group: group.id,
+            reason: group.description,
+            suggestion: group.suggestion
+          }
+        });
+      }
+    }
+    return diagnostics;
+  }
+};
+
+// src/adapters/large-generated-file-adapter.ts
+import fs19 from "fs";
+import path20 from "path";
+var BAD_PATH_PATTERNS = [
+  {
+    regex: /(^|\/)\.next\/cache\//,
+    reason: "Next.js build cache (.next/cache/) should never be committed \u2014 it is fully regenerable and grows without bound across builds."
+  },
+  {
+    regex: /(^|\/)node_modules\//,
+    reason: "node_modules should never be committed."
+  },
+  {
+    regex: /\.pack(\.gz)?$/,
+    reason: "webpack .pack/.pack.gz cache files should never be committed \u2014 regenerable build cache."
+  }
+];
+var LOG_NAME_PATTERNS = [/ralph-log/i, /\.log\.jsonl$/i, /-log-\d+.*\.jsonl$/i];
+var GENERIC_SIZE_THRESHOLD_BYTES = 5 * 1024 * 1024;
+var JSONL_SIZE_THRESHOLD_BYTES = 1 * 1024 * 1024;
+var LargeGeneratedFileAdapter = class {
+  id = "large-generated-file";
+  supports(filePath, _context) {
+    return true;
+  }
+  async validate(filePath, context) {
+    const diagnostics = [];
+    const relativePath = path20.relative(context.repoRoot, filePath).replace(/\\/g, "/");
+    for (const { regex, reason } of BAD_PATH_PATTERNS) {
+      if (regex.test(relativePath)) {
+        diagnostics.push({
+          code: "generated_path_tracked",
+          severity: "error",
+          file: filePath,
+          message: `'${relativePath}' matches a generated/build-cache path that should never be tracked: ${reason} Add it to .gitignore and remove it from git.`,
+          details: { pattern: regex.source, reason }
+        });
+        return diagnostics;
+      }
+    }
+    let stat;
+    try {
+      stat = fs19.statSync(filePath);
+    } catch {
+      return diagnostics;
+    }
+    if (!stat.isFile()) {
+      return diagnostics;
+    }
+    const basename = path20.basename(relativePath);
+    const isJsonl = basename.endsWith(".jsonl");
+    const looksLikeLog = LOG_NAME_PATTERNS.some((re) => re.test(basename));
+    if (looksLikeLog) {
+      diagnostics.push({
+        code: "log_shaped_file_tracked",
+        severity: "error",
+        file: filePath,
+        message: `'${relativePath}' looks like a runtime log/export file (${(stat.size / 1024).toFixed(0)}KB) \u2014 these belong in .supernal-local/ or another gitignored runtime dir, not tracked in git.`,
+        details: { sizeBytes: stat.size }
+      });
+      return diagnostics;
+    }
+    if (isJsonl && stat.size > JSONL_SIZE_THRESHOLD_BYTES) {
+      diagnostics.push({
+        code: "large_jsonl_tracked",
+        severity: "warning",
+        file: filePath,
+        message: `'${relativePath}' is a ${(stat.size / (1024 * 1024)).toFixed(1)}MB tracked .jsonl file \u2014 .jsonl is commonly log/export output; verify this is real content, not a runtime dump that should be gitignored.`,
+        details: { sizeBytes: stat.size }
+      });
+      return diagnostics;
+    }
+    if (stat.size > GENERIC_SIZE_THRESHOLD_BYTES) {
+      diagnostics.push({
+        code: "large_file_tracked",
+        severity: "warning",
+        file: filePath,
+        message: `'${relativePath}' is ${(stat.size / (1024 * 1024)).toFixed(1)}MB \u2014 large binary/generated files bloat git history permanently (git cannot diff them, every revision is a full new blob). Confirm this belongs in git; consider external/object storage for frequently-regenerated assets.`,
+        details: { sizeBytes: stat.size }
+      });
+    }
     return diagnostics;
   }
 };
 
 // src/adapters/cron-registry-drift-adapter.ts
-import fs19 from "fs";
-import path20 from "path";
+import fs20 from "fs";
+import path21 from "path";
 import yaml6 from "js-yaml";
 var BOARDS_DIR_SEGMENT_FWD2 = "/packages/modules/";
 var CRONS_JSON_SEGMENT_FWD = "/.supernal/modules/crons.json";
@@ -11586,8 +11721,8 @@ var CronRegistryDriftAdapter = class {
   /** The pure declared×registered diff over every board under packages/modules/. */
   computeDrift(monorepoRoot) {
     const diagnostics = [];
-    const cronsJsonPath = path20.join(monorepoRoot, ".supernal", "modules", "crons.json");
-    if (!fs19.existsSync(cronsJsonPath)) {
+    const cronsJsonPath = path21.join(monorepoRoot, ".supernal", "modules", "crons.json");
+    if (!fs20.existsSync(cronsJsonPath)) {
       return [
         {
           code: "cron_registry_missing",
@@ -11600,7 +11735,7 @@ var CronRegistryDriftAdapter = class {
     }
     let registry2;
     try {
-      registry2 = JSON.parse(fs19.readFileSync(cronsJsonPath, "utf8"));
+      registry2 = JSON.parse(fs20.readFileSync(cronsJsonPath, "utf8"));
     } catch (err) {
       return [
         {
@@ -11613,21 +11748,21 @@ var CronRegistryDriftAdapter = class {
       ];
     }
     const registryCrons = registry2.crons ?? {};
-    const boardsDir = path20.join(monorepoRoot, "packages", "modules");
+    const boardsDir = path21.join(monorepoRoot, "packages", "modules");
     let boardDirs;
     try {
-      boardDirs = fs19.readdirSync(boardsDir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
+      boardDirs = fs20.readdirSync(boardsDir, { withFileTypes: true }).filter((e) => e.isDirectory()).map((e) => e.name);
     } catch {
       boardDirs = [];
     }
     const declaredByBoard = /* @__PURE__ */ new Map();
     for (const boardId of boardDirs) {
       if (RECONCILE_EXCLUDED.has(boardId)) continue;
-      const yamlPath = path20.join(boardsDir, boardId, "module.yaml");
-      if (!fs19.existsSync(yamlPath)) continue;
+      const yamlPath = path21.join(boardsDir, boardId, "module.yaml");
+      if (!fs20.existsSync(yamlPath)) continue;
       let doc;
       try {
-        const parsed = yaml6.load(fs19.readFileSync(yamlPath, "utf8"));
+        const parsed = yaml6.load(fs20.readFileSync(yamlPath, "utf8"));
         doc = typeof parsed === "object" && parsed !== null ? parsed : {};
       } catch {
         continue;
@@ -11669,7 +11804,7 @@ var CronRegistryDriftAdapter = class {
     for (const [boardId, registryList] of Object.entries(registryCrons)) {
       if (RECONCILE_EXCLUDED.has(boardId)) continue;
       const declared = declaredByBoard.get(boardId);
-      const cronsJsonRel = path20.join(monorepoRoot, ".supernal", "modules", "crons.json");
+      const cronsJsonRel = path21.join(monorepoRoot, ".supernal", "modules", "crons.json");
       for (const reg of registryList) {
         if (reg.source !== "yaml") continue;
         if (reg.removedFromYaml) continue;
@@ -11691,8 +11826,8 @@ var CronRegistryDriftAdapter = class {
 };
 
 // src/adapters/cron-index-drift-adapter.ts
-import fs20 from "fs";
-import path21 from "path";
+import fs21 from "fs";
+import path22 from "path";
 var CRONS_JSON_SEG = "/.supernal/modules/crons.json";
 var CRON_INDEX_JSON_SEG = "/.supernal/modules/crons.index.json";
 var CRON_INDEX_MD_SEG = "/.supernal/modules/crons.index.md";
@@ -11730,10 +11865,10 @@ var CronIndexDriftAdapter = class {
     return diagnostics;
   }
   computeDrift(monorepoRoot) {
-    const cronsJsonPath = path21.join(monorepoRoot, ".supernal", "modules", "crons.json");
-    const indexJsonPath = path21.join(monorepoRoot, ".supernal", "modules", "crons.index.json");
-    if (!fs20.existsSync(cronsJsonPath)) return [];
-    if (!fs20.existsSync(indexJsonPath)) {
+    const cronsJsonPath = path22.join(monorepoRoot, ".supernal", "modules", "crons.json");
+    const indexJsonPath = path22.join(monorepoRoot, ".supernal", "modules", "crons.index.json");
+    if (!fs21.existsSync(cronsJsonPath)) return [];
+    if (!fs21.existsSync(indexJsonPath)) {
       return [
         {
           code: "cron_index_missing",
@@ -11746,7 +11881,7 @@ var CronIndexDriftAdapter = class {
     }
     let index;
     try {
-      index = JSON.parse(fs20.readFileSync(indexJsonPath, "utf8"));
+      index = JSON.parse(fs21.readFileSync(indexJsonPath, "utf8"));
     } catch (err) {
       return [
         {
@@ -11760,7 +11895,7 @@ var CronIndexDriftAdapter = class {
     }
     let cronsFile;
     try {
-      cronsFile = JSON.parse(fs20.readFileSync(cronsJsonPath, "utf8"));
+      cronsFile = JSON.parse(fs21.readFileSync(cronsJsonPath, "utf8"));
     } catch (err) {
       return [
         {
@@ -11801,7 +11936,7 @@ var CronIndexDriftAdapter = class {
 
 // src/adapters/sentinel-content-adapter.ts
 import { spawnSync as spawnSync2 } from "child_process";
-import fs21 from "fs";
+import fs22 from "fs";
 
 // src/adapters/git-staged-cache.ts
 import { spawnSync } from "child_process";
@@ -11857,7 +11992,7 @@ var SentinelContentAdapter = class {
         file: filePath
       });
       try {
-        content = fs21.readFileSync(filePath);
+        content = fs22.readFileSync(filePath);
       } catch {
         return diagnostics;
       }
@@ -11876,7 +12011,7 @@ var SentinelContentAdapter = class {
           file: filePath
         });
         try {
-          content = fs21.readFileSync(filePath);
+          content = fs22.readFileSync(filePath);
         } catch {
           return diagnostics;
         }
@@ -11974,8 +12109,8 @@ var SentinelContentAdapter = class {
 };
 
 // src/adapters/skill-best-practices-adapter.ts
-import fs22 from "fs";
-import path22 from "path";
+import fs23 from "fs";
+import path23 from "path";
 var SKILL_MANIFEST_RE = /(?:^|\/)skills\/([^/]+)\/SKILL\.md$/;
 var SKILL_NAME_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 var BOARD_SKILL_NAME_RE = /^[a-z0-9_][a-z0-9_-]*$/;
@@ -11984,7 +12119,7 @@ var MAX_LINES = 500;
 function skillDirFromPath(filePath) {
   const normalized = filePath.replace(/\\/g, "/");
   const match = normalized.match(SKILL_MANIFEST_RE);
-  return match ? match[1] : path22.basename(path22.dirname(filePath));
+  return match ? match[1] : path23.basename(path23.dirname(filePath));
 }
 function isBoardSkill(filePath, skillDir) {
   const normalized = filePath.replace(/\\/g, "/");
@@ -11992,7 +12127,7 @@ function isBoardSkill(filePath, skillDir) {
   if (idx < 0) return false;
   const repoRoot = normalized.slice(0, idx);
   try {
-    return fs22.existsSync(path22.join(repoRoot, "packages", "modules", skillDir));
+    return fs23.existsSync(path23.join(repoRoot, "packages", "modules", skillDir));
   } catch {
     return false;
   }
@@ -12008,7 +12143,7 @@ var SkillBestPracticesAdapter = class {
     const skillDir = skillDirFromPath(filePath);
     let raw;
     try {
-      raw = fs22.readFileSync(filePath, "utf8");
+      raw = fs23.readFileSync(filePath, "utf8");
     } catch (err) {
       return [
         {
@@ -12146,24 +12281,24 @@ var SkillBestPracticesAdapter = class {
 };
 
 // src/adapters/workflow-gate-adapter.ts
-import path23 from "path";
-import fs23 from "fs";
+import path24 from "path";
+import fs24 from "fs";
 import yaml7 from "js-yaml";
 var REQ_ID_PATTERN = /^REQ-[A-Z0-9-]+$/;
-var STATE_FILE_RELATIVE = path23.join(".supernal", "controlled-files-workflow-state.yaml");
+var STATE_FILE_RELATIVE = path24.join(".supernal", "controlled-files-workflow-state.yaml");
 var workflowStateCache = /* @__PURE__ */ new Map();
 function getWorkflowState(repoRoot, filePath) {
   if (workflowStateCache.has(repoRoot)) {
     return { state: workflowStateCache.get(repoRoot) };
   }
-  const stateFilePath = path23.join(repoRoot, STATE_FILE_RELATIVE);
-  if (!fs23.existsSync(stateFilePath)) {
+  const stateFilePath = path24.join(repoRoot, STATE_FILE_RELATIVE);
+  if (!fs24.existsSync(stateFilePath)) {
     workflowStateCache.set(repoRoot, null);
     return { state: null };
   }
   let parsed;
   try {
-    const raw = fs23.readFileSync(stateFilePath, "utf8");
+    const raw = fs24.readFileSync(stateFilePath, "utf8");
     parsed = yaml7.load(raw);
   } catch {
     const warning = {
@@ -12222,7 +12357,7 @@ var WorkflowGateAdapter = class {
       });
       return diagnostics;
     }
-    const stateFilePath = path23.join(repoRoot, STATE_FILE_RELATIVE);
+    const stateFilePath = path24.join(repoRoot, STATE_FILE_RELATIVE);
     const { state, warning } = getWorkflowState(repoRoot, filePath);
     if (warning) {
       diagnostics.push(warning);
@@ -12306,24 +12441,24 @@ var WorkflowGateAdapter = class {
 };
 
 // src/core/validator-framework.ts
-import fs24 from "fs";
+import fs25 from "fs";
 import os from "os";
-import path24 from "path";
+import path25 from "path";
 import { globSync as globSync6 } from "glob";
 var CONFIG_FILE_NAMES = /* @__PURE__ */ new Set(["repotype.yaml", "repo-schema.yaml"]);
 function resolveRepoRoot(targetRoot, configPath) {
-  const configDir = path24.dirname(configPath);
-  const rel = path24.relative(configDir, targetRoot);
-  const targetInsideConfigDir = rel === "" || !rel.startsWith("..") && !path24.isAbsolute(rel);
+  const configDir = path25.dirname(configPath);
+  const rel = path25.relative(configDir, targetRoot);
+  const targetInsideConfigDir = rel === "" || !rel.startsWith("..") && !path25.isAbsolute(rel);
   return targetInsideConfigDir ? configDir : targetRoot;
 }
 var MAX_SCAN_FILES = 5e4;
 function scanFiles(targetPath, repoRoot, sharedIgnoreMatcher) {
   const ignoreMatcher = sharedIgnoreMatcher ?? createIgnoreMatcher(repoRoot);
-  const stats = fs24.statSync(targetPath);
+  const stats = fs25.statSync(targetPath);
   if (stats.isFile()) {
-    const absoluteFile = path24.resolve(targetPath);
-    if (CONFIG_FILE_NAMES.has(path24.basename(absoluteFile))) return [];
+    const absoluteFile = path25.resolve(targetPath);
+    if (CONFIG_FILE_NAMES.has(path25.basename(absoluteFile))) return [];
     return ignoreMatcher.isIgnored(absoluteFile) ? [] : [absoluteFile];
   }
   const files = globSync6("**/*", {
@@ -12333,7 +12468,7 @@ function scanFiles(targetPath, repoRoot, sharedIgnoreMatcher) {
     ignore: getStaticIgnoreGlobs()
   });
   const filtered = files.filter((filePath) => {
-    if (CONFIG_FILE_NAMES.has(path24.basename(filePath))) return false;
+    if (CONFIG_FILE_NAMES.has(path25.basename(filePath))) return false;
     return !ignoreMatcher.isIgnored(filePath);
   });
   if (filtered.length > MAX_SCAN_FILES) {
@@ -12470,9 +12605,9 @@ var ValidationEngine = class {
   }
   adapters;
   async validate(targetPath, options) {
-    const absoluteTarget = path24.resolve(targetPath);
-    const targetRoot = fs24.existsSync(absoluteTarget) && fs24.statSync(absoluteTarget).isDirectory() ? absoluteTarget : path24.dirname(absoluteTarget);
-    const configPath = options?.configPath ? path24.resolve(options.configPath) : findConfig(absoluteTarget);
+    const absoluteTarget = path25.resolve(targetPath);
+    const targetRoot = fs25.existsSync(absoluteTarget) && fs25.statSync(absoluteTarget).isDirectory() ? absoluteTarget : path25.dirname(absoluteTarget);
+    const configPath = options?.configPath ? path25.resolve(options.configPath) : findConfig(absoluteTarget);
     const repoRoot = resolveRepoRoot(targetRoot, configPath);
     const config2 = loadConfig(configPath);
     const files = options?.fileList ?? scanFiles(absoluteTarget, repoRoot, options?.sharedIgnoreMatcher);
@@ -12533,9 +12668,9 @@ var ValidationEngine = class {
    * Auto-detects child configs under rootDir.
    */
   async validateWorkspace(rootDir, options = {}) {
-    const root = path24.resolve(rootDir);
+    const root = path25.resolve(rootDir);
     const rootConfigPath = findConfig(root);
-    const repoRoot = path24.dirname(rootConfigPath);
+    const repoRoot = path25.dirname(rootConfigPath);
     const sharedIgnoreMatcher = createIgnoreMatcher(repoRoot);
     const workspaces = discoverWorkspaces(repoRoot, sharedIgnoreMatcher);
     if (workspaces.length === 0) {
@@ -12650,11 +12785,11 @@ var ValidationEngine = class {
       }
       for (const folder of rootConfig.folders ?? []) {
         for (const reqFile of folder.requiredFiles ?? []) {
-          const absReqFile = path24.resolve(repoRoot, reqFile);
-          if (absReqFile.startsWith(ws.subtreeRoot + path24.sep) || absReqFile === ws.subtreeRoot) {
+          const absReqFile = path25.resolve(repoRoot, reqFile);
+          if (absReqFile.startsWith(ws.subtreeRoot + path25.sep) || absReqFile === ws.subtreeRoot) {
             const childRequires = (childConfig.folders ?? []).some(
               (cf) => (cf.requiredFiles ?? []).some(
-                (rf) => path24.resolve(ws.subtreeRoot, rf) === absReqFile
+                (rf) => path25.resolve(ws.subtreeRoot, rf) === absReqFile
               )
             );
             if (!childRequires) {
@@ -12670,7 +12805,7 @@ var ValidationEngine = class {
           }
         }
       }
-      const relSubtree = path24.relative(repoRoot, ws.subtreeRoot);
+      const relSubtree = path25.relative(repoRoot, ws.subtreeRoot);
       for (const rootRule of rootConfig.files ?? []) {
         if (!rootGlobCouldMatchSubtree(rootRule.glob, relSubtree)) continue;
         for (const childRule of childConfig.files ?? []) {
@@ -12751,6 +12886,7 @@ function createDefaultEngine() {
     new BoardStoryCompletenessAdapter(),
     new CompanyYamlAdapter(),
     new GitignorePolicyAdapter(),
+    new LargeGeneratedFileAdapter(),
     new CronRegistryDriftAdapter(),
     new CronIndexDriftAdapter(),
     new SkillBestPracticesAdapter()
@@ -12960,20 +13096,20 @@ function renderComplianceReport(report, format = "markdown") {
 import yaml8 from "js-yaml";
 var deriveRepoRoot = resolveRepoRoot;
 function deriveTargetRoot(targetPath) {
-  if (fs25.existsSync(targetPath) && fs25.statSync(targetPath).isDirectory()) {
+  if (fs26.existsSync(targetPath) && fs26.statSync(targetPath).isDirectory()) {
     return targetPath;
   }
-  return path25.dirname(targetPath);
+  return path26.dirname(targetPath);
 }
 async function validatePath(target, configOverridePath, opts = {}) {
-  const absolute = path25.resolve(target);
-  const configPath = configOverridePath ? path25.resolve(configOverridePath) : findConfig(absolute);
+  const absolute = path26.resolve(target);
+  const configPath = configOverridePath ? path26.resolve(configOverridePath) : findConfig(absolute);
   const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const config2 = loadConfig(configPath);
   const engine = createDefaultEngine();
   const pluginsEnabled = opts.plugins === true;
   const pluginDiagnostics = pluginsEnabled ? runPluginPhase(config2, repoRoot, "validate") : [];
-  const isDirectory = fs25.existsSync(absolute) && fs25.statSync(absolute).isDirectory();
+  const isDirectory = fs26.existsSync(absolute) && fs26.statSync(absolute).isDirectory();
   const workspaceEnabled = opts.workspace !== false;
   if (isDirectory && workspaceEnabled && !configOverridePath) {
     const wsResult = await engine.validateWorkspace(absolute, {
@@ -13011,15 +13147,15 @@ async function validatePath(target, configOverridePath, opts = {}) {
   };
 }
 function explainPath(target, configOverridePath) {
-  const absolute = path25.resolve(target);
-  const configPath = configOverridePath ? path25.resolve(configOverridePath) : findConfig(absolute);
+  const absolute = path26.resolve(target);
+  const configPath = configOverridePath ? path26.resolve(configOverridePath) : findConfig(absolute);
   const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const config2 = loadConfig(configPath);
   return explainRules(config2, repoRoot, absolute);
 }
 async function fixPath(target, configOverridePath, opts = {}) {
-  const absolute = path25.resolve(target);
-  const configPath = configOverridePath ? path25.resolve(configOverridePath) : findConfig(absolute);
+  const absolute = path26.resolve(target);
+  const configPath = configOverridePath ? path26.resolve(configOverridePath) : findConfig(absolute);
   const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const config2 = loadConfig(configPath);
   const pluginsEnabled = opts.plugins === true;
@@ -13065,16 +13201,16 @@ async function fixPath(target, configOverridePath, opts = {}) {
   };
 }
 function scaffoldFromTemplate(templateId, outputPath, variables) {
-  const absolute = path25.resolve(outputPath);
+  const absolute = path26.resolve(outputPath);
   const configPath = findConfig(absolute);
-  const repoRoot = path25.dirname(configPath);
+  const repoRoot = path26.dirname(configPath);
   const config2 = loadConfig(configPath);
   const content = renderTemplate(config2, repoRoot, templateId, variables);
-  const parent = path25.dirname(absolute);
-  if (!fs25.existsSync(parent)) {
-    fs25.mkdirSync(parent, { recursive: true });
+  const parent = path26.dirname(absolute);
+  if (!fs26.existsSync(parent)) {
+    fs26.mkdirSync(parent, { recursive: true });
   }
-  fs25.writeFileSync(absolute, content);
+  fs26.writeFileSync(absolute, content);
   return absolute;
 }
 function generateSchemaFromContent(target, output, pattern = "**/*.md") {
@@ -13083,25 +13219,25 @@ function generateSchemaFromContent(target, output, pattern = "**/*.md") {
 function initRepotypeConfig(targetDir, options = {}) {
   const type = options.type ?? "default";
   const force = options.force ?? false;
-  const absoluteTarget = path25.resolve(targetDir);
-  const outputPath = path25.join(absoluteTarget, "repotype.yaml");
-  if (fs25.existsSync(outputPath) && !force) {
+  const absoluteTarget = path26.resolve(targetDir);
+  const outputPath = path26.join(absoluteTarget, "repotype.yaml");
+  if (fs26.existsSync(outputPath) && !force) {
     throw new Error(
       `repotype.yaml already exists at ${outputPath}. Use --force to overwrite.`
     );
   }
-  const config2 = options.from ? yaml8.load(fs25.readFileSync(path25.resolve(options.from), "utf8")) : createPresetConfig(type);
+  const config2 = options.from ? yaml8.load(fs26.readFileSync(path26.resolve(options.from), "utf8")) : createPresetConfig(type);
   if (!config2 || typeof config2 !== "object" || !config2.version) {
     throw new Error(
       'Source config is invalid. Expected YAML with top-level "version".'
     );
   }
   const rendered = yaml8.dump(config2, { lineWidth: 120 });
-  fs25.mkdirSync(absoluteTarget, { recursive: true });
-  fs25.writeFileSync(outputPath, rendered);
+  fs26.mkdirSync(absoluteTarget, { recursive: true });
+  fs26.writeFileSync(outputPath, rendered);
   return {
     outputPath,
-    source: options.from ? `file:${path25.resolve(options.from)}` : `preset:${type}`
+    source: options.from ? `file:${path26.resolve(options.from)}` : `preset:${type}`
   };
 }
 function getRepotypePresetMetadata() {
@@ -13110,9 +13246,9 @@ function getRepotypePresetMetadata() {
   };
 }
 function installPluginRequirements(target) {
-  const absolute = path25.resolve(target);
+  const absolute = path26.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path25.dirname(configPath);
+  const repoRoot = path26.dirname(configPath);
   const config2 = loadConfig(configPath);
   const installs = installPlugins(config2, repoRoot);
   return {
@@ -13123,9 +13259,9 @@ function installPluginRequirements(target) {
   };
 }
 function pluginStatus(target) {
-  const absolute = path25.resolve(target);
+  const absolute = path26.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path25.dirname(configPath);
+  const repoRoot = path26.dirname(configPath);
   const config2 = loadConfig(configPath);
   const plugins = describePlugins(config2);
   return {
@@ -13135,8 +13271,8 @@ function pluginStatus(target) {
   };
 }
 async function generateComplianceReport(target, format = "markdown", configOverridePath) {
-  const absolute = path25.resolve(target);
-  const configPath = configOverridePath ? path25.resolve(configOverridePath) : findConfig(absolute);
+  const absolute = path26.resolve(target);
+  const configPath = configOverridePath ? path26.resolve(configOverridePath) : findConfig(absolute);
   const repoRoot = deriveRepoRoot(deriveTargetRoot(absolute), configPath);
   const validateResult = await validatePath(target, configOverridePath);
   const allDiagnostics = validateResult.mode === "workspace" ? [
@@ -13211,8 +13347,8 @@ async function generateComplianceReport(target, format = "markdown", configOverr
 
 // src/cli/cleanup.ts
 function ensureDir(dir) {
-  if (!fs26.existsSync(dir)) {
-    fs26.mkdirSync(dir, { recursive: true });
+  if (!fs27.existsSync(dir)) {
+    fs27.mkdirSync(dir, { recursive: true });
   }
 }
 function getTimestamp() {
@@ -13222,22 +13358,22 @@ function dedupe(items) {
   return [...new Set(items)];
 }
 function safeDestination(baseQueue, targetRoot, sourceFile) {
-  const relative = path26.relative(targetRoot, sourceFile);
-  const clamped = relative.startsWith("..") ? path26.basename(sourceFile) : relative;
-  const destination = path26.join(baseQueue, clamped);
-  if (!fs26.existsSync(destination)) {
+  const relative = path27.relative(targetRoot, sourceFile);
+  const clamped = relative.startsWith("..") ? path27.basename(sourceFile) : relative;
+  const destination = path27.join(baseQueue, clamped);
+  if (!fs27.existsSync(destination)) {
     return destination;
   }
-  const ext = path26.extname(destination);
+  const ext = path27.extname(destination);
   const stem = destination.slice(0, destination.length - ext.length);
   return `${stem}.moved-${Date.now()}${ext}`;
 }
 function writeAuditLogs(queueDir, entries) {
   ensureDir(queueDir);
-  const jsonlPath = path26.join(queueDir, "cleanup-log.jsonl");
-  const textPath = path26.join(queueDir, "cleanup-log.md");
+  const jsonlPath = path27.join(queueDir, "cleanup-log.jsonl");
+  const textPath = path27.join(queueDir, "cleanup-log.md");
   for (const entry of entries) {
-    fs26.appendFileSync(jsonlPath, `${JSON.stringify(entry)}
+    fs27.appendFileSync(jsonlPath, `${JSON.stringify(entry)}
 `);
     const summary = [
       `- ${entry.timestamp}`,
@@ -13248,12 +13384,12 @@ function writeAuditLogs(queueDir, entries) {
       ...entry.diagnostics.map((d) => `  - ${d.code}: ${d.message}`),
       ""
     ].join("\n");
-    fs26.appendFileSync(textPath, summary);
+    fs27.appendFileSync(textPath, summary);
   }
 }
 async function runCleanup(options) {
-  const targetRoot = path26.resolve(options.target);
-  const queueDir = path26.resolve(options.queueDir);
+  const targetRoot = path27.resolve(options.target);
+  const queueDir = path27.resolve(options.queueDir);
   ensureDir(queueDir);
   const validateResult = await validatePath(targetRoot);
   const allDiagnostics = validateResult.mode === "workspace" ? [
@@ -13269,7 +13405,7 @@ async function runCleanup(options) {
   const entries = [];
   let moved = 0;
   for (const file2 of files) {
-    if (!fs26.existsSync(file2)) {
+    if (!fs27.existsSync(file2)) {
       continue;
     }
     const diagnostics = errorDiagnostics.filter((d) => d.file === file2);
@@ -13277,9 +13413,9 @@ async function runCleanup(options) {
       continue;
     }
     const destination = safeDestination(queueDir, targetRoot, file2);
-    ensureDir(path26.dirname(destination));
+    ensureDir(path27.dirname(destination));
     if (!options.dryRun) {
-      fs26.renameSync(file2, destination);
+      fs27.renameSync(file2, destination);
       moved += 1;
     }
     entries.push({
@@ -13308,8 +13444,8 @@ async function runCleanup(options) {
 }
 
 // src/cli/watcher.ts
-import fs27 from "fs";
-import path27 from "path";
+import fs28 from "fs";
+import path28 from "path";
 import { spawnSync as spawnSync3 } from "child_process";
 function shQuote(input) {
   return `'${input.replace(/'/g, `'"'"'`)}'`;
@@ -13328,11 +13464,11 @@ function writeCrontab(content) {
   }
 }
 function installWatcher(options) {
-  const target = path27.resolve(options.target);
-  const queueDir = path27.resolve(options.queueDir);
-  const logFile = path27.resolve(options.logFile);
-  fs27.mkdirSync(path27.dirname(logFile), { recursive: true });
-  fs27.mkdirSync(queueDir, { recursive: true });
+  const target = path28.resolve(options.target);
+  const queueDir = path28.resolve(options.queueDir);
+  const logFile = path28.resolve(options.logFile);
+  fs28.mkdirSync(path28.dirname(logFile), { recursive: true });
+  fs28.mkdirSync(queueDir, { recursive: true });
   const marker = `# REPOTYPE_WATCHER:${target}`;
   const command = [
     `cd ${shQuote(target)}`,
@@ -13361,7 +13497,7 @@ function installWatcher(options) {
   };
 }
 function inspectWatcher(target) {
-  const resolved = path27.resolve(target);
+  const resolved = path28.resolve(target);
   const marker = `# REPOTYPE_WATCHER:${resolved}`;
   const current = readCrontab();
   const lines = current.split("\n").map((entry) => entry.trimEnd()).filter((entry) => entry.length > 0);
@@ -13373,7 +13509,7 @@ function inspectWatcher(target) {
   };
 }
 function uninstallWatcher(target, dryRun = false) {
-  const resolved = path27.resolve(target);
+  const resolved = path28.resolve(target);
   const marker = `# REPOTYPE_WATCHER:${resolved}`;
   const current = readCrontab();
   const lines = current.split("\n").map((entry) => entry.trimEnd()).filter((entry) => entry.length > 0);
@@ -13392,12 +13528,12 @@ function uninstallWatcher(target, dryRun = false) {
 }
 
 // src/cli/operations.ts
-import fs28 from "fs";
-import path28 from "path";
+import fs29 from "fs";
+import path29 from "path";
 function resolveRepoRoot2(target) {
-  const absolute = path28.resolve(target);
+  const absolute = path29.resolve(target);
   const configPath = findConfig(absolute);
-  const repoRoot = path28.dirname(configPath);
+  const repoRoot = path29.dirname(configPath);
   return { repoRoot, configPath };
 }
 function normalizeOperations(target) {
@@ -13411,9 +13547,9 @@ function normalizeOperations(target) {
     watcher: {
       enabled: config2.operations?.watcher?.enabled ?? false,
       schedule: config2.operations?.watcher?.schedule ?? "*/15 * * * *",
-      queueDir: path28.resolve(repoRoot, config2.operations?.watcher?.queueDir ?? "sort_queue"),
+      queueDir: path29.resolve(repoRoot, config2.operations?.watcher?.queueDir ?? "sort_queue"),
       minErrors: config2.operations?.watcher?.minErrors ?? 3,
-      logFile: path28.resolve(repoRoot, config2.operations?.watcher?.logFile ?? ".repotype/logs/watcher.log")
+      logFile: path29.resolve(repoRoot, config2.operations?.watcher?.logFile ?? ".repotype/logs/watcher.log")
     }
   };
   return {
@@ -13423,11 +13559,11 @@ function normalizeOperations(target) {
   };
 }
 function readLastCleanupEntry(queueDir) {
-  const logPath = path28.join(queueDir, "cleanup-log.jsonl");
-  if (!fs28.existsSync(logPath)) {
+  const logPath = path29.join(queueDir, "cleanup-log.jsonl");
+  if (!fs29.existsSync(logPath)) {
     return { found: false };
   }
-  const lines = fs28.readFileSync(logPath, "utf8").split("\n").map((line) => line.trim()).filter(Boolean);
+  const lines = fs29.readFileSync(logPath, "utf8").split("\n").map((line) => line.trim()).filter(Boolean);
   if (lines.length === 0) {
     return { found: false };
   }
@@ -13732,9 +13868,9 @@ var repotypeReportCommand = new UniversalCommand({
   async handler({ target = ".", format = "markdown", config: config2, output }) {
     const result = await generateComplianceReport(target, format, config2);
     if (output) {
-      const outPath = path29.resolve(output);
-      fs29.mkdirSync(path29.dirname(outPath), { recursive: true });
-      fs29.writeFileSync(outPath, result.rendered);
+      const outPath = path30.resolve(output);
+      fs30.mkdirSync(path30.dirname(outPath), { recursive: true });
+      fs30.writeFileSync(outPath, result.rendered);
       return { ...result, _writtenTo: outPath };
     }
     return result;
@@ -13812,8 +13948,8 @@ var repotypeCleanupRunCommand = new UniversalCommand({
     minErrors = 3,
     dryRun = false
   }) {
-    const absoluteTarget = path29.resolve(target);
-    const queueDir = path29.isAbsolute(queue) ? queue : path29.resolve(absoluteTarget, queue);
+    const absoluteTarget = path30.resolve(target);
+    const queueDir = path30.isAbsolute(queue) ? queue : path30.resolve(absoluteTarget, queue);
     return runCleanup({ target: absoluteTarget, queueDir, minErrors, dryRun });
   }
 });
@@ -13905,9 +14041,9 @@ var repotypeInstallWatcherCommand = new UniversalCommand({
     logFile = ".repotype/logs/watcher.log",
     dryRun = true
   }) {
-    const resolvedTarget = path29.resolve(target);
-    const queueDir = path29.isAbsolute(queue) ? queue : path29.resolve(resolvedTarget, queue);
-    const resolvedLogFile = path29.isAbsolute(logFile) ? logFile : path29.resolve(resolvedTarget, logFile);
+    const resolvedTarget = path30.resolve(target);
+    const queueDir = path30.isAbsolute(queue) ? queue : path30.resolve(resolvedTarget, queue);
+    const resolvedLogFile = path30.isAbsolute(logFile) ? logFile : path30.resolve(resolvedTarget, logFile);
     return installWatcher({
       target: resolvedTarget,
       schedule,

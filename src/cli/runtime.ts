@@ -12,6 +12,7 @@ import { BoardYamlCompletenessAdapter } from '../adapters/board-yaml-completenes
 import { BoardStoryCompletenessAdapter } from '../adapters/board-story-completeness-adapter.js';
 import { CompanyYamlAdapter } from '../adapters/company-yaml-adapter.js';
 import { GitignorePolicyAdapter } from '../adapters/gitignore-policy-adapter.js';
+import { LargeGeneratedFileAdapter } from '../adapters/large-generated-file-adapter.js';
 import { CronRegistryDriftAdapter } from '../adapters/cron-registry-drift-adapter.js';
 import { CronIndexDriftAdapter } from '../adapters/cron-index-drift-adapter.js';
 import { SentinelContentAdapter } from '../adapters/sentinel-content-adapter.js';
@@ -37,6 +38,7 @@ export function createDefaultEngine(): ValidationEngine {
     new BoardStoryCompletenessAdapter(),
     new CompanyYamlAdapter(),
     new GitignorePolicyAdapter(),
+    new LargeGeneratedFileAdapter(),
     new CronRegistryDriftAdapter(),
     new CronIndexDriftAdapter(),
     new SkillBestPracticesAdapter(),
