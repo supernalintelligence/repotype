@@ -96,6 +96,67 @@ describe('LargeGeneratedFileAdapter', () => {
     expect(diagnostics[0].severity).toBe('warning');
   });
 
+  it('warns on a tracked mp3 over the 100KB media threshold', async () => {
+    const base = tmp();
+    const big = Buffer.alloc(150 * 1024, 'a'); // 150KB > 100KB media threshold, well under 5MB generic
+    const file = writeFile(base, 'apps/marketing-video/voiceover/line-01.mp3', big);
+    const diagnostics = await adapter.validate(file, makeContext(base));
+    expect(codes(diagnostics)).toEqual(['tracked_media_binary']);
+    expect(diagnostics[0].severity).toBe('warning');
+    expect(diagnostics[0].message).toContain('storage.git_data');
+    expect(diagnostics[0].message).toContain('Drive asset-pairing');
+    expect(diagnostics[0].message).toContain('gitTracked:');
+  });
+
+  it('warns on a tracked mp4 over the 100KB media threshold', async () => {
+    const base = tmp();
+    const big = Buffer.alloc(200 * 1024, 'a');
+    const file = writeFile(base, 'apps/supernal-dashboard/videos/stories/demo.mp4', big);
+    const diagnostics = await adapter.validate(file, makeContext(base));
+    expect(codes(diagnostics)).toEqual(['tracked_media_binary']);
+  });
+
+  it('warns on a tracked pdf over the 100KB media threshold (advisory only, non-blocking)', async () => {
+    const base = tmp();
+    const big = Buffer.alloc(150 * 1024, 'a');
+    const file = writeFile(base, 'docs/whitepaper.pdf', big);
+    const diagnostics = await adapter.validate(file, makeContext(base));
+    expect(codes(diagnostics)).toEqual(['tracked_media_binary']);
+    expect(diagnostics[0].severity).toBe('warning');
+  });
+
+  it('does not flag a small tracked mp3 under the media threshold', async () => {
+    const base = tmp();
+    const small = Buffer.alloc(50 * 1024, 'a'); // 50KB < 100KB
+    const file = writeFile(base, 'assets/ding.mp3', small);
+    const diagnostics = await adapter.validate(file, makeContext(base));
+    expect(diagnostics).toEqual([]);
+  });
+
+  it('does not flag media files inside a declared .gitmodules submodule mount', async () => {
+    const base = tmp();
+    fs.writeFileSync(
+      path.join(base, '.gitmodules'),
+      '[submodule ".supernal/applications"]\n\tpath = .supernal/applications\n\turl = git@github.com:example/applications.git\n'
+    );
+    const big = Buffer.alloc(200 * 1024, 'a');
+    const file = writeFile(base, '.supernal/applications/demo-video.mp4', big);
+    const diagnostics = await adapter.validate(file, makeContext(base));
+    expect(diagnostics).toEqual([]);
+  });
+
+  it('still flags media files OUTSIDE a declared submodule mount when .gitmodules exists', async () => {
+    const base = tmp();
+    fs.writeFileSync(
+      path.join(base, '.gitmodules'),
+      '[submodule ".supernal/applications"]\n\tpath = .supernal/applications\n\turl = git@github.com:example/applications.git\n'
+    );
+    const big = Buffer.alloc(200 * 1024, 'a');
+    const file = writeFile(base, 'apps/marketing-video/demo.mp4', big);
+    const diagnostics = await adapter.validate(file, makeContext(base));
+    expect(codes(diagnostics)).toEqual(['tracked_media_binary']);
+  });
+
   it('does not flag a normal small source file', async () => {
     const base = tmp();
     const file = writeFile(base, 'src/index.ts', 'export const x = 1;\n');
