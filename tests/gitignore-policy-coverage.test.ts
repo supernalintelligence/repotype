@@ -43,13 +43,22 @@ describe('GitignorePolicyAdapter — required coverage', () => {
     const diagnostics = await adapter.validate(file, makeContext());
     const missing = groupIds(diagnostics);
     expect(missing).toEqual(
-      expect.arrayContaining(['node_modules', 'build-output', 'os-junk', 'local-env', 'log-artifacts']),
+      expect.arrayContaining([
+        'node_modules',
+        'build-output',
+        'os-junk',
+        'local-env',
+        'log-artifacts',
+        'board-storage',
+      ]),
     );
     expect(diagnostics.every((d) => d.severity === 'error' || d.code === 'dangerous_ignore_pattern')).toBe(true);
   });
 
   it('does not flag a group once a covering line is present', async () => {
-    const file = writeGitignore('node_modules/\n.next/\ndist/\n.DS_Store\n.env.local\n*.log\n');
+    const file = writeGitignore(
+      'node_modules/\n.next/\ndist/\n.DS_Store\n.env.local\n*.log\n.supernal-local/\n',
+    );
     const diagnostics = await adapter.validate(file, makeContext());
     expect(groupIds(diagnostics)).toEqual([]);
   });
@@ -60,6 +69,36 @@ describe('GitignorePolicyAdapter — required coverage', () => {
     );
     const diagnostics = await adapter.validate(file, makeContext());
     expect(groupIds(diagnostics)).not.toContain('log-artifacts');
+  });
+
+  it('flags missing board-storage coverage independently of log-artifacts', async () => {
+    // *.log alone covers log-artifacts but NOT board-storage (a narrower rule doesn't
+    // imply the whole .supernal-local/ dir is ignored) -- board-owned runtime DB/cache/
+    // storage/asset dirs must be blanket-excluded on their own.
+    const file = writeGitignore('node_modules/\n.next/\n.DS_Store\n.env.local\n*.log\n');
+    const diagnostics = await adapter.validate(file, makeContext());
+    expect(groupIds(diagnostics)).toContain('board-storage');
+    expect(groupIds(diagnostics)).not.toContain('log-artifacts');
+  });
+
+  it('a narrow per-file .supernal-local rule does NOT satisfy board-storage (must be blanket)', async () => {
+    const file = writeGitignore(
+      'node_modules/\n.next/\n.DS_Store\n.env.local\n*.log\n.supernal-local/rules-state.json\n',
+    );
+    const diagnostics = await adapter.validate(file, makeContext());
+    expect(groupIds(diagnostics)).toContain('board-storage');
+  });
+
+  it('accepts a blanket .supernal-local/ rule (with or without trailing slash) as board-storage coverage', async () => {
+    const withSlash = writeGitignore(
+      'node_modules/\n.next/\n.DS_Store\n.env.local\n*.log\n.supernal-local/\n',
+    );
+    expect(groupIds(await adapter.validate(withSlash, makeContext()))).not.toContain('board-storage');
+
+    const noSlash = writeGitignore(
+      'node_modules/\n.next/\n.DS_Store\n.env.local\n*.log\n.supernal-local\n',
+    );
+    expect(groupIds(await adapter.validate(noSlash, makeContext()))).not.toContain('board-storage');
   });
 
   it('still flags dangerous ralph-artifact patterns alongside the new coverage check', async () => {
@@ -80,6 +119,7 @@ describe('GitignorePolicyAdapter — required coverage', () => {
         '.env*.local',
         '*.log',
         '.ralph-log-*.jsonl',
+        '.supernal-local/',
       ].join('\n'),
     );
     const diagnostics = await adapter.validate(file, makeContext());

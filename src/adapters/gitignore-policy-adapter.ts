@@ -95,6 +95,19 @@ const REQUIRED_COVERAGE: RequiredCoverageGroup[] = [
     suggestion: '*.log\n.ralph-log*.jsonl',
     coveredBy: [/\*?\.log\b/, /ralph-log/, /\.supernal-local/, /\*\.jsonl/],
   },
+  {
+    id: 'board-storage',
+    description:
+      '.supernal-local/ (board-owned runtime storage — AgentStateDB files, caches, ' +
+      'declared storage.paths dirs, resolved via resolveBoardStoragePath()/' +
+      'resolveBoardAssetDir()) is not excluded. Unlike .supernal/ (git-remembered, ' +
+      'holds board manifests/placement), .supernal-local/ is board runtime DATA and ' +
+      'must never be committed — a real repo (the si42/supernal fleet root) shipped ' +
+      'without this rule until caught by a manual audit; this check makes that class ' +
+      'of gap self-detecting fleet-wide instead of relying on someone noticing.',
+    suggestion: '.supernal-local/',
+    coveredBy: [/\.supernal-local\/?$/],
+  },
 ];
 
 export class GitignorePolicyAdapter implements ValidatorAdapter {
