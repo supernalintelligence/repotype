@@ -18,6 +18,7 @@ import { CronIndexDriftAdapter } from '../adapters/cron-index-drift-adapter.js';
 import { SentinelContentAdapter } from '../adapters/sentinel-content-adapter.js';
 import { SkillBestPracticesAdapter } from '../adapters/skill-best-practices-adapter.js';
 import { WorkflowGateAdapter } from '../adapters/workflow-gate-adapter.js';
+import { BoardLocationSuggestedPathAdapter } from '../adapters/board-location-suggested-path-adapter.js';
 import { ValidationEngine } from '../core/validator-framework.js';
 
 export function createDefaultEngine(): ValidationEngine {
@@ -42,5 +43,6 @@ export function createDefaultEngine(): ValidationEngine {
     new CronRegistryDriftAdapter(),
     new CronIndexDriftAdapter(),
     new SkillBestPracticesAdapter(),
+    new BoardLocationSuggestedPathAdapter(),
   ]);
 }
