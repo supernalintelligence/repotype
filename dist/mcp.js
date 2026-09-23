@@ -13,7 +13,7 @@ var __export = (target, all) => {
     __defProp(target, name, { get: all[name], enumerable: true });
 };
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js
 // @__NO_SIDE_EFFECTS__
 function $constructor(name, initializer3, params) {
   function init(inst, def) {
@@ -73,7 +73,7 @@ function config(newConfig) {
 }
 var _a, $ZodAsyncError, $ZodEncodeError, globalConfig;
 var init_core = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/core.js"() {
     "use strict";
     $ZodAsyncError = class extends Error {
       constructor() {
@@ -91,7 +91,7 @@ var init_core = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js
 var util_exports = {};
 __export(util_exports, {
   BIGINT_FORMAT_RANGES: () => BIGINT_FORMAT_RANGES,
@@ -702,7 +702,7 @@ function uint8ArrayToHex(bytes) {
 }
 var EVALUATING, captureStackTrace, allowsEval, getParsedType, propertyKeyTypes, primitiveTypes, NUMBER_FORMAT_RANGES, BIGINT_FORMAT_RANGES, Class;
 var init_util = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/util.js"() {
     "use strict";
     init_core();
     EVALUATING = /* @__PURE__ */ Symbol("evaluating");
@@ -794,7 +794,7 @@ var init_util = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/errors.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/errors.js
 function flattenError(error2, mapper = (issue2) => issue2.message) {
   const fieldErrors = {};
   const formErrors = [];
@@ -846,7 +846,7 @@ function formatError(error2, mapper = (issue2) => issue2.message) {
 }
 var initializer, $ZodError, $ZodRealError;
 var init_errors = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/errors.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/errors.js"() {
     "use strict";
     init_core();
     init_util();
@@ -871,10 +871,10 @@ var init_errors = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js
 var _parse, _parseAsync, _safeParse, safeParse, _safeParseAsync, safeParseAsync, _encode, _decode, _encodeAsync, _decodeAsync, _safeEncode, _safeDecode, _safeEncodeAsync, _safeDecodeAsync;
 var init_parse = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/parse.js"() {
     "use strict";
     init_core();
     init_errors();
@@ -958,7 +958,7 @@ var init_parse = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/regexes.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/regexes.js
 function emoji() {
   return new RegExp(_emoji, "u");
 }
@@ -982,7 +982,7 @@ function datetime(args) {
 }
 var cuid, cuid2, ulid, xid, ksuid, nanoid, duration, guid, uuid, email, _emoji, ipv4, ipv6, cidrv4, cidrv6, base64, base64url, httpProtocol, e164, dateSource, date, string, integer, number, boolean, _null, lowercase, uppercase;
 var init_regexes = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/regexes.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/regexes.js"() {
     "use strict";
     cuid = /^[cC][0-9a-z]{6,}$/;
     cuid2 = /^[0-9a-z]+$/;
@@ -1022,10 +1022,10 @@ var init_regexes = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/checks.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/checks.js
 var $ZodCheck, numericOriginMap, $ZodCheckLessThan, $ZodCheckGreaterThan, $ZodCheckMultipleOf, $ZodCheckNumberFormat, $ZodCheckMaxLength, $ZodCheckMinLength, $ZodCheckLengthEquals, $ZodCheckStringFormat, $ZodCheckRegex, $ZodCheckLowerCase, $ZodCheckUpperCase, $ZodCheckIncludes, $ZodCheckStartsWith, $ZodCheckEndsWith, $ZodCheckOverwrite;
 var init_checks = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/checks.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/checks.js"() {
     "use strict";
     init_core();
     init_regexes();
@@ -1421,10 +1421,10 @@ var init_checks = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/doc.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/doc.js
 var Doc;
 var init_doc = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/doc.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/doc.js"() {
     "use strict";
     Doc = class {
       constructor(args = []) {
@@ -1463,10 +1463,10 @@ var init_doc = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/versions.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/versions.js
 var version;
 var init_versions = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/versions.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/versions.js"() {
     "use strict";
     version = {
       major: 4,
@@ -1476,7 +1476,7 @@ var init_versions = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js
 function isValidBase64(data) {
   if (data === "")
     return true;
@@ -1760,7 +1760,7 @@ function handleRefineResult(result, payload, input, inst) {
 }
 var $ZodType, $ZodString, $ZodStringFormat, $ZodGUID, $ZodUUID, $ZodEmail, $ZodURL, $ZodEmoji, $ZodNanoID, $ZodCUID, $ZodCUID2, $ZodULID, $ZodXID, $ZodKSUID, $ZodISODateTime, $ZodISODate, $ZodISOTime, $ZodISODuration, $ZodIPv4, $ZodIPv6, $ZodCIDRv4, $ZodCIDRv6, $ZodBase64, $ZodBase64URL, $ZodE164, $ZodJWT, $ZodNumber, $ZodNumberFormat, $ZodBoolean, $ZodNull, $ZodUnknown, $ZodNever, $ZodArray, $ZodObject, $ZodObjectJIT, $ZodUnion, $ZodDiscriminatedUnion, $ZodIntersection, $ZodRecord, $ZodEnum, $ZodLiteral, $ZodTransform, $ZodOptional, $ZodExactOptional, $ZodNullable, $ZodDefault, $ZodPrefault, $ZodNonOptional, $ZodCatch, $ZodPipe, $ZodPreprocess, $ZodReadonly, $ZodCustom;
 var init_schemas = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/schemas.js"() {
     "use strict";
     init_checks();
     init_core();
@@ -2970,7 +2970,7 @@ var init_schemas = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/en.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/en.js
 function en_default() {
   return {
     localeError: error()
@@ -2978,7 +2978,7 @@ function en_default() {
 }
 var error;
 var init_en = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/en.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/en.js"() {
     "use strict";
     init_util();
     error = () => {
@@ -3090,20 +3090,20 @@ var init_en = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/index.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/index.js
 var init_locales = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/index.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/locales/index.js"() {
     "use strict";
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/registries.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/registries.js
 function registry() {
   return new $ZodRegistry();
 }
 var _a2, $ZodRegistry, globalRegistry;
 var init_registries = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/registries.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/registries.js"() {
     "use strict";
     $ZodRegistry = class {
       constructor() {
@@ -3150,7 +3150,7 @@ var init_registries = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/api.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/api.js
 // @__NO_SIDE_EFFECTS__
 function _string(Class2, params) {
   return new Class2({
@@ -3678,14 +3678,14 @@ function _check(fn, params) {
   return ch;
 }
 var init_api = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/api.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/api.js"() {
     "use strict";
     init_checks();
     init_util();
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/to-json-schema.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/to-json-schema.js
 function initializeContext(params) {
   let target = params?.target ?? "draft-2020-12";
   if (target === "draft-4")
@@ -4032,7 +4032,7 @@ function isTransforming(_schema, _ctx) {
 }
 var createToJSONSchemaMethod, createStandardJSONSchemaMethod;
 var init_to_json_schema = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/to-json-schema.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/to-json-schema.js"() {
     "use strict";
     init_registries();
     createToJSONSchemaMethod = (schema, processors = {}) => (params) => {
@@ -4051,10 +4051,10 @@ var init_to_json_schema = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/json-schema-processors.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/json-schema-processors.js
 var formatMap, stringProcessor, numberProcessor, booleanProcessor, nullProcessor, neverProcessor, unknownProcessor, enumProcessor, literalProcessor, customProcessor, transformProcessor, arrayProcessor, objectProcessor, unionProcessor, intersectionProcessor, recordProcessor, nullableProcessor, nonoptionalProcessor, defaultProcessor, prefaultProcessor, catchProcessor, pipeProcessor, readonlyProcessor, optionalProcessor;
 var init_json_schema_processors = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/json-schema-processors.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/json-schema-processors.js"() {
     "use strict";
     init_to_json_schema();
     init_util();
@@ -4392,16 +4392,16 @@ var init_json_schema_processors = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/json-schema.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/json-schema.js
 var init_json_schema = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/json-schema.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/json-schema.js"() {
     "use strict";
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/index.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/index.js
 var init_core2 = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/index.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/core/index.js"() {
     "use strict";
     init_core();
     init_parse();
@@ -4420,15 +4420,15 @@ var init_core2 = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/checks.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/checks.js
 var init_checks2 = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/checks.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/checks.js"() {
     "use strict";
     init_core2();
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/iso.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/iso.js
 var iso_exports = {};
 __export(iso_exports, {
   ZodISODate: () => ZodISODate,
@@ -4454,7 +4454,7 @@ function duration2(params) {
 }
 var ZodISODateTime, ZodISODate, ZodISOTime, ZodISODuration;
 var init_iso = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/iso.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/iso.js"() {
     "use strict";
     init_core2();
     init_schemas2();
@@ -4477,10 +4477,10 @@ var init_iso = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/errors.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/errors.js
 var initializer2, ZodRealError;
 var init_errors2 = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/errors.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/errors.js"() {
     "use strict";
     init_core2();
     init_core2();
@@ -4525,10 +4525,10 @@ var init_errors2 = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/parse.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/parse.js
 var parse2, parseAsync2, safeParse2, safeParseAsync2, encode, decode, encodeAsync, decodeAsync, safeEncode, safeDecode, safeEncodeAsync, safeDecodeAsync;
 var init_parse2 = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/parse.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/parse.js"() {
     "use strict";
     init_core2();
     init_errors2();
@@ -4547,7 +4547,7 @@ var init_parse2 = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js
 function _installLazyMethods(inst, group, methods) {
   const proto = Object.getPrototypeOf(inst);
   let installed = _installedGroups.get(proto);
@@ -4765,7 +4765,7 @@ function preprocess(fn, schema) {
 }
 var _installedGroups, ZodType, _ZodString, ZodString, ZodStringFormat, ZodEmail, ZodGUID, ZodUUID, ZodURL, ZodEmoji, ZodNanoID, ZodCUID, ZodCUID2, ZodULID, ZodXID, ZodKSUID, ZodIPv4, ZodIPv6, ZodCIDRv4, ZodCIDRv6, ZodBase64, ZodBase64URL, ZodE164, ZodJWT, ZodNumber, ZodNumberFormat, ZodBoolean, ZodNull, ZodUnknown, ZodNever, ZodArray, ZodObject, ZodUnion, ZodDiscriminatedUnion, ZodIntersection, ZodRecord, ZodEnum, ZodLiteral, ZodTransform, ZodOptional, ZodExactOptional, ZodNullable, ZodDefault, ZodPrefault, ZodNonOptional, ZodCatch, ZodPipe, ZodPreprocess, ZodReadonly, ZodCustom;
 var init_schemas2 = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/schemas.js"() {
     "use strict";
     init_core2();
     init_core2();
@@ -5402,26 +5402,26 @@ var init_schemas2 = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/compat.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/compat.js
 var ZodFirstPartyTypeKind;
 var init_compat = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/compat.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/compat.js"() {
     "use strict";
     /* @__PURE__ */ (function(ZodFirstPartyTypeKind2) {
     })(ZodFirstPartyTypeKind || (ZodFirstPartyTypeKind = {}));
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/coerce.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/coerce.js
 var init_coerce = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/coerce.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/coerce.js"() {
     "use strict";
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/external.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/external.js
 var init_external = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/external.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/external.js"() {
     "use strict";
     init_core2();
     init_schemas2();
@@ -5438,26 +5438,26 @@ var init_external = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/index.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/index.js
 var init_classic = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/index.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/classic/index.js"() {
     "use strict";
     init_external();
   }
 });
 
-// ../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/index.js
+// ../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/index.js
 var init_v4 = __esm({
-  "../../../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/index.js"() {
+  "../../node_modules/.pnpm/zod@4.4.3/node_modules/zod/v4/index.js"() {
     "use strict";
     init_classic();
   }
 });
 
-// ../../../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.4.3/node_modules/@modelcontextprotocol/sdk/dist/esm/types.js
+// ../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.30.0_@cfworker+json-schema@4.1.1_zod@4.4.3/node_modules/@modelcontextprotocol/sdk/dist/esm/types.js
 var RELATED_TASK_META_KEY, JSONRPC_VERSION, AssertObjectSchema, ProgressTokenSchema, CursorSchema, TaskCreationParamsSchema, TaskMetadataSchema, RelatedTaskMetadataSchema, RequestMetaSchema, BaseRequestParamsSchema, TaskAugmentedRequestParamsSchema, RequestSchema, NotificationsParamsSchema, NotificationSchema, ResultSchema, RequestIdSchema, JSONRPCRequestSchema, JSONRPCNotificationSchema, JSONRPCResultResponseSchema, ErrorCode, JSONRPCErrorResponseSchema, JSONRPCMessageSchema, JSONRPCResponseSchema, EmptyResultSchema, CancelledNotificationParamsSchema, CancelledNotificationSchema, IconSchema, IconsSchema, BaseMetadataSchema, ImplementationSchema, FormElicitationCapabilitySchema, ElicitationCapabilitySchema, ClientTasksCapabilitySchema, ServerTasksCapabilitySchema, ClientCapabilitiesSchema, InitializeRequestParamsSchema, InitializeRequestSchema, ServerCapabilitiesSchema, InitializeResultSchema, InitializedNotificationSchema, PingRequestSchema, ProgressSchema, ProgressNotificationParamsSchema, ProgressNotificationSchema, PaginatedRequestParamsSchema, PaginatedRequestSchema, PaginatedResultSchema, TaskStatusSchema, TaskSchema, CreateTaskResultSchema, TaskStatusNotificationParamsSchema, TaskStatusNotificationSchema, GetTaskRequestSchema, GetTaskResultSchema, GetTaskPayloadRequestSchema, GetTaskPayloadResultSchema, ListTasksRequestSchema, ListTasksResultSchema, CancelTaskRequestSchema, CancelTaskResultSchema, ResourceContentsSchema, TextResourceContentsSchema, Base64Schema, BlobResourceContentsSchema, RoleSchema, AnnotationsSchema, ResourceSchema, ResourceTemplateSchema, ListResourcesRequestSchema, ListResourcesResultSchema, ListResourceTemplatesRequestSchema, ListResourceTemplatesResultSchema, ResourceRequestParamsSchema, ReadResourceRequestParamsSchema, ReadResourceRequestSchema, ReadResourceResultSchema, ResourceListChangedNotificationSchema, SubscribeRequestParamsSchema, SubscribeRequestSchema, UnsubscribeRequestParamsSchema, UnsubscribeRequestSchema, ResourceUpdatedNotificationParamsSchema, ResourceUpdatedNotificationSchema, PromptArgumentSchema, PromptSchema, ListPromptsRequestSchema, ListPromptsResultSchema, GetPromptRequestParamsSchema, GetPromptRequestSchema, TextContentSchema, ImageContentSchema, AudioContentSchema, ToolUseContentSchema, EmbeddedResourceSchema, ResourceLinkSchema, ContentBlockSchema, PromptMessageSchema, GetPromptResultSchema, PromptListChangedNotificationSchema, ToolAnnotationsSchema, ToolExecutionSchema, ToolSchema, ListToolsRequestSchema, ListToolsResultSchema, CallToolResultSchema, CompatibilityCallToolResultSchema, CallToolRequestParamsSchema, CallToolRequestSchema, ToolListChangedNotificationSchema, ListChangedOptionsBaseSchema, LoggingLevelSchema, SetLevelRequestParamsSchema, SetLevelRequestSchema, LoggingMessageNotificationParamsSchema, LoggingMessageNotificationSchema, ModelHintSchema, ModelPreferencesSchema, ToolChoiceSchema, ToolResultContentSchema, SamplingContentSchema, SamplingMessageContentBlockSchema, SamplingMessageSchema, CreateMessageRequestParamsSchema, CreateMessageRequestSchema, CreateMessageResultSchema, CreateMessageResultWithToolsSchema, BooleanSchemaSchema, StringSchemaSchema, NumberSchemaSchema, UntitledSingleSelectEnumSchemaSchema, TitledSingleSelectEnumSchemaSchema, LegacyTitledEnumSchemaSchema, SingleSelectEnumSchemaSchema, UntitledMultiSelectEnumSchemaSchema, TitledMultiSelectEnumSchemaSchema, MultiSelectEnumSchemaSchema, EnumSchemaSchema, PrimitiveSchemaDefinitionSchema, ElicitRequestFormParamsSchema, ElicitRequestURLParamsSchema, ElicitRequestParamsSchema, ElicitRequestSchema, ElicitationCompleteNotificationParamsSchema, ElicitationCompleteNotificationSchema, ElicitResultSchema, ResourceTemplateReferenceSchema, PromptReferenceSchema, CompleteRequestParamsSchema, CompleteRequestSchema, CompleteResultSchema, RootSchema, ListRootsRequestSchema, ListRootsResultSchema, RootsListChangedNotificationSchema, ClientRequestSchema, ClientNotificationSchema, ClientResultSchema, ServerRequestSchema, ServerNotificationSchema, ServerResultSchema;
 var init_types = __esm({
-  "../../../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.4.3/node_modules/@modelcontextprotocol/sdk/dist/esm/types.js"() {
+  "../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.30.0_@cfworker+json-schema@4.1.1_zod@4.4.3/node_modules/@modelcontextprotocol/sdk/dist/esm/types.js"() {
     "use strict";
     init_v4();
     RELATED_TASK_META_KEY = "io.modelcontextprotocol/related-task";
@@ -5467,10 +5467,9 @@ var init_types = __esm({
     CursorSchema = string2();
     TaskCreationParamsSchema = looseObject({
       /**
-       * Time in milliseconds to keep task results available after completion.
-       * If null, the task has unlimited lifetime until manually cleaned up.
+       * Requested duration in milliseconds to retain task from creation.
        */
-      ttl: union([number2(), _null3()]).optional(),
+      ttl: number2().optional(),
       /**
        * Time in milliseconds to wait between task status requests.
        */
@@ -5764,7 +5763,11 @@ var init_types = __esm({
       /**
        * Present if the client supports task creation.
        */
-      tasks: ClientTasksCapabilitySchema.optional()
+      tasks: ClientTasksCapabilitySchema.optional(),
+      /**
+       * Extensions that the client supports. Keys are extension identifiers (vendor-prefix/extension-name).
+       */
+      extensions: record(string2(), AssertObjectSchema).optional()
     });
     InitializeRequestParamsSchema = BaseRequestParamsSchema.extend({
       /**
@@ -5825,7 +5828,11 @@ var init_types = __esm({
       /**
        * Present if the server supports task creation.
        */
-      tasks: ServerTasksCapabilitySchema.optional()
+      tasks: ServerTasksCapabilitySchema.optional(),
+      /**
+       * Extensions that the server supports. Keys are extension identifiers (vendor-prefix/extension-name).
+       */
+      extensions: record(string2(), AssertObjectSchema).optional()
     });
     InitializeResultSchema = ResultSchema.extend({
       /**
@@ -6017,6 +6024,12 @@ var init_types = __esm({
        * The MIME type of this resource, if known.
        */
       mimeType: optional(string2()),
+      /**
+       * The size of the raw resource content, in bytes (i.e., before base64 encoding or any tokenization), if known.
+       *
+       * This can be used by Hosts to display file sizes and estimate context window usage.
+       */
+      size: optional(number2()),
       /**
        * Optional annotations for the client.
        */
@@ -6929,20 +6942,29 @@ var init_types = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.4.3/node_modules/@modelcontextprotocol/sdk/dist/esm/shared/stdio.js
+// ../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.30.0_@cfworker+json-schema@4.1.1_zod@4.4.3/node_modules/@modelcontextprotocol/sdk/dist/esm/shared/stdio.js
 function deserializeMessage(line) {
   return JSONRPCMessageSchema.parse(JSON.parse(line));
 }
 function serializeMessage(message) {
   return JSON.stringify(message) + "\n";
 }
-var ReadBuffer;
+var STDIO_DEFAULT_MAX_BUFFER_SIZE, ReadBuffer;
 var init_stdio = __esm({
-  "../../../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.4.3/node_modules/@modelcontextprotocol/sdk/dist/esm/shared/stdio.js"() {
+  "../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.30.0_@cfworker+json-schema@4.1.1_zod@4.4.3/node_modules/@modelcontextprotocol/sdk/dist/esm/shared/stdio.js"() {
     "use strict";
     init_types();
+    STDIO_DEFAULT_MAX_BUFFER_SIZE = 10 * 1024 * 1024;
     ReadBuffer = class {
+      constructor(options) {
+        this._maxBufferSize = options?.maxBufferSize ?? STDIO_DEFAULT_MAX_BUFFER_SIZE;
+      }
       append(chunk) {
+        const newSize = (this._buffer?.length ?? 0) + chunk.length;
+        if (newSize > this._maxBufferSize) {
+          this.clear();
+          throw new Error(`ReadBuffer exceeded maximum size of ${this._maxBufferSize} bytes`);
+        }
         this._buffer = this._buffer ? Buffer.concat([this._buffer, chunk]) : chunk;
       }
       readMessage() {
@@ -6964,7 +6986,7 @@ var init_stdio = __esm({
   }
 });
 
-// ../../../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.4.3/node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js
+// ../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.30.0_@cfworker+json-schema@4.1.1_zod@4.4.3/node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js
 var stdio_exports = {};
 __export(stdio_exports, {
   StdioServerTransport: () => StdioServerTransport
@@ -6972,22 +6994,28 @@ __export(stdio_exports, {
 import process3 from "process";
 var StdioServerTransport;
 var init_stdio2 = __esm({
-  "../../../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.26.0_@cfworker+json-schema@4.1.1_zod@4.4.3/node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js"() {
+  "../../node_modules/.pnpm/@modelcontextprotocol+sdk@1.30.0_@cfworker+json-schema@4.1.1_zod@4.4.3/node_modules/@modelcontextprotocol/sdk/dist/esm/server/stdio.js"() {
     "use strict";
     init_stdio();
     StdioServerTransport = class {
-      constructor(_stdin = process3.stdin, _stdout = process3.stdout) {
+      constructor(_stdin = process3.stdin, _stdout = process3.stdout, options) {
         this._stdin = _stdin;
         this._stdout = _stdout;
-        this._readBuffer = new ReadBuffer();
         this._started = false;
         this._ondata = (chunk) => {
-          this._readBuffer.append(chunk);
-          this.processReadBuffer();
+          try {
+            this._readBuffer.append(chunk);
+            this.processReadBuffer();
+          } catch (error2) {
+            this.onerror?.(error2);
+            this.close().catch(() => {
+            });
+          }
         };
         this._onerror = (error2) => {
           this.onerror?.(error2);
         };
+        this._readBuffer = new ReadBuffer({ maxBufferSize: options?.maxBufferSize });
       }
       /**
        * Starts listening for messages on stdin.
