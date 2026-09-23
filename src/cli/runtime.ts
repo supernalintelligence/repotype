@@ -9,6 +9,7 @@ import { GuidanceAdapter } from '../adapters/guidance-adapter.js';
 import { MarkdownTemplateAdapter } from '../adapters/markdown-template-adapter.js';
 import { PathPolicyAdapter } from '../adapters/path-policy-adapter.js';
 import { BoardYamlCompletenessAdapter } from '../adapters/board-yaml-completeness-adapter.js';
+import { BoardGeneratedPathsGitignoreAdapter } from '../adapters/board-generated-paths-gitignore-adapter.js';
 import { BoardStoryCompletenessAdapter } from '../adapters/board-story-completeness-adapter.js';
 import { CompanyYamlAdapter } from '../adapters/company-yaml-adapter.js';
 import { GitignorePolicyAdapter } from '../adapters/gitignore-policy-adapter.js';
@@ -36,6 +37,7 @@ export function createDefaultEngine(): ValidationEngine {
     new WorkflowGateAdapter(),
     new GuidanceAdapter(),
     new BoardYamlCompletenessAdapter(),
+    new BoardGeneratedPathsGitignoreAdapter(),
     new BoardStoryCompletenessAdapter(),
     new CompanyYamlAdapter(),
     new GitignorePolicyAdapter(),
