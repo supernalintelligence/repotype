@@ -15,6 +15,7 @@ import {
   pluginStatus,
   scaffoldFromTemplate,
   validatePath,
+  validateFileList,
 } from "./cli/use-cases.js";
 import {
   applyOperationsConfig,
@@ -41,6 +42,7 @@ export const repotypeValidateCommand = new UniversalCommand<
     noCache?: boolean;
     guidance?: boolean;
     plugins?: boolean;
+    filesFrom?: string;
   },
   { ok: boolean; filesScanned: number; diagnostics: unknown[] }
 >({
@@ -97,6 +99,14 @@ export const repotypeValidateCommand = new UniversalCommand<
         positional: false,
         required: false,
       },
+      {
+        name: "filesFrom",
+        type: "string",
+        description:
+          "Validate every file listed (one path per line) in this file, or '-' for stdin, in a single run. Replaces the target argument.",
+        positional: false,
+        required: false,
+      },
     ],
   },
   output: {
@@ -130,8 +140,27 @@ export const repotypeValidateCommand = new UniversalCommand<
       return JSON.stringify(filtered, null, 2);
     },
   },
-  async handler({ target = ".", config, noWorkspace, noCache, plugins }) {
-    const validateResult = await validatePath(target, config, {
+  async handler({
+    target,
+    config,
+    noWorkspace,
+    noCache,
+    plugins,
+    filesFrom,
+  }) {
+    if (filesFrom !== undefined) {
+      if (target !== undefined) {
+        throw new Error("Pass either a target or --files-from, not both");
+      }
+      const batch = await validateFileList(filesFrom, config);
+      return {
+        ok: batch.ok,
+        filesScanned: batch.filesScanned,
+        diagnostics: batch.diagnostics,
+        mode: "flat",
+      };
+    }
+    const validateResult = await validatePath(target ?? ".", config, {
       workspace: noWorkspace ? false : undefined,
       noCache,
       plugins,

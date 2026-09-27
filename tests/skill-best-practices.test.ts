@@ -15,7 +15,7 @@ function makeSkill(base: string, skillName: string, content: string): string {
 
 /** Make a skill that mirrors a board package (creates packages/boards/<id>). */
 function makeBoardSkill(base: string, skillName: string, content: string): string {
-  fs.mkdirSync(path.join(base, 'packages', 'boards', skillName), { recursive: true });
+  fs.mkdirSync(path.join(base, 'packages', 'modules', skillName), { recursive: true });
   return makeSkill(base, skillName, content);
 }
 

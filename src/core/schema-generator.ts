@@ -2,7 +2,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { globSync } from 'glob';
 import { parseMarkdown } from './markdown.js';
-import { createIgnoreMatcher, getStaticIgnoreGlobs } from './path-ignore.js';
+import { createIgnoreMatcher } from './path-ignore.js';
 
 type JsonSchema = Record<string, unknown>;
 
@@ -95,7 +95,7 @@ function discoverMarkdownFiles(targetPath: string, pattern: string): string[] {
     cwd: absolute,
     absolute: true,
     nodir: true,
-    ignore: getStaticIgnoreGlobs(),
+    ignore: ignoreMatcher.globIgnore,
   });
   return discovered.filter((filePath) => !ignoreMatcher.isIgnored(filePath));
 }

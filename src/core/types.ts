@@ -1,3 +1,4 @@
+import type { IgnoreMatcher } from "./path-ignore.js";
 export type DiagnosticSeverity = "error" | "warning" | "suggestion";
 
 export interface AutofixAction {
@@ -166,6 +167,8 @@ export interface ValidatorContext {
    * packages/boards/* must not fire when validating .supernal/docs).
    */
   targetRoot: string;
+  /** Ignore rules for repoRoot, built once per run and shared by every adapter. */
+  ignoreMatcher: IgnoreMatcher;
 }
 
 export interface ValidatorAdapter {

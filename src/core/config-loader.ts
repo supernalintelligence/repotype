@@ -8,7 +8,6 @@ import type {
   WorkspaceCache,
   WorkspaceEntry,
 } from "./types.js";
-import { getStaticIgnoreGlobs } from "./path-ignore.js";
 import type { IgnoreMatcher } from "./path-ignore.js";
 
 export function findConfig(startPath: string): string {
@@ -262,7 +261,7 @@ export function discoverWorkspaces(
     cwd: root,
     absolute: true,
     nodir: true,
-    ignore: getStaticIgnoreGlobs(),
+    ignore: ignoreMatcher.globIgnore,
   });
 
   // Filter out root config(s) and ignored paths

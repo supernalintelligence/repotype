@@ -20,6 +20,7 @@
  * Tests that exercise the "not staged" gate do NOT need git setup.
  */
 
+import type { IgnoreMatcher } from '../src/core/path-ignore.js';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
@@ -41,6 +42,13 @@ function makeGitRepo(tmpDir: string): string {
   return tmpDir;
 }
 
+// These adapters never consult ignore rules, and the tests use fake roots.
+const NO_IGNORES: IgnoreMatcher = {
+  isIgnored: () => false,
+  ignoreFiles: [],
+  globIgnore: { ignored: () => false, childrenIgnored: () => false },
+};
+
 function makeContext(
   repoRoot: string,
   relPath: string,
@@ -60,6 +68,7 @@ function makeContext(
     config,
     ruleSet,
     targetRoot: repoRoot,
+    ignoreMatcher: NO_IGNORES,
   };
 }
 

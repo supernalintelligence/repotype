@@ -2,11 +2,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { describe, expect, it, afterEach } from 'vitest';
+import { createIgnoreMatcher } from '../src/core/path-ignore.js';
 import { BoardGeneratedPathsGitignoreAdapter } from '../src/adapters/board-generated-paths-gitignore-adapter.js';
 import type { ValidatorContext } from '../src/core/types.js';
 
 function makeContext(repoRoot: string): ValidatorContext {
-  return { repoRoot } as ValidatorContext;
+  return { repoRoot, ignoreMatcher: createIgnoreMatcher(repoRoot) } as ValidatorContext;
 }
 
 function codes(diagnostics: { code: string }[]): string[] {

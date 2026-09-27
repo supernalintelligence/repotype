@@ -2,11 +2,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { globSync } from "glob";
 import { matchesGlob } from "../core/glob.js";
-import {
-  createIgnoreMatcher,
-  getStaticIgnoreGlobs,
-  type IgnoreMatcher,
-} from "../core/path-ignore.js";
+import type { IgnoreMatcher } from "../core/path-ignore.js";
 import type {
   Diagnostic,
   FolderRule,
@@ -49,6 +45,10 @@ function matchesAny(name: string, patterns: string[]): boolean {
   return patterns.some((pattern) => matchesGlob(name, pattern));
 }
 
+// Glob matches depend only on the repo and its ignore rules, so one run
+// (one IgnoreMatcher) computes each rule glob once, whatever the target count.
+const globTargetCache = new WeakMap<IgnoreMatcher, Map<string, string[]>>();
+
 function collectTargetDirectories(
   rule: FolderRule,
   repoRoot: string,
@@ -59,19 +59,29 @@ function collectTargetDirectories(
     return ignoreMatcher.isIgnored(resolved) ? [] : [resolved];
   }
   if (rule.glob) {
+    let perRun = globTargetCache.get(ignoreMatcher);
+    if (!perRun) {
+      perRun = new Map();
+      globTargetCache.set(ignoreMatcher, perRun);
+    }
+    const key = `${repoRoot}\0${rule.glob}`;
+    const cached = perRun.get(key);
+    if (cached) return cached;
     const matched = globSync(rule.glob, {
       cwd: repoRoot,
       absolute: true,
       nodir: false,
       dot: true,
-      ignore: getStaticIgnoreGlobs(),
+      ignore: ignoreMatcher.globIgnore,
     });
-    return matched.filter(
+    const dirs = matched.filter(
       (entry) =>
         !ignoreMatcher.isIgnored(entry) &&
         fs.existsSync(entry) &&
         fs.statSync(entry).isDirectory(),
     );
+    perRun.set(key, dirs);
+    return dirs;
   }
   return [];
 }
@@ -229,7 +239,7 @@ export class FolderStructureAdapter implements ValidatorAdapter {
 
     const diagnostics: Diagnostic[] = [];
     const folderRules = context.config.folders || [];
-    const ignoreMatcher = createIgnoreMatcher(context.repoRoot);
+    const ignoreMatcher = context.ignoreMatcher;
 
     for (const rule of folderRules) {
       // Scope rules to the validation target. A path rule whose nominal target

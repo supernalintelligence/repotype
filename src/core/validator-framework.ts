@@ -11,7 +11,7 @@ import {
   writeWorkspaceCache,
   resolveOwningWorkspace,
 } from "./config-loader.js";
-import { createIgnoreMatcher, getStaticIgnoreGlobs } from "./path-ignore.js";
+import { createIgnoreMatcher } from "./path-ignore.js";
 import type { IgnoreMatcher } from "./path-ignore.js";
 import { resolveEffectiveRules } from "./rule-engine.js";
 import type {
@@ -67,7 +67,7 @@ export function scanFiles(
     cwd: targetPath,
     absolute: true,
     nodir: true,
-    ignore: getStaticIgnoreGlobs(),
+    ignore: ignoreMatcher.globIgnore,
   });
 
   const filtered = files.filter((filePath) => {
@@ -274,6 +274,8 @@ export class ValidationEngine {
       workspaceTag?: string;
       /** Pre-computed file list; when provided, skips scanFiles entirely. */
       fileList?: string[];
+      /** Omit the config-level glob lint (a batch adds it once). */
+      skipConfigLint?: boolean;
     },
   ): Promise<ValidationResult> {
     const absoluteTarget = path.resolve(targetPath);
@@ -296,26 +298,29 @@ export class ValidationEngine {
     // repo-root-relative rule on a scoped in-tree run with --config.
     const repoRoot = resolveRepoRoot(targetRoot, configPath);
     const config = loadConfig(configPath);
-    const files =
-      options?.fileList ??
-      scanFiles(absoluteTarget, repoRoot, options?.sharedIgnoreMatcher);
-
-    // Inject .gitignore files — the main scanner uses dot:false so dotfiles are excluded.
-    // We add only .gitignore specifically; injecting all dotfiles would OOM large repos.
-    // Use the same ignore matcher that governs scanFiles so repotype.yaml `ignore:` patterns
-    // (e.g. `_build_output/**`) are respected and don't leak through as unmatched-file errors.
-    const giIgnoreMatcher =
+    const ignoreMatcher =
       options?.sharedIgnoreMatcher ?? createIgnoreMatcher(repoRoot);
-    const gitignoreFiles = globSync("**/.gitignore", {
-      cwd: repoRoot,
-      absolute: true,
-      ignore: ["**/node_modules/**"],
-    });
-    for (const gi of gitignoreFiles) {
-      if (!files.includes(gi) && !giIgnoreMatcher.isIgnored(gi)) files.push(gi);
+    const files =
+      options?.fileList ?? scanFiles(absoluteTarget, repoRoot, ignoreMatcher);
+
+    // The directory scanner skips dotfiles, so a directory target adds the
+    // .gitignore files under it explicitly. A file target validates only itself.
+    const targetIsDirectory = targetRoot === absoluteTarget;
+    if (targetIsDirectory) {
+      const known = new Set(files);
+      for (const ignoreFile of ignoreMatcher.ignoreFiles) {
+        if (path.basename(ignoreFile) !== ".gitignore") continue;
+        const rel = path.relative(absoluteTarget, ignoreFile);
+        if (rel.startsWith("..") || path.isAbsolute(rel)) continue;
+        if (!known.has(ignoreFile) && !ignoreMatcher.isIgnored(ignoreFile)) {
+          files.push(ignoreFile);
+        }
+      }
     }
 
-    const diagnostics: Diagnostic[] = [...lintConfigGlobs(config, configPath)];
+    const diagnostics: Diagnostic[] = options?.skipConfigLint
+      ? []
+      : [...lintConfigGlobs(config, configPath)];
 
     for (const filePath of files) {
       const ruleSet = resolveEffectiveRules(config, repoRoot, filePath);
@@ -326,6 +331,7 @@ export class ValidationEngine {
         config,
         ruleSet,
         globalFileIndex: options?.globalFileIndex,
+        ignoreMatcher,
       };
 
       for (const adapter of this.adapters) {
@@ -360,6 +366,49 @@ export class ValidationEngine {
       ok: diagnostics.every((d) => d.severity !== "error"),
       diagnostics,
       filesScanned: files.length,
+    };
+  }
+
+  /**
+   * Validate an explicit list of files against one config in a single run:
+   * the config, ignore rules and folder-rule scopes are computed once for the
+   * whole list instead of once per file.
+   */
+  async validateFiles(
+    filePaths: string[],
+    options: { configPath: string },
+  ): Promise<ValidationResult> {
+    const configPath = path.resolve(options.configPath);
+    const configDir = path.dirname(configPath);
+    const absoluteFiles = [...new Set(filePaths.map((f) => path.resolve(f)))];
+    for (const file of absoluteFiles) {
+      const rel = path.relative(configDir, file);
+      if (rel.startsWith("..") || path.isAbsolute(rel)) {
+        throw new Error(
+          `validateFiles: ${file} is outside the config's repo root ${configDir}`,
+        );
+      }
+      if (!fs.existsSync(file) || !fs.statSync(file).isFile()) {
+        throw new Error(`validateFiles: ${file} is not an existing file`);
+      }
+    }
+    const config = loadConfig(configPath);
+    const sharedIgnoreMatcher = createIgnoreMatcher(configDir);
+    const diagnostics: Diagnostic[] = [...lintConfigGlobs(config, configPath)];
+    let filesScanned = 0;
+    for (const file of absoluteFiles) {
+      const result = await this.validate(file, {
+        configPath,
+        sharedIgnoreMatcher,
+        skipConfigLint: true,
+      });
+      diagnostics.push(...result.diagnostics);
+      filesScanned += result.filesScanned;
+    }
+    return {
+      ok: diagnostics.every((d) => d.severity !== "error"),
+      diagnostics,
+      filesScanned,
     };
   }
 

@@ -230,10 +230,28 @@ defaults:
 files:
   - id: docs-txt
     glob: "docs/**/*.txt"
+  - id: root-gitignore
+    glob: ".gitignore"
 `,
   );
 
-  fs.writeFileSync(path.join(root, ".gitignore"), "scratch/\n*.tmp\n");
+  fs.writeFileSync(
+    path.join(root, ".gitignore"),
+    [
+      "scratch/",
+      "*.tmp",
+      "node_modules/",
+      ".next/",
+      "dist/",
+      "build/",
+      ".DS_Store",
+      ".env*.local",
+      "*.log",
+      ".ralph-log*.jsonl",
+      ".supernal-local/",
+      "",
+    ].join("\n"),
+  );
   fs.writeFileSync(path.join(root, ".customignore"), "generated/\n");
   fs.writeFileSync(path.join(root, "docs", "keep.txt"), "kept\n");
   fs.writeFileSync(

@@ -1,6 +1,5 @@
 import fs from "node:fs";
 import path from "node:path";
-import { globSync } from "glob";
 import { Minimatch } from "minimatch";
 
 const MATCH_OPTS = { dot: true, nocase: false, nocomment: true };
@@ -121,67 +120,119 @@ function matchesRule(localPath: string, rule: IgnoreRule): boolean {
   );
 }
 
-function collectIgnoreRules(repoRoot: string): IgnoreRule[] {
-  const root = path.resolve(repoRoot);
-  const ignoreFiles = globSync("**/.*ignore*", {
-    cwd: root,
-    absolute: true,
-    nodir: true,
-    dot: true,
-    ignore: STATIC_IGNORES,
-  }).sort((a, b) => {
-    const depthDiff =
-      normalize(path.relative(root, path.dirname(a))).split("/").length -
-      normalize(path.relative(root, path.dirname(b))).split("/").length;
-    return depthDiff !== 0 ? depthDiff : a.localeCompare(b);
-  });
+const STATIC_IGNORE_DIR_NAMES = new Set(["node_modules", ".git", "dist", "build"]);
+const IGNORE_FILE_RE = /^\..*ignore/;
 
-  const rules: IgnoreRule[] = [];
-  for (const ignoreFile of ignoreFiles) {
-    const dirRel =
-      normalize(path.relative(root, path.dirname(ignoreFile))) || ".";
-    const lines = fs.readFileSync(ignoreFile, "utf8").split(/\r?\n/);
-    for (const line of lines) {
-      const parsed = parseIgnoreLine(line);
-      if (!parsed) {
-        continue;
-      }
-      rules.push({
-        ...parsed,
-        base: dirRel,
-      });
+function matchesAnyRule(rel: string, rules: IgnoreRule[]): boolean {
+  let ignored = false;
+  for (const rule of rules) {
+    const localPath = toLocalPath(rule.base, rel);
+    if (localPath === null) {
+      continue;
+    }
+    if (matchesRule(localPath, rule)) {
+      ignored = !rule.negated;
     }
   }
+  return ignored;
+}
 
-  return rules;
+/**
+ * Reads ignore files level by level and never descends into a directory the
+ * rules found so far already ignore, the same pruning git applies. An unpruned
+ * `**` walk enumerated every ignored tree on every call (a checkout's
+ * `.worktrees/` holds 100+ full repo copies), which made a one-file validation
+ * take minutes.
+ */
+function collectIgnoreRules(repoRoot: string): {
+  rules: IgnoreRule[];
+  ignoreFiles: string[];
+} {
+  const root = path.resolve(repoRoot);
+  const rules: IgnoreRule[] = [];
+  const ignoreFiles: string[] = [];
+  let level = [root];
+
+  while (level.length > 0) {
+    level.sort((a, b) => a.localeCompare(b));
+    const next: string[] = [];
+    const levelDirents = level.map((dir) => ({
+      dir,
+      entries: fs.readdirSync(dir, { withFileTypes: true }),
+    }));
+
+    for (const { dir, entries } of levelDirents) {
+      const dirRel = normalize(path.relative(root, dir)) || ".";
+      const names = entries
+        .filter((e) => e.isFile() && IGNORE_FILE_RE.test(e.name))
+        .map((e) => e.name)
+        .sort();
+      for (const name of names) {
+        const ignoreFile = path.join(dir, name);
+        ignoreFiles.push(ignoreFile);
+        for (const line of fs.readFileSync(ignoreFile, "utf8").split(/\r?\n/)) {
+          const parsed = parseIgnoreLine(line);
+          if (parsed) {
+            rules.push({ ...parsed, base: dirRel });
+          }
+        }
+      }
+    }
+
+    for (const { dir, entries } of levelDirents) {
+      for (const entry of entries) {
+        if (!entry.isDirectory() || STATIC_IGNORE_DIR_NAMES.has(entry.name)) {
+          continue;
+        }
+        const child = path.join(dir, entry.name);
+        if (!matchesAnyRule(normalize(path.relative(root, child)), rules)) {
+          next.push(child);
+        }
+      }
+    }
+    level = next;
+  }
+
+  return { rules, ignoreFiles };
 }
 
 export interface IgnoreMatcher {
   isIgnored(absolutePath: string): boolean;
+  /** Every ignore file read, in the order its rules were applied. */
+  readonly ignoreFiles: readonly string[];
+  /** A glob `ignore` option that prunes ignored and static-ignored directories. */
+  readonly globIgnore: {
+    ignored(p: { fullpath(): string }): boolean;
+    childrenIgnored(p: { name: string; fullpath(): string }): boolean;
+  };
 }
 
 export function createIgnoreMatcher(repoRoot: string): IgnoreMatcher {
   const root = path.resolve(repoRoot);
-  const rules = collectIgnoreRules(root);
+  const { rules, ignoreFiles } = collectIgnoreRules(root);
+
+  const isIgnored = (absolutePath: string): boolean => {
+    const rel = normalize(path.relative(root, path.resolve(absolutePath)));
+    if (!rel || rel.startsWith("..")) {
+      return false;
+    }
+    // As in git, a path inside an ignored directory is ignored too.
+    const segments = rel.split("/");
+    for (let i = 1; i < segments.length; i++) {
+      if (matchesAnyRule(segments.slice(0, i).join("/"), rules)) {
+        return true;
+      }
+    }
+    return matchesAnyRule(rel, rules);
+  };
 
   return {
-    isIgnored(absolutePath: string): boolean {
-      const rel = normalize(path.relative(root, path.resolve(absolutePath)));
-      if (!rel || rel.startsWith("..")) {
-        return false;
-      }
-
-      let ignored = false;
-      for (const rule of rules) {
-        const localPath = toLocalPath(rule.base, rel);
-        if (localPath === null) {
-          continue;
-        }
-        if (matchesRule(localPath, rule)) {
-          ignored = !rule.negated;
-        }
-      }
-      return ignored;
+    isIgnored,
+    ignoreFiles,
+    globIgnore: {
+      ignored: () => false,
+      childrenIgnored: (p) =>
+        STATIC_IGNORE_DIR_NAMES.has(p.name) || isIgnored(p.fullpath()),
     },
   };
 }

@@ -20,7 +20,6 @@ import fs from 'node:fs';
 import path from 'node:path';
 import yaml from 'js-yaml';
 import type { Diagnostic, ValidatorAdapter, ValidatorContext } from '../core/types.js';
-import { createIgnoreMatcher } from '../core/path-ignore.js';
 
 function isBoardYaml(filePath: string): boolean {
   return filePath.endsWith('/module.yaml') || filePath === 'module.yaml';
@@ -80,7 +79,7 @@ export class BoardGeneratedPathsGitignoreAdapter implements ValidatorAdapter {
       return diagnostics;
     }
 
-    const matcher = createIgnoreMatcher(repoRoot);
+    const matcher = context.ignoreMatcher;
 
     for (const entry of generatedPaths) {
       if (typeof entry !== 'string' || entry.trim().length === 0) {

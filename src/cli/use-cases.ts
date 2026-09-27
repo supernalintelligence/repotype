@@ -10,7 +10,11 @@ import {
 import { generateFrontmatterSchemaFromContent } from "../core/schema-generator.js";
 import { explainRules } from "../core/rule-engine.js";
 import { renderTemplate } from "../core/template-engine.js";
-import type { AutofixAction, ValidateResult } from "../core/types.js";
+import type {
+  AutofixAction,
+  ValidateResult,
+  ValidationResult,
+} from "../core/types.js";
 import { createDefaultEngine } from "./runtime.js";
 import { resolveRepoRoot } from "../core/validator-framework.js";
 import type { DiagnosticSeverity } from "../core/types.js";
@@ -109,6 +113,31 @@ export async function validatePath(
       ok: diagnostics.every((d) => d.severity !== "error"),
     },
   };
+}
+
+/**
+ * Validate an explicit file list in one run. `listSource` is a path to a
+ * newline-separated list, or "-" for stdin. Relative entries resolve against cwd.
+ */
+export async function validateFileList(
+  listSource: string,
+  configOverridePath?: string,
+): Promise<ValidationResult> {
+  const raw =
+    listSource === "-"
+      ? fs.readFileSync(0, "utf8")
+      : fs.readFileSync(path.resolve(listSource), "utf8");
+  const files = raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+  if (files.length === 0) {
+    throw new Error(`--files-from ${listSource}: the file list is empty`);
+  }
+  const configPath = configOverridePath
+    ? path.resolve(configOverridePath)
+    : findConfig(path.resolve(files[0]));
+  return createDefaultEngine().validateFiles(files, { configPath });
 }
 
 export function explainPath(target: string, configOverridePath?: string) {
