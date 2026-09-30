@@ -62,13 +62,20 @@ describe('CronIndexDriftAdapter — declared-source rule', () => {
     expect(diags.map((d) => d.code)).toEqual(['cron_index_stale']);
   });
 
-  it('passes a fully declared index and still checks crons.json -> index when crons.json exists', async () => {
+  it('passes a fully declared index; live crons.json rows are not its concern', async () => {
     const root = tmp();
-    const indexPath = writeIndex(root, [board('crm', 'a', 'crons.yaml', ['crons.json', 'sqlite'])]);
-    writeCronsJson(root, { crm: [{ id: 'a' }, { id: 'b' }] });
+    const indexPath = writeIndex(root, [board('crm', 'a', 'crons.yaml')]);
+    writeCronsJson(root, { crm: [{ id: 'a' }, { id: 'live-only' }] });
     const diags = await new CronIndexDriftAdapter().validate(indexPath, ctx(root));
-    expect(diags.map((d) => `${d.code}:${(d.details as { cronId?: string } | undefined)?.cronId}`)).toEqual([
-      'cron_index_stale:b',
-    ]);
+    expect(diags).toEqual([]);
+  });
+
+  it('fails a missing index', async () => {
+    const root = tmp();
+    const diags = await new CronIndexDriftAdapter().validate(
+      path.join(root, '.supernal', 'modules', 'crons.index.json'),
+      ctx(root),
+    );
+    expect(diags.map((d) => d.code)).toEqual(['cron_index_missing']);
   });
 });

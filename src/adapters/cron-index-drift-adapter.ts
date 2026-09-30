@@ -9,30 +9,24 @@
  *
  * Spec: .supernal/docs/specs/platform/2026-06-24-cron-system-consolidation-sqlite-canonical.md §5 (R-D1, R-D4), §9 step 1
  *
- * ── Why this adapter only checks the file-readable half ────────────────────────
- * repotype is a dependency-light, file-only linter that must run fast and must
- * NOT open encrypted per-board SQLite DBs (that needs the AgentStateDB native dep
- * + decryption key). So this rule verifies what the files alone can prove:
- *   - every cron in crons.json appears in crons.index.json with "crons.json" in
- *     its `sources`, and the index exists + parses;
- *   - every board row in the committed index carries a declared source
- *     (`declaredBy` non-null) — an undeclared row was committed.
- * The full check (SQLite-inclusive staleness plus declared crons.yaml -> aggregate
- * and aggregate -> declared source in both directions) is `sc cron index --check`.
- * No CI workflow runs it: it runs in .husky/pre-push and in the daily
- * `cron-index-check` maintenance task, because the live board DBs it reads exist
- * only on a developer machine.
+ * ── What this adapter checks ───────────────────────────────────────────────────
+ * The committed index is a pure function of declared files
+ * (packages/cron-store/src/committed-cron-index.ts); live rows (crons.json,
+ * SQLite, maintenance tasks) are never committed. This file-only rule checks
+ * that the index exists, parses, and that every board row names its declared
+ * source. Byte-equality with the declared files is `node scripts/cron-index-gen.mjs
+ * --check` (pre-commit regenerates, pre-push checks each pushed commit); the live
+ * declared-vs-aggregate check is `sc cron index --check`.
  *
  * Rule ID: cron-index-drift
  *
  * Diagnostics:
- *   - cron_index_missing       → error (index file absent — run `sc cron index`)
+ *   - cron_index_missing       → error (index file absent)
  *   - cron_index_unparseable   → error (index JSON corrupt)
- *   - cron_index_stale         → error (a crons.json cron is missing from the index,
- *                                 or the index predates declared-source tracking)
+ *   - cron_index_stale         → error (the index predates declared-source tracking)
  *   - cron_index_undeclared    → error (a committed board row has declaredBy: null)
  *
- * No fallbacks (repo rule): missing/unparseable index or crons.json is a loud error.
+ * No fallbacks (repo rule): a missing/unparseable index is a loud error.
  */
 
 import fs from 'node:fs';
@@ -43,16 +37,10 @@ const CRONS_JSON_SEG = '/.supernal/modules/crons.json';
 const CRON_INDEX_JSON_SEG = '/.supernal/modules/crons.index.json';
 const CRON_INDEX_MD_SEG = '/.supernal/modules/crons.index.md';
 
-interface CronsJsonFile {
-  version?: number;
-  crons?: Record<string, Array<{ id?: string; action?: string }>>;
-}
-
 interface CronIndexEntry {
   system?: string;
   boardId: string;
   cronId: string;
-  sources: string[];
   declaredBy?: string | null;
 }
 
@@ -84,11 +72,6 @@ function resolveMonorepoRoot(filePath: string, context: ValidatorContext): strin
   return context.repoRoot;
 }
 
-/** Canonical cron id matching the index builder: id ?? action ?? '(unnamed)'. */
-function cronId(c: { id?: string; action?: string }): string {
-  return c.id ?? c.action ?? '(unnamed)';
-}
-
 export class CronIndexDriftAdapter implements ValidatorAdapter {
   id = 'cron-index-drift';
 
@@ -109,22 +92,16 @@ export class CronIndexDriftAdapter implements ValidatorAdapter {
   }
 
   private computeDrift(monorepoRoot: string): Diagnostic[] {
-    const cronsJsonPath = path.join(monorepoRoot, '.supernal', 'modules', 'crons.json');
     const indexJsonPath = path.join(monorepoRoot, '.supernal', 'modules', 'crons.index.json');
-
-    // crons.json is gitignored, so it exists only on a machine that runs the
-    // scheduler. The declared-source rule below needs only the committed index.
-    const hasCronsJson = fs.existsSync(cronsJsonPath);
 
     // ── The index file must exist + parse ──
     if (!fs.existsSync(indexJsonPath)) {
-      if (!hasCronsJson) return [];
       return [
         {
           code: 'cron_index_missing',
           message:
-            `.supernal/modules/crons.index.json is missing but crons.json exists — ` +
-            `the git-visible cron index is required. Run \`sc cron index\` and commit it.`,
+            `.supernal/modules/crons.index.json is missing — the git-visible cron index is ` +
+            `required. Run \`node scripts/cron-index-gen.mjs\` and commit it.`,
           severity: 'error',
           file: indexJsonPath,
           ruleId: this.id,
@@ -167,58 +144,12 @@ export class CronIndexDriftAdapter implements ValidatorAdapter {
           message:
             `Cron ${e.boardId}/${e.cronId} is in the aggregate with no declared source (no crons.yaml ` +
             `entry, not an sc-cron job, not soft-deleted). Restore its crons.yaml entry or run ` +
-            `\`sc cron delete --id ${e.cronId} --board ${e.boardId} --reason "<why>"\`, then \`sc cron index\`.`,
+            `\`sc cron delete --id ${e.cronId} --board ${e.boardId} --reason "<why>"\`, then \`node scripts/cron-index-gen.mjs\`.`,
           severity: 'error',
           file: indexJsonPath,
           ruleId: this.id,
           details: { boardId: e.boardId, cronId: e.cronId },
         });
-      }
-    }
-
-    if (!hasCronsJson) return diagnostics;
-
-    let cronsFile: CronsJsonFile;
-    try {
-      cronsFile = JSON.parse(fs.readFileSync(cronsJsonPath, 'utf8')) as CronsJsonFile;
-    } catch (err) {
-      return [
-        ...diagnostics,
-        {
-          code: 'cron_index_stale',
-          message: `.supernal/modules/crons.json could not be parsed: ${(err as Error).message}`,
-          severity: 'error',
-          file: cronsJsonPath,
-          ruleId: this.id,
-        },
-      ];
-    }
-
-    // Build the set of (boardId, cronId) the index claims came from crons.json.
-    const indexByKey = new Map<string, CronIndexEntry>();
-    for (const e of index.entries ?? []) {
-      indexByKey.set(`${e.boardId}|${e.cronId}`, e);
-    }
-
-    const crons = cronsFile.crons ?? {};
-    for (const [boardId, jobs] of Object.entries(crons)) {
-      for (const job of jobs ?? []) {
-        const id = cronId(job);
-        const key = `${boardId}|${id}`;
-        const entry = indexByKey.get(key);
-        if (!entry || !entry.sources?.includes('crons.json')) {
-          diagnostics.push({
-            code: 'cron_index_stale',
-            message:
-              `Cron ${boardId}/${id} is present in crons.json but missing from ` +
-              `.supernal/modules/crons.index.json (or not attributed to crons.json) — ` +
-              `the cron index is stale. Run \`sc cron index\` and commit the result.`,
-            severity: 'error',
-            file: indexJsonPath,
-            ruleId: this.id,
-            details: { boardId, cronId: id },
-          });
-        }
       }
     }
 
