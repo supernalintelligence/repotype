@@ -61,3 +61,7 @@ director:
 
 claude_hooks:
   parent_repo: ../..
+
+git_hooks:
+  # core.hooksPath this repo runs (husky 9). The task-session gate checks it.
+  hooks_path: .husky/_

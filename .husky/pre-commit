@@ -1,0 +1,3 @@
+#!/bin/sh
+# sc-managed pre-commit hook: checks come from supernal.yaml git_hooks.pre_commit.
+exec sc git hooks run pre-commit "$@"
