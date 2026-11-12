@@ -47,6 +47,7 @@
     "badge:validation": "node scripts/generate-validation-badge.mjs"
   },
   "dependencies": {
+    "@modelcontextprotocol/server": "^2.4.0",
     "@supernal/universal-command": "workspace:*",
     "ajv": "^8.17.1",
     "ajv-formats": "^3.0.1",

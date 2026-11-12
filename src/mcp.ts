@@ -55,7 +55,7 @@ export async function startMCPServer(): Promise<void> {
     version: "0.1.0",
   });
   const { StdioServerTransport } =
-    await import("@modelcontextprotocol/sdk/server/stdio.js");
+    await import("@modelcontextprotocol/server/stdio");
   const transport = new StdioServerTransport();
   await server.connect(transport);
   process.stderr.write("repotype MCP server running on stdio\n");
